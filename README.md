@@ -11,6 +11,7 @@ PocketCW is not made by HamCube, and is not affiliated with HamCube or Nintendo.
 - **Receive:** copy drills, and ragchews: whole contacts between two stations, with a quiz.
 - **POTA, SOTA and Hunt:** practice park and summit contacts, both as the activator and as the hunter.
 - **Letters and Progress:** accuracy for each letter, common mixups, and session history.
+- **USB keyboard:** types what you key on a computer, phone or tablet, or keys VBand.
 - **Radio:** decodes a radio's audio through the HamCube decoder board, when one is fitted.
 
 ## Install

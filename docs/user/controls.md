@@ -12,7 +12,7 @@
 
 Each screen page in this manual has a table of what these controls do on that screen.
 
-On every screen, your key sounds the sidetone, and keys the func jack when KEY OUT is ON. The Key row of each table lists what else the key does on that screen.
+On every screen, your key sounds the sidetone, keys the func jack when KEY OUT is ON, and types or keys VBand over USB when USB OUT is TEXT or VBAND. The Key row of each table lists what else the key does on that screen.
 
 ## Turn on
 

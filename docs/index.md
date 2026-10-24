@@ -12,6 +12,7 @@ PocketCW is not affiliated with HamCube or Nintendo.
 - QSO practice: activate a park or a summit and work a pileup, or hunt activators.
 - Four memories that key your radio, with repeat for calling CQ.
 - Copy accuracy per character, your most common mixups, and practice history.
+- A USB keyboard mode that types what you key, or keys [VBand](user/usb.md).
 
 PocketCW was tested on a Mini with board version 2.64. Other boards from 2.60 and the Pro may work, but nobody has tried them yet.
 
