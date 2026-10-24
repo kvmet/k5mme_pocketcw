@@ -1,0 +1,54 @@
+# Ragchew
+
+In a ragchew, two stations hold a full QSO for you to copy. One station calls CQ, the other answers, and they trade signal reports, names, cities (QTH), rigs, antennas and weather (WX). Then they sign off with 73. After 8 overs, two new stations start a new QSO.
+
+Open the ragchew from the [receive drills](receive.md): press F2 (KIND) on the CALLS drill. There are two kinds:
+
+| Kind | What you do |
+| - | - |
+| CHEW | Listen. The text of each over shows after the over ends. |
+| QUIZ | After an over, answer a question about it. The device scores your answer like a receive drill. |
+
+The stations send at CHAR SPEED, with FARNSWORTH spacing when you set it. With FIST set to HUMAN, each station keys with its own small timing errors. The two stations send at slightly different pitches. See [Settings](settings.md).
+
+## What the screen shows
+
+The screen shows each over in a list: the sender's callsign at the left of the first line, then the text. The two stations show in two colors. Text that you have not been shown yet shows as a row of dashes.
+
+### CHEW
+
+CHEW SHOWS on the RECV tab sets when text shows:
+
+- WHOLE OVER: each over shows after it ends.
+- EACH LINE: each line shows after it ends.
+
+The footer repeats this choice.
+
+### QUIZ
+
+After an over that holds a fact, the screen asks one question, such as:
+
+`SENDER'S CALL?`, `RST?`, `NAME?`, `QTH CITY?`, `RIG?`, `POWER IN WATTS?`, `ANTENNA?`, `WX?` or `TEMPERATURE?`
+
+1. The status shows `YOUR TURN`. Start to key the answer within 10 seconds.
+2. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your answer ends.
+3. The device shows the answer as sent, your copy with each character marked, and the score. The text of the over shows too. After 2.5 seconds the next over plays.
+
+If you do not start to key within 10 seconds, the answer counts as missed. To hear the over again, key `?` alone as your answer. The sign off overs have no question.
+
+The footer shows your score for this session.
+
+## Controls
+
+| Control | Action |
+| - | - |
+| F1 (SET) | Pauses and opens the settings at the RECV tab. F4 (BACK) there returns, and the current over plays again at the new settings. |
+| F2 (KIND) | CHEW: starts QUIZ. QUIZ: starts the KOCH drill. |
+| F3 (STOP or GO) | Pauses, or starts again from the start of the current over. |
+| F4 (BACK) | Opens the [menu](menu.md). |
+| Dial turn | Nothing. |
+| Dial click | Nothing. |
+| Dial hold | Turns the device off. |
+| Key | QUIZ: keys your answer. CHEW: nothing more. |
+
+Quiz scores also go to [Letters](letters.md) and [Progress](progress.md).

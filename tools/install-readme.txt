@@ -166,6 +166,10 @@ The original firmware needs two files from HamCube: F0000C0.bin (the screen
 images) and A000014.bin (the firmware). Install F0000C0.bin first. With an
 older F0000C0.bin, the original firmware shows a scrambled screen.
 
+The original firmware does not fully support boards with an IPS screen (2.63
+and later). Before you go back, read the user manual page:
+https://github.com/kvmet/k5mme_pocketcw/blob/main/docs/user/stock-firmware.md
+
 1. Download both files from the folder "CW Pokemon V5.03 Upgrade package" at
    https://github.com/admvip/CW-Pokemon-Infomation
 2. Do steps 2 to 4 above. Then drag flash.sh into the window, type a space,

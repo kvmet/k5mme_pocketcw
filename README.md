@@ -6,7 +6,7 @@ PocketCW is not made by HamCube, and is not affiliated with HamCube or Nintendo.
 
 ## What it does
 
-- **Keyer:** iambic A, iambic B and straight key, with a live decoder and a timing tape.
+- **Keyer:** iambic A and B paddles, straight keys and sideswipers, with a live decoder and a timing tape.
 - **Timing:** element timing graphs and grades for your sending.
 - **Receive:** copy drills, and ragchews: whole contacts between two stations, with a quiz.
 - **POTA, SOTA and Hunt:** practice park and summit contacts, both as the activator and as the hunter.

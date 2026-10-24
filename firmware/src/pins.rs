@@ -1,5 +1,5 @@
 //! Pin numbers, found on board 2.64; the vendor firmware uses the same pins from 2.60. See
-//! HARDWARE.md for how each was found.
+//! docs/dev/hardware/pins.md for how each was found.
 
 // Port A
 pub const POWER_BUTTON: u32 = 0; // dial click, active high, standby wakeup pin
