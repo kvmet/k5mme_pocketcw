@@ -4,7 +4,7 @@ This manual tells you how to install PocketCW and how to use it.
 
 ## Install and recover
 
-- [Install on macOS](install.md)
+- [Install](install.md)
 - [Troubleshooting](troubleshooting.md)
 - [Go back to the stock firmware](stock-firmware.md)
 

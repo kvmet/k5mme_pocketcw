@@ -25,7 +25,16 @@ PocketCW does not include these files. The install script downloads them from [g
 
 ## Install
 
-1. Do steps 1 and 2 of [Install on macOS](install.md).
+### Windows and Linux
+
+1. Download `F0000C0.bin` and `A000014.bin` from the "CW Pokemon V5.03 Upgrade package" folder of [the HamCube files](https://github.com/admvip/CW-Pokemon-Infomation). If the device has had the V5.03 images installed before, you need only `A000014.bin`.
+2. Copy `F0000C0.bin` to the update drive, as in [Install](install.md#windows-and-linux).
+3. Put the device in update mode again, and copy `A000014.bin` the same way.
+4. Unplug the device, then click the dial to turn it on.
+
+### macOS
+
+1. Do steps 1 and 2 of the [macOS install](install.md#macos).
 2. Copy this line, paste it into the Terminal window, and press Return:
 
     ```bash
@@ -36,7 +45,7 @@ PocketCW does not include these files. The install script downloads them from [g
 4. Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.
 5. When the script says "Finished", unplug the device, then click the dial to turn it on.
 
-To install PocketCW again, follow [Install on macOS](install.md). PocketCW needs no `F` file.
+To install PocketCW again, follow [Install](install.md). PocketCW needs no `F` file.
 
 ## The beta for board 2.63
 
@@ -44,7 +53,8 @@ On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 `A000014.bi
 
 1. Install the stock firmware with the steps above, so the device has the V5.03 images.
 2. In [the HamCube files](https://github.com/admvip/CW-Pokemon-Infomation), open the folder "CW Pokemon Beta Upgrade package", download `V5.03.13Beta.zip`, and unzip it. It holds only `A000014.bin`.
-3. In Terminal, download the PocketCW install tool, and make it a program you can run:
+3. On Windows or Linux, copy that `A000014.bin` to the update drive, as in [Install](install.md#windows-and-linux), and stop here. On a Mac, do steps 4 to 6.
+4. In Terminal, download the PocketCW install tool, and make it a program you can run:
 
     ```bash
     curl -fsSLo ~/Downloads/pocketcw-flash https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash
@@ -54,10 +64,10 @@ On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 `A000014.bi
     chmod +x ~/Downloads/pocketcw-flash
     ```
 
-4. Run the tool on the beta file. Replace the path with the place of your file:
+5. Run the tool on the beta file. Replace the path with the place of your file:
 
     ```bash
     ~/Downloads/pocketcw-flash ~/Downloads/V5.03.13Beta/A000014.bin
     ```
 
-5. Follow the steps the tool prints.
+6. Follow the steps the tool prints.

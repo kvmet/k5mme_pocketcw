@@ -1,10 +1,10 @@
 # Troubleshooting
 
-This page lists install problems first, then problems on the device. Step numbers refer to [Install on macOS](install.md).
+This page lists install problems first, then problems on the device. Step numbers refer to the macOS steps of [Install](install.md#macos).
 
 ## Install messages
 
-When the install tool finds a problem, it prints `Problem:` and one of these messages, then waits. Do what the message says, press Return, and follow the steps the tool prints again.
+These messages come from the macOS install tool. When it finds a problem, it prints `Problem:` and one of these messages, then waits. Do what the message says, press Return, and follow the steps the tool prints again.
 
 ### "could not download"
 
