@@ -1,0 +1,72 @@
+site_name: PocketCW
+site_url: https://kvmet.github.io/k5mme_pocketcw/
+repo_url: https://github.com/kvmet/k5mme_pocketcw
+edit_uri: edit/main/docs/
+strict: true
+
+theme:
+  name: material
+  features:
+    - navigation.indexes
+    - navigation.sections
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+
+markdown_extensions:
+  - toc:
+      permalink: true
+
+# Page titles come from each page's first heading. Keep this order in step with the index pages.
+nav:
+  - index.md
+  - User manual:
+      - user/index.md
+      - user/install.md
+      - user/troubleshooting.md
+      - user/stock-firmware.md
+      - user/controls.md
+      - user/keys.md
+      - user/menu.md
+      - user/keyer.md
+      - user/memories.md
+      - user/timing.md
+      - user/receive.md
+      - user/ragchew.md
+      - user/activate.md
+      - user/hunt.md
+      - user/letters.md
+      - user/progress.md
+      - user/settings.md
+      - user/system.md
+      - user/radio.md
+      - user/status-messages.md
+  - Developer docs:
+      - dev/index.md
+      - dev/code-layout.md
+      - dev/building.md
+      - dev/fonts.md
+      - dev/release.md
+      - Hardware reference:
+          - dev/hardware/index.md
+          - dev/hardware/mcu.md
+          - dev/hardware/flash-layout.md
+          - dev/hardware/pins.md
+          - dev/hardware/buttons.md
+          - dev/hardware/jacks.md
+          - dev/hardware/display.md
+          - dev/hardware/audio.md
+          - dev/hardware/storage.md
+          - dev/hardware/battery.md
+          - dev/hardware/power.md
+          - dev/hardware/decoder-board.md
+          - dev/hardware/board-variants.md
+          - dev/hardware/vendor-firmware.md
