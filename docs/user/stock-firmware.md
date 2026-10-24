@@ -34,16 +34,17 @@ PocketCW does not include these files. The install script downloads them from [g
 
 ### macOS
 
-1. Do steps 1 and 2 of the [macOS install](install.md#macos).
-2. Copy this line, paste it into the Terminal window, and press Return:
+Start the script as in [Start the script](install.md#start-the-script), with this line in place of the PocketCW line:
 
-    ```bash
-    curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
-    ```
+```bash
+curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
+```
 
-3. The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.
-4. Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.
-5. When the script says "Finished", unplug the device, then click the dial to turn it on.
+Then:
+
+1. The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.
+2. Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.
+3. When the script says "Finished", unplug the device, then click the dial to turn it on.
 
 To install PocketCW again, follow [Install](install.md). PocketCW needs no `F` file.
 
@@ -53,21 +54,20 @@ On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 `A000014.bi
 
 1. Install the stock firmware with the steps above, so the device has the V5.03 images.
 2. In [the HamCube files](https://github.com/admvip/CW-Pokemon-Infomation), open the folder "CW Pokemon Beta Upgrade package", download `V5.03.13Beta.zip`, and unzip it. It holds only `A000014.bin`.
-3. On Windows or Linux, copy that `A000014.bin` to the update drive, as in [Install](install.md#windows-and-linux), and stop here. On a Mac, do steps 4 to 6.
-4. In Terminal, download the PocketCW install tool, and make it a program you can run:
+3. Copy that `A000014.bin` to the update drive, as in [Install](install.md#windows-and-linux). On a Mac, use the install tool below in place of a copy.
 
-    ```bash
-    curl -fsSLo ~/Downloads/pocketcw-flash https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash
-    ```
+On a Mac, download the PocketCW install tool in Terminal, and make it a program you can run:
 
-    ```bash
-    chmod +x ~/Downloads/pocketcw-flash
-    ```
+```bash
+curl -fsSLo ~/Downloads/pocketcw-flash https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash
+```
 
-5. Run the tool on the beta file. Replace the path with the place of your file:
+```bash
+chmod +x ~/Downloads/pocketcw-flash
+```
 
-    ```bash
-    ~/Downloads/pocketcw-flash ~/Downloads/V5.03.13Beta/A000014.bin
-    ```
+Then run the tool on the beta file, and follow the steps it prints. Replace the path with the place of your file:
 
-6. Follow the steps the tool prints.
+```bash
+~/Downloads/pocketcw-flash ~/Downloads/V5.03.13Beta/A000014.bin
+```

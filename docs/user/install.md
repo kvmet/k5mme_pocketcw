@@ -43,27 +43,34 @@ If the drive holds a file other than `READY.TXT` before the copy, hold F4 to res
 
 ## macOS
 
+### Start the script
+
 1. Turn the device off, and unplug its USB cable.
 2. Open Terminal. Press Command and Space together, type Terminal, and press Return.
 3. Copy this line, paste it into the Terminal window, and press Return:
 
-    ```bash
-    curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
-    ```
+```bash
+curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
+```
 
-    The script downloads the newest PocketCW release and the install tool.
-4. The script now says "Waiting for the device". Put the device in [update mode](#update-mode), then plug the USB cable into the device and the Mac.
+The script downloads the newest PocketCW release and the install tool, then says "Waiting for the device".
 
-    After a few seconds, the Terminal window says "Found the device". If the device already shows the firmware update screen, plug it in.
-5. macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that.
-6. Wait about 10 seconds. When the install works, you see:
+### Plug in the device
 
-    ```
-    Finished. Unplug the device.
-    Then click the dial to turn it on.
-    ```
+1. Put the device in [update mode](#update-mode). If it already shows the firmware update screen, go to the next step.
+2. Plug the USB cable into the device and the Mac. After a few seconds, the script says "Found the device".
+3. macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that.
 
-7. Unplug the device, then click the dial to turn it on.
+### Finish
+
+After about 10 seconds, the script shows this when the install works:
+
+```
+Finished. Unplug the device.
+Then click the dial to turn it on.
+```
+
+Unplug the device, then click the dial to turn it on.
 
 ### While the install runs
 

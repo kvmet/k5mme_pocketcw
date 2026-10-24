@@ -1,6 +1,6 @@
 # Troubleshooting
 
-This page lists install problems first, then problems on the device. Step numbers refer to the macOS steps of [Install](install.md#macos).
+This page lists install problems first, then problems on the device.
 
 ## Install messages
 
@@ -8,7 +8,7 @@ These messages come from the macOS install tool. When it finds a problem, it pri
 
 ### "could not download"
 
-The script could not reach GitHub. Check that the Mac is connected to the internet, and run the line from step 3 again.
+The script could not reach GitHub. Check that the Mac is connected to the internet, and run the line from [Start the script](install.md#start-the-script) again.
 
 ### "the update drive is mounted"
 
@@ -18,7 +18,7 @@ The device was in update mode before the script started, so macOS opened its dri
 
 The Mac did not find the device in update mode. Check these two things:
 
-- The device showed the firmware update screen before you plugged it in (step 4).
+- The device showed the firmware update screen before you plugged it in. See [Update mode](install.md#update-mode).
 - The cable carries data. Try another cable or another USB port.
 
 Then press Return.
