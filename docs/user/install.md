@@ -51,6 +51,7 @@ To check the version: on the KEYER screen, press F4 (MENU). Turn the dial to SYS
 ## While the install runs
 
 - Do not unplug the device until the script says "Finished".
+- When the script finds a problem, it prints `Problem:` and the reason, then waits. Fix the cause, press Return, and follow the steps it prints again.
 - macOS can show a message about a disk it cannot read. Click Ignore. If you click Initialize by mistake, close the Disk Utility window that opens, and change nothing.
 - To stop the script at any time, press Control and C together.
 

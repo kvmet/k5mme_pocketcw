@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -38,6 +39,16 @@ extern char **environ;
 // Board 2.64 names the drive POKEMON-2; the vendor manual calls it HAM MODULE.
 static const char *drive_names[] = {"POKEMON-2", "HAM MODULE"};
 static char found_disk[64];
+// Why the current attempt stopped. Attempt steps set it through `stop` and return 0.
+static char problem[512];
+
+static int stop(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(problem, sizeof problem, fmt, args);
+    va_end(args);
+    return 0;
+}
 
 static void fail(const char *fmt, ...) {
     va_list args;
@@ -128,15 +139,30 @@ static int wait_for_drive(double seconds) {
 }
 
 // A mounted drive has already had macOS files written to it, which the update can't share.
-static void check_not_mounted(void) {
+static int check_not_mounted(void) {
     DIR *volumes = opendir("/Volumes");
-    if (!volumes) return;
+    if (!volumes) return 1;
     struct dirent *entry;
-    while ((entry = readdir(volumes))) {
-        if (is_drive_name(entry->d_name))
-            fail("the update drive is already mounted. Eject it in Finder, unplug the device, then run this again.");
-    }
+    int mounted = 0;
+    while ((entry = readdir(volumes))) mounted |= is_drive_name(entry->d_name);
     closedir(volumes);
+    return mounted ? stop("the update drive is mounted. Eject it in Finder, and unplug the device.") : 1;
+}
+
+// Waits for Return while the run loop runs, so the update drive stays unmounted meanwhile.
+static void wait_for_enter(void) {
+    for (;;) {
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.2, true);
+        fd_set in;
+        FD_ZERO(&in);
+        FD_SET(STDIN_FILENO, &in);
+        struct timeval now = {0, 0};
+        if (select(STDIN_FILENO + 1, &in, NULL, NULL, &now) <= 0) continue;
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF) {}
+        if (c == EOF) fail("input closed");
+        return;
+    }
 }
 
 // Opens the raw disk read/write through authopen, which shows the macOS password dialog and
@@ -168,46 +194,49 @@ static int authopen_rw(const char *path) {
     close(sv[0]);
     waitpid(pid, NULL, 0);
     struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
-    if (n <= 0 || !cmsg || cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS)
-        fail("macOS did not allow writing to the device. Run this again, and type your Mac login password when macOS asks.");
+    if (n <= 0 || !cmsg || cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
+        stop("macOS did not allow writing to the device. Type your Mac login password when macOS asks.");
+        return -1;
+    }
     int fd;
     memcpy(&fd, CMSG_DATA(cmsg), sizeof fd);
     return fd;
 }
 
-static void read_sector(int fd, off_t offset, uint8_t *buf) {
-    if (pread(fd, buf, SECTOR, offset) != SECTOR) fail("cannot read the device: %s", strerror(errno));
+static int read_sector(int fd, off_t offset, uint8_t *buf) {
+    return pread(fd, buf, SECTOR, offset) == SECTOR || stop("cannot read the device: %s", strerror(errno));
 }
 
-static void write_bytes(int fd, const uint8_t *buf, size_t len, off_t offset) {
-    if (pwrite(fd, buf, len, offset) != (ssize_t)len) fail("cannot write the device: %s", strerror(errno));
+static int write_bytes(int fd, const uint8_t *buf, size_t len, off_t offset) {
+    return pwrite(fd, buf, len, offset) == (ssize_t)len || stop("cannot write the device: %s", strerror(errno));
 }
 
-// Returns the byte offset of the root directory.
-static off_t write_update(int fd, const char *base, const uint8_t *payload, size_t len) {
+// Sets `root` to the byte offset of the root directory.
+static int write_update(int fd, const char *base, const uint8_t *payload, size_t len, off_t *root) {
     uint8_t boot[SECTOR];
-    read_sector(fd, 0, boot);
+    if (!read_sector(fd, 0, boot)) return 0;
     unsigned bytes_per_sector = le16(boot + 11), sectors_per_cluster = boot[13];
     unsigned reserved = le16(boot + 14), fat_count = boot[16], root_entries = le16(boot + 17);
     unsigned fat_sectors = le16(boot + 22);
     if (bytes_per_sector != SECTOR || memcmp(boot + 54, "FAT16   ", 8) != 0)
-        fail("unexpected boot sector (%u B sectors, not FAT16)", bytes_per_sector);
-    off_t root = (off_t)(reserved + fat_count * fat_sectors) * SECTOR;
-    off_t data = root + root_entries * 32;
+        return stop("unexpected boot sector (%u B sectors, not FAT16)", bytes_per_sector);
+    *root = (off_t)(reserved + fat_count * fat_sectors) * SECTOR;
+    off_t data = *root + root_entries * 32;
     size_t cluster_bytes = sectors_per_cluster * SECTOR;
 
     uint8_t root_sector[SECTOR];
-    read_sector(fd, root, root_sector);
+    if (!read_sector(fd, *root, root_sector)) return 0;
+    printf("Device status: %.11s\n", root_sector);
     if (strncasecmp((char *)root_sector, "READY   TXT", 11) != 0)
-        fail("drive status is '%.11s', not Ready; hold F4 to reset the drive", root_sector);
+        return stop("the device status is '%.11s', not Ready. Hold F4 to reset the drive.", root_sector);
     // The bootloader scans for the file from entry 2, after the status file and volume label.
     for (int i = 64; i < SECTOR; i++) {
-        if (root_sector[i]) fail("root directory has entries after the volume label; replug the device");
+        if (root_sector[i]) return stop("the drive already holds a file. Hold F4 to reset the drive.");
     }
 
     size_t padded_len = (len + SECTOR - 1) / SECTOR * SECTOR;
     size_t clusters = (padded_len + cluster_bytes - 1) / cluster_bytes;
-    if (2 * (2 + clusters) > SECTOR) fail("file needs more than one FAT sector");
+    if (2 * (2 + clusters) > SECTOR) return stop("the file needs more than one FAT sector");
 
     uint8_t *entry = root_sector + 64;
     memcpy(entry, base, 7);
@@ -223,34 +252,57 @@ static off_t write_update(int fd, const char *base, const uint8_t *payload, size
     uint8_t fat[SECTOR] = {0xF8, 0xFF, 0xFF, 0xFF};
     for (size_t n = 2; n < 2 + clusters; n++) put_le16(fat + n * 2, n < 1 + clusters ? n + 1 : 0xFFFF);
 
-    write_bytes(fd, root_sector, SECTOR, root);
-    write_bytes(fd, padded, padded_len, data);
-    for (unsigned i = 0; i < fat_count; i++) write_bytes(fd, fat, SECTOR, (off_t)(reserved + i * fat_sectors) * SECTOR);
-    write_bytes(fd, root_sector, SECTOR, root);
+    int ok = write_bytes(fd, root_sector, SECTOR, *root) && write_bytes(fd, padded, padded_len, data);
+    for (unsigned i = 0; ok && i < fat_count; i++) ok = write_bytes(fd, fat, SECTOR, (off_t)(reserved + i * fat_sectors) * SECTOR);
+    ok = ok && write_bytes(fd, root_sector, SECTOR, *root);
     fsync(fd);
     free(padded);
-    return root;
+    return ok;
 }
 
-// When done, the bootloader renames the status file to Success, then drops off USB for about
-// 2 s and comes back Ready. The drop only follows a finished write.
-static void wait_for_success(int fd, off_t root) {
+// When done, the bootloader renames the status file to Success for about 1 s, then drops off
+// USB for about 2 s and comes back Ready. Only a Success read proves the write.
+static int wait_for_success(int fd, off_t root) {
     uint8_t root_sector[SECTOR];
-    // The drive can come back between two polls, so clear found_disk before the first.
-    found_disk[0] = 0;
     for (int i = 0; i < 10 / POLL_S; i++) {
         CFRunLoopRunInMode(kCFRunLoopDefaultMode, POLL_S, false);
-        if (pread(fd, root_sector, SECTOR, root) != SECTOR) {
-            printf("The device dropped off USB, which means it finished. Waiting for it to return...\n");
-            // Keep blocking the mount until the drive is back, so macOS writes nothing to it.
-            if (!wait_for_drive(15)) fail("the device did not return within 15 s");
-            return;
-        }
-        if (strncasecmp((char *)root_sector, "SUCCESS", 7) == 0) return;
-        if (strncasecmp((char *)root_sector, "READY   TXT", 11) != 0)
-            fail("status now '%.11s', not Success", root_sector);
+        if (pread(fd, root_sector, SECTOR, root) != SECTOR)
+            return stop("the device dropped off USB before showing Success, so the write is not confirmed.");
+        if (strncasecmp((char *)root_sector, "READY   TXT", 11) == 0) continue;
+        printf("Device status: %.11s\n", root_sector);
+        if (strncasecmp((char *)root_sector, "SUCCESS", 7) == 0) return 1;
+        return stop("the device status is '%.11s', not Success.", root_sector);
     }
-    fail("status still Ready after 10 s; the device did not take the file");
+    return stop("the status stayed Ready for 10 s; the device did not take the file.");
+}
+
+// One install attempt, from the setup steps to Success.
+static int install(const char *base, const uint8_t *payload, size_t len) {
+    if (!check_not_mounted()) return 0;
+    printf("1. Unplug the device, and turn it off.\n");
+    printf("2. Hold F1 and F4. Keep holding them, and hold the dial down too.\n");
+    printf("3. When the firmware update screen shows, let go of all three.\n");
+    printf("4. Plug the device into this Mac.\n\n");
+    printf("Waiting for the device (up to %d seconds; Control-C to stop)...\n", WAIT_S);
+    fflush(stdout);
+    found_disk[0] = 0;
+    if (!wait_for_drive(WAIT_S))
+        return stop("no update drive appeared in %d seconds. Check that the device shows the firmware update screen, and that the cable carries data.", WAIT_S);
+
+    char raw[80];
+    snprintf(raw, sizeof raw, "/dev/r%s", found_disk);
+    printf("Found the device at %s.\n\n", raw);
+    printf("macOS now asks for your Mac login password, to allow writing to the device.\n");
+    fflush(stdout);
+    int fd = authopen_rw(raw);
+    if (fd < 0) return 0;
+
+    printf("Writing...\n");
+    fflush(stdout);
+    off_t root;
+    int ok = write_update(fd, base, payload, len, &root) && wait_for_success(fd, root);
+    close(fd);
+    return ok;
 }
 
 int main(int argc, char **argv) {
@@ -264,33 +316,25 @@ int main(int argc, char **argv) {
     size_t len;
     uint8_t *payload = read_file(path, &len);
     check_range(path, base, len);
-    check_not_mounted();
 
     DASessionRef session = DASessionCreate(kCFAllocatorDefault);
     DARegisterDiskMountApprovalCallback(session, NULL, approve_mount, NULL);
     DASessionScheduleWithRunLoop(session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
 
     printf("Installing %s.BIN (%zu bytes).\n\n", base, len);
-    printf("1. Unplug the device, and turn it off.\n");
-    printf("2. Hold F1 and F4. Keep holding them, and hold the dial down too.\n");
-    printf("3. When the firmware update screen shows, let go of all three.\n");
-    printf("4. Plug the device into this Mac.\n\n");
-    printf("Waiting for the device (up to %d seconds; Control-C to stop)...\n", WAIT_S);
+    while (!install(base, payload, len)) {
+        printf("\nProblem: %s\n", problem);
+        printf("Press Return to try again, or Control-C to stop.\n");
+        fflush(stdout);
+        wait_for_enter();
+        printf("\n");
+    }
+    // The drive comes back Ready after Success. Blocking its mount until then keeps macOS from
+    // writing its own files to it.
+    printf("\nInstalled: the device showed Success. Waiting for it to come back (up to 15 s)...\n");
     fflush(stdout);
-    if (!wait_for_drive(WAIT_S))
-        fail("no update drive appeared in %d seconds. Check that the device shows the firmware update screen, and that the cable carries data.", WAIT_S);
-
-    char raw[80];
-    snprintf(raw, sizeof raw, "/dev/r%s", found_disk);
-    printf("Found the device at %s.\n\n", raw);
-    printf("macOS now asks for your Mac login password, to allow writing to the device.\n");
-    fflush(stdout);
-    int fd = authopen_rw(raw);
-
-    printf("Writing...\n");
-    fflush(stdout);
-    off_t root = write_update(fd, base, payload, len);
-    wait_for_success(fd, root);
-    printf("\nFinished. Unplug the device.\n");
+    found_disk[0] = 0;
+    wait_for_drive(15);
+    printf("Finished. Unplug the device.\n");
     return 0;
 }
