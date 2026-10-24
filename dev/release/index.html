@@ -1742,7 +1742,7 @@
 
 
 <h1 id="release">Release<a class="headerlink" href="#release" title="Permanent link">&para;</a></h1>
-<p>A release is a git tag <code>vX.Y.Z</code> and a GitHub release with two files:</p>
+<p>A release is a git tag <code>vX.Y.Z</code> and a GitHub release with these files:</p>
 <table>
 <thead>
 <tr>
@@ -1756,17 +1756,29 @@
 <td>The firmware image.</td>
 </tr>
 <tr>
-<td><code>pocketcw-vX.Y.Z-mac.zip</code></td>
-<td>The macOS install bundle. It unzips to a folder <code>pocketcw-vX.Y.Z</code>.</td>
+<td><code>pocketcw-flash</code></td>
+<td>The macOS install tool, for Apple and Intel Macs.</td>
+</tr>
+<tr>
+<td><code>LICENSE</code></td>
+<td>The PocketCW license.</td>
+</tr>
+<tr>
+<td><code>B612-OFL.txt</code></td>
+<td>The license of the B612 Mono font.</td>
+</tr>
+<tr>
+<td><code>THIRD-PARTY.txt</code></td>
+<td>The MIT notice of every crate linked into the firmware.</td>
 </tr>
 </tbody>
 </table>
-<p>The bundle holds <code>A000014.bin</code>, <code>flash.sh</code>, <code>iapwrite.py</code>, <code>nomount</code>, <code>README.txt</code>, <code>LICENSE</code>, <code>B612-OFL.txt</code> and <code>THIRD-PARTY.txt</code>.</p>
+<p>The install script <code>docs/install.sh</code> downloads <code>A000014.bin</code> and <code>pocketcw-flash</code> from the newest release. The docs site serves the script, so a change to it goes live when it reaches <code>main</code>.</p>
 <h2 id="the-version-number">The version number<a class="headerlink" href="#the-version-number" title="Permanent link">&para;</a></h2>
 <p>The version comes from <code>version</code> in <code>firmware/Cargo.toml</code>. The firmware reads it at build time, and shows it on the SYSTEM screen in the FIRMWARE row and on the boot screen.</p>
 <p>Both crates have the same version. <code>firmware/Cargo.toml</code> also names the version of its <code>pocketcw-logic</code> dependency.</p>
 <h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
-<p>Run these on a Mac. <code>release.sh</code> needs <code>clang</code> with the macOS frameworks, and <code>ditto</code>.</p>
+<p>Run these on a Mac. <code>release.sh</code> needs <code>clang</code> with the macOS frameworks.</p>
 <ol>
 <li>Set the new version in three places: <code>version</code> in <code>firmware/Cargo.toml</code>, <code>version</code> in <code>logic/Cargo.toml</code>, and the <code>pocketcw-logic</code> dependency in <code>firmware/Cargo.toml</code>.</li>
 <li>Build once, so the <code>Cargo.lock</code> files take the new version. Commit everything.</li>
@@ -1781,22 +1793,20 @@
    git tag vX.Y.Z
    git push origin vX.Y.Z</code></p>
 <ol>
-<li>Make a GitHub release for the tag, and upload <code>dist/A000014.bin</code> and <code>dist/pocketcw-vX.Y.Z-mac.zip</code>. With the GitHub CLI:</li>
+<li>Make a GitHub release for the tag, and upload every file in <code>dist/</code>. With the GitHub CLI:</li>
 </ol>
 <p><code>bash
-   gh release create vX.Y.Z dist/A000014.bin dist/pocketcw-vX.Y.Z-mac.zip</code></p>
+   gh release create vX.Y.Z dist/*</code></p>
 <h2 id="what-releasesh-does">What release.sh does<a class="headerlink" href="#what-releasesh-does" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Stops with an error when <code>firmware/Cargo.toml</code> does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.</li>
 <li>Runs <code>tools/mkimage.sh</code> and copies the image to <code>dist/A000014.bin</code>.</li>
-<li>Builds <code>nomount</code> for Apple and Intel Macs, macOS 10.15 or later.</li>
-<li>Copies <code>flash.sh</code>, <code>iapwrite.py</code>, the image, <code>LICENSE</code> and <code>firmware/src/B612-OFL.txt</code> into the bundle folder.</li>
-<li>Writes <code>THIRD-PARTY.txt</code> with <code>tools/notices.py</code>: the MIT notice of every crate linked into the firmware.</li>
-<li>Writes <code>README.txt</code> from <code>tools/install-readme.txt</code>, with the version in place of <code>@VERSION@</code>.</li>
-<li>Zips the folder with <code>ditto</code>, which keeps the execute bits and leaves out macOS metadata files.</li>
-<li>Lists the zip and prints the tag and upload steps.</li>
+<li>Copies <code>LICENSE</code> and <code>firmware/src/B612-OFL.txt</code> to <code>dist/</code>.</li>
+<li>Builds <code>dist/pocketcw-flash</code> for Apple and Intel Macs, macOS 10.15 or later.</li>
+<li>Writes <code>dist/THIRD-PARTY.txt</code> with <code>tools/notices.py</code>.</li>
+<li>Lists <code>dist/</code> and prints the tag and upload steps.</li>
 </ol>
-<p>Git ignores <code>dist/</code> and <code>tools/nomount</code>.</p>
+<p>Git ignores <code>dist/</code> and <code>tools/pocketcw-flash</code>.</p>
 
 
 

@@ -1805,11 +1805,7 @@
 <p>The bootloader is a modified Artery <code>virtual_msc_iap</code> demo. It shows a USB drive: "HAM MODULE" in the vendor manual, "POKEMON-2" on board 2.64.</p>
 <p>To start it: hold F1 and F4, then hold the dial until the update screen shows. Plug in USB after that.</p>
 <p>The bootloader routes file data by the name in the root directory entry. So the directory entry must reach the device before the data, as Windows writes it. macOS and mtools write the data first, and the data goes to the wrong place.</p>
-<p>On macOS, PocketCW installs with two tools that <code>tools/flash.sh</code> runs:</p>
-<ul>
-<li><code>tools/nomount.c</code> blocks the mount of the update drive, so macOS writes nothing to it.</li>
-<li><code>tools/iapwrite.py</code> writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.</li>
-</ul>
+<p>On macOS, PocketCW installs with <code>tools/pocketcw-flash.c</code>. The tool blocks the mount of the update drive, so macOS writes nothing to it. Then it writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.</p>
 <p>After a finished write, the status file reads <code>Success</code> for about 1 second. Then the drive drops off USB and comes back as <code>Ready</code>.</p>
 <h2 id="write-protection">Write protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
 <p>The vendor app has a one-time activation routine at 0x08018014, keyed to the chip UID. It writes these option bytes: Data0 and Data1 = <code>F2 60</code>, WRP0 = 0xE0, EOPB0 = 0xFE, Data3 and Data4 = <code>D</code>, <code>y</code>.</p>

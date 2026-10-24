@@ -1799,7 +1799,7 @@
 <p><code>bash
   rustup component add llvm-tools</code></p>
 <ul>
-<li>To flash from macOS: Python 3, and <code>clang</code> from the Xcode command line tools.</li>
+<li>To flash from macOS: <code>clang</code> from the Xcode command line tools.</li>
 </ul>
 <h2 id="build-the-image">Build the image<a class="headerlink" href="#build-the-image" title="Permanent link">&para;</a></h2>
 <pre><code class="language-bash">sh tools/mkimage.sh
@@ -1815,19 +1815,19 @@
 <h2 id="flash-the-image">Flash the image<a class="headerlink" href="#flash-the-image" title="Permanent link">&para;</a></h2>
 <p>The device installs updates through its bootloader, which shows a USB drive. macOS must not mount that drive. See <a href="../hardware/flash-layout/">Flash layout</a> for the reason.</p>
 <ol>
-<li>Build <code>nomount</code> once. <code>flash.sh</code> looks for it next to itself:</li>
+<li>Build the install tool once. <code>mkimage.sh</code> prints a command that runs it from <code>tools/</code>:</li>
 </ol>
 <p><code>bash
-   clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o tools/nomount tools/nomount.c -framework DiskArbitration -framework CoreFoundation</code></p>
+   clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o tools/pocketcw-flash tools/pocketcw-flash.c -framework DiskArbitration -framework CoreFoundation</code></p>
 <ol>
 <li>Run the command that <code>mkimage.sh</code> printed:</li>
 </ol>
 <p><code>bash
-   sh tools/flash.sh firmware/target/A000014.bin</code></p>
+   tools/pocketcw-flash firmware/target/A000014.bin</code></p>
 <ol>
-<li>Follow the steps the script prints. It asks for your Mac login password, because <code>iapwrite.py</code> writes to the raw disk with <code>sudo</code>.</li>
+<li>Follow the steps the tool prints. macOS asks for your Mac login password, because the tool writes to the raw disk through <code>authopen</code>.</li>
 </ol>
-<p><code>iapwrite.py</code> refuses a file that would write below 0x08005000, or past the end of the 256 KB flash. The <a href="../../user/install/">install guide</a> and <a href="../../user/troubleshooting/">troubleshooting</a> pages cover the steps on the device.</p>
+<p><code>pocketcw-flash</code> refuses a file that would write below 0x08005000, or past the end of the 256 KB flash. The <a href="../../user/install/">install guide</a> and <a href="../../user/troubleshooting/">troubleshooting</a> pages cover the steps on the device.</p>
 <h2 id="test">Test<a class="headerlink" href="#test" title="Permanent link">&para;</a></h2>
 <p>The tests run on your computer:</p>
 <pre><code class="language-bash">cd logic

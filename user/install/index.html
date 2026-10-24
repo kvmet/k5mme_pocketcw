@@ -474,17 +474,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-the-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Get the files
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -500,6 +489,17 @@
     <span class="md-ellipsis">
       
         While the install runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-with-your-own-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install with your own tools
       
     </span>
   </a>
@@ -1733,17 +1733,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-the-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Get the files
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#install" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1759,6 +1748,17 @@
     <span class="md-ellipsis">
       
         While the install runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-with-your-own-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install with your own tools
       
     </span>
   </a>
@@ -1790,7 +1790,7 @@
 <p>PocketCW was tested on board version 2.64. Other board versions may work, but nobody has tried them yet.</p>
 <h2 id="what-you-need">What you need<a class="headerlink" href="#what-you-need" title="Permanent link">&para;</a></h2>
 <ul>
-<li>A Mac with an Intel or Apple chip, macOS 10.15 or later.</li>
+<li>A Mac with an Intel or Apple chip, macOS 10.15 or later, connected to the internet.</li>
 <li>A USB cable that carries data. Some cables only charge. If the Mac never finds the device, try a different cable.</li>
 <li>Your Mac login password. The install writes directly to the device, and macOS asks for your password before it allows that.</li>
 <li>About 5 minutes.</li>
@@ -1798,13 +1798,41 @@
 <h2 id="is-it-safe">Is it safe?<a class="headerlink" href="#is-it-safe" title="Permanent link">&para;</a></h2>
 <p>The device has a small built-in program, the bootloader, that installs firmware. This install never touches the bootloader: the install tool refuses any file that would write over it. If an install goes wrong, the bootloader still works, and you can run the install again.</p>
 <p>To go back to the original firmware, see <a href="../stock-firmware/">Go back to the stock firmware</a>.</p>
-<h2 id="get-the-files">Get the files<a class="headerlink" href="#get-the-files" title="Permanent link">&para;</a></h2>
+<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Open <a href="https://github.com/kvmet/k5mme_pocketcw/releases">the releases page</a>.</li>
-<li>Download <code>pocketcw-vX.Y.Z-mac.zip</code> from the newest release. X.Y.Z is the version number.</li>
+<li>Turn the device off, and unplug its USB cable. To turn it off, hold the dial down for about 2 seconds.</li>
+<li>Open Terminal. Press Command and Space together, type Terminal, and press Return.</li>
+<li>
+<p>Copy this line, paste it into the Terminal window, and press Return:</p>
+<p><code>bash
+curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh</code></p>
+<p>The script downloads the newest PocketCW release and the install tool.
+4. The script now says "Waiting for the device". Put the device in update mode, then plug it in:
+1. Find F1 and F4. They are two of the four buttons beside the screen: F1 is the top one, and F4 is the bottom one.
+2. Hold F1 and F4 down.
+3. While you hold them, hold the dial down too.
+4. When the firmware update screen shows, let go of all three.
+5. Plug the USB cable into the device and the Mac.</p>
+<p>After a few seconds, the Terminal window says "Found the device". If the device already shows the firmware update screen, start at step 4.5.
+5. macOS asks for your password. Type your Mac login password, and click OK.
+6. Wait about 10 seconds. When the install works, you see:</p>
+<p><code>Finished. Unplug the device.
+Then click the dial to turn it on.</code></p>
+</li>
+<li>
+<p>Unplug the device, then click the dial to turn it on.</p>
+</li>
 </ol>
-<p>The release also has <code>A000014.bin</code> as its own download. You need it only if you install with your own tools.</p>
-<p>The zip file unzips to a folder named <code>pocketcw-vX.Y.Z</code>. The folder holds these files:</p>
+<p>To check the version: on the KEYER screen, press F4 (MENU). Turn the dial to SYSTEM, and click the dial. The FIRMWARE row shows the version, such as <code>v0.2.0</code>.</p>
+<h2 id="while-the-install-runs">While the install runs<a class="headerlink" href="#while-the-install-runs" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Do not unplug the device until the script says "Finished".</li>
+<li>macOS can show a message about a disk it cannot read. Click Ignore. If you click Initialize by mistake, close the Disk Utility window that opens, and change nothing.</li>
+<li>To stop the script at any time, press Control and C together.</li>
+</ul>
+<p>If something goes wrong, see <a href="../troubleshooting/">Troubleshooting</a>.</p>
+<h2 id="install-with-your-own-tools">Install with your own tools<a class="headerlink" href="#install-with-your-own-tools" title="Permanent link">&para;</a></h2>
+<p>Each <a href="https://github.com/kvmet/k5mme_pocketcw/releases">release</a> has these files:</p>
 <table>
 <thead>
 <tr>
@@ -1818,20 +1846,8 @@
 <td>The firmware.</td>
 </tr>
 <tr>
-<td><code>flash.sh</code></td>
-<td>The install script. It runs the next two programs for you.</td>
-</tr>
-<tr>
-<td><code>iapwrite.py</code></td>
-<td>Writes the firmware file to the device.</td>
-</tr>
-<tr>
-<td><code>nomount</code></td>
-<td>Stops macOS from opening the device's update drive while the install runs.</td>
-</tr>
-<tr>
-<td><code>README.txt</code></td>
-<td>The install guide.</td>
+<td><code>pocketcw-flash</code></td>
+<td>The macOS install tool that the script runs.</td>
 </tr>
 <tr>
 <td><code>LICENSE</code></td>
@@ -1847,41 +1863,6 @@
 </tr>
 </tbody>
 </table>
-<h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<ol>
-<li>Unzip the download, if your Mac has not done that already.</li>
-<li>Turn the device off, and unplug its USB cable. To turn it off, hold the dial down for about 2 seconds.</li>
-<li>Open Terminal. Press Command and Space together, type Terminal, and press Return.</li>
-<li>In the Terminal window, type <code>sh</code> and then a space. Do not press Return yet.</li>
-<li>Drag the file <code>flash.sh</code> from the folder into the Terminal window. Its full location appears after <code>sh</code>. Now press Return.</li>
-<li>A box can appear that offers to install the "command line developer tools". If it does, click Install and wait until it finishes. This can take several minutes. Then go back to step 4. You do this only once.</li>
-<li>
-<p>The script now says "Waiting for the device". Put the device in update mode, then plug it in:</p>
-<ol>
-<li>Find F1 and F4. They are two of the four buttons beside the screen: F1 is the top one, and F4 is the bottom one.</li>
-<li>Hold F1 and F4 down.</li>
-<li>While you hold them, hold the dial down too.</li>
-<li>When the firmware update screen shows, let go of all three.</li>
-<li>Plug the USB cable into the device and the Mac.</li>
-</ol>
-<p>After a few seconds, the Terminal window says "Found the device". If the device already shows the firmware update screen, start at step 7.5.
-8. Terminal asks for your password. Type your Mac login password and press Return. Nothing shows while you type. That is normal.
-9. Wait about 10 seconds. When the install works, you see:</p>
-<p><code>status now 'SUCCESS TXT'
-done: the device finished the update
-Finished. Unplug the device, then click the dial to turn it on.</code></p>
-<p>The device can also drop off USB for a moment and come back. Then you see "device dropped off USB" and then "done". That is a success too.
-10. Unplug the device, then click the dial to turn it on.</p>
-</li>
-</ol>
-<p>To check the version: on the KEYER screen, press F4 (MENU). Turn the dial to SYSTEM, and click the dial. The FIRMWARE row shows the version, such as <code>v0.2.0</code>.</p>
-<h2 id="while-the-install-runs">While the install runs<a class="headerlink" href="#while-the-install-runs" title="Permanent link">&para;</a></h2>
-<ul>
-<li>Do not unplug the device until the script says "Finished".</li>
-<li>macOS can show a message about a disk it cannot read. Click Ignore. If you click Initialize by mistake, close the Disk Utility window that opens, and change nothing.</li>
-<li>To stop the script at any time, press Control and C together.</li>
-</ul>
-<p>If something goes wrong, see <a href="../troubleshooting/">Troubleshooting</a>.</p>
 
 
 

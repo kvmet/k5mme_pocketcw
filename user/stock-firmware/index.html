@@ -519,10 +519,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-the-files" class="md-nav__link">
+  <a href="#the-two-stock-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Get the files
+        The two stock files
       
     </span>
   </a>
@@ -534,6 +534,17 @@
     <span class="md-ellipsis">
       
         Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-beta-for-board-263" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The beta for board 2.63
       
     </span>
   </a>
@@ -1700,10 +1711,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#get-the-files" class="md-nav__link">
+  <a href="#the-two-stock-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Get the files
+        The two stock files
       
     </span>
   </a>
@@ -1715,6 +1726,17 @@
     <span class="md-ellipsis">
       
         Install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-beta-for-board-263" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The beta for board 2.63
       
     </span>
   </a>
@@ -1742,42 +1764,56 @@
 
 
 <h1 id="go-back-to-the-stock-firmware">Go back to the stock firmware<a class="headerlink" href="#go-back-to-the-stock-firmware" title="Permanent link">&para;</a></h1>
-<p>This page puts the original HamCube firmware, version V5.03, back on the device. PocketCW does not include the HamCube files. You get them from a separate download.</p>
+<p>This page puts the original HamCube firmware, version V5.03, back on the device. PocketCW does not include the HamCube files. The install script downloads them from a separate source.</p>
 <h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
 <p>On board 2.64, the stock firmware has no setup for the board's sound chip (an ES8388), so the speaker is silent under the stock firmware.</p>
 <p>Boards from 2.63 have an IPS screen. Stock V5.03 has no setup for the IPS screen, so it shows that screen on its side, in strips. The beta version V5.03.13 sets up the IPS screen, but only on boards that read as version 2.63. No stock version fully supports board 2.64.</p>
 <p>The SYSTEM screen of PocketCW shows your board version on the BOARD row.</p>
 <p>Stock firmware keeps its settings in a different part of the memory chip than PocketCW. If you install PocketCW again later, it finds its settings again.</p>
-<h2 id="get-the-files">Get the files<a class="headerlink" href="#get-the-files" title="Permanent link">&para;</a></h2>
-<ol>
-<li>Open <a href="https://github.com/admvip/CW-Pokemon-Infomation">github.com/admvip/CW-Pokemon-Infomation</a>.</li>
-<li>Open the folder "CW Pokemon V5.03 Upgrade package".</li>
-<li>Download <code>F0000C0.bin</code> and <code>A000014.bin</code>.</li>
-<li>Put both files in a folder of their own. Do not put them in the PocketCW folder: that folder has its own <code>A000014.bin</code>.</li>
-</ol>
-<p>On a board 2.63, you can use the beta in place of the V5.03 <code>A000014.bin</code>: open the folder "CW Pokemon Beta Upgrade package", download <code>V5.03.13Beta.zip</code>, and unzip it. It holds only <code>A000014.bin</code>, so you still need <code>F0000C0.bin</code> from the V5.03 folder.</p>
-<p><code>F0000C0.bin</code> holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. HamCube says to install <code>F0000C0.bin</code> before <code>A000014.bin</code>. PocketCW never reads the image memory, so PocketCW works with any version of this file.</p>
+<h2 id="the-two-stock-files">The two stock files<a class="headerlink" href="#the-two-stock-files" title="Permanent link">&para;</a></h2>
+<p>The stock firmware is two files from HamCube's V5.03 upgrade package:</p>
+<ul>
+<li><code>F0000C0.bin</code> holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. The images stay in the image memory, so a device needs this file only once. PocketCW never reads the image memory, so PocketCW works with any version of this file.</li>
+<li><code>A000014.bin</code> is the stock firmware.</li>
+</ul>
+<p>HamCube says to install <code>F0000C0.bin</code> before <code>A000014.bin</code>.</p>
+<p>PocketCW does not include these files. The install script downloads them from <a href="https://github.com/admvip/CW-Pokemon-Infomation">github.com/admvip/CW-Pokemon-Infomation</a>, and checks that each one matches the V5.03 file.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
-<p>You install one file per install run. You need the macOS install tool from the PocketCW download. See <a href="../install/">Install on macOS</a>.</p>
 <ol>
-<li>Do steps 2 to 4 of <a href="../install/">Install on macOS</a>.</li>
+<li>Do steps 1 and 2 of <a href="../install/">Install on macOS</a>.</li>
 <li>
-<p>Drag <code>flash.sh</code> into the Terminal window. Type a space. Drag the HamCube file <code>F0000C0.bin</code> into the window too. Press Return. The command looks like this:</p>
-<p><code>sh flash.sh F0000C0.bin</code></p>
+<p>Copy this line, paste it into the Terminal window, and press Return:</p>
+<p><code>bash
+curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock</code></p>
 </li>
 <li>
-<p>Continue from step 7 of the install, and wait until the script says "Finished".</p>
+<p>The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.</p>
 </li>
-<li>Unplug the device.</li>
-<li>
-<p>Do steps 1 to 3 again with the HamCube file <code>A000014.bin</code>:</p>
-<p><code>sh flash.sh A000014.bin</code></p>
-</li>
-<li>
-<p>Unplug the device, then click the dial to turn it on.</p>
-</li>
+<li>Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.</li>
+<li>When the script says "Finished", unplug the device, then click the dial to turn it on.</li>
 </ol>
 <p>To install PocketCW again, follow <a href="../install/">Install on macOS</a>. PocketCW needs no <code>F</code> file.</p>
+<h2 id="the-beta-for-board-263">The beta for board 2.63<a class="headerlink" href="#the-beta-for-board-263" title="Permanent link">&para;</a></h2>
+<p>On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 <code>A000014.bin</code>. The install script does not download the beta.</p>
+<ol>
+<li>Install the stock firmware with the steps above, so the device has the V5.03 images.</li>
+<li>In <a href="https://github.com/admvip/CW-Pokemon-Infomation">the HamCube files</a>, open the folder "CW Pokemon Beta Upgrade package", download <code>V5.03.13Beta.zip</code>, and unzip it. It holds only <code>A000014.bin</code>.</li>
+<li>
+<p>In Terminal, download the PocketCW install tool, and make it a program you can run:</p>
+<p><code>bash
+curl -fsSLo ~/Downloads/pocketcw-flash https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash</code></p>
+<p><code>bash
+chmod +x ~/Downloads/pocketcw-flash</code></p>
+</li>
+<li>
+<p>Run the tool on the beta file. Replace the path with the place of your file:</p>
+<p><code>bash
+~/Downloads/pocketcw-flash ~/Downloads/V5.03.13Beta/A000014.bin</code></p>
+</li>
+<li>
+<p>Follow the steps the tool prints.</p>
+</li>
+</ol>
 
 
 
