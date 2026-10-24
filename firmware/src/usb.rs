@@ -2,10 +2,19 @@
 //! USB block, so `stm32-usbd` drives it; the AT32 adds the D+ pull-up switch in CFG.
 
 use at32f4xx_pac::at32f403a as pac;
+use pocketcw_logic::keyboard::{NO_KEYS, Report};
 use stm32_usbd::{MemoryAccess, UsbBus, UsbPeripheral};
+use usb_device::UsbError;
 use usb_device::bus::UsbBusAllocator;
+use usb_device::device::{StringDescriptors, UsbDevice, UsbDeviceBuilder, UsbDeviceState, UsbVidPid};
+use usbd_hid::descriptor::{KeyboardReport, SerializedDescriptor};
+use usbd_hid::hid_class::HIDClass;
 
 use crate::clock;
+
+/// Artery's VID and the PID of its keyboard example: the chip maker's ID for this class of
+/// device, as the vendor bootloader uses Artery's mass storage example ID.
+pub const VID_PID: UsbVidPid = UsbVidPid(0x2E3C, 0x6040);
 
 /// How long the host sees no device before `attach`. USB needs only 2.5 us; the margin covers
 /// hosts that poll their ports slowly.
@@ -61,4 +70,59 @@ pub fn detach() {
 
 fn registers() -> &'static pac::usbfs::RegisterBlock {
     unsafe { &*pac::USBFS::ptr() }
+}
+
+pub type Bus = UsbBusAllocator<UsbBus<Usb>>;
+
+/// A USB keyboard that sends one report at a time.
+pub struct Keyboard {
+    device: UsbDevice<'static, UsbBus<Usb>>,
+    // No boot subclass: usbd-hid refuses every report from a boot keyboard in Report mode.
+    hid: HIDClass<'static, UsbBus<Usb>>,
+    /// The last report the host took.
+    sent: Report,
+}
+
+impl Keyboard {
+    /// The device stays off the bus until `attach`.
+    pub fn new(bus: &'static Bus, product: &'static str) -> Keyboard {
+        let hid = HIDClass::new_ep_in(bus, KeyboardReport::desc(), 1);
+        let device = UsbDeviceBuilder::new(bus, VID_PID)
+            .strings(&[StringDescriptors::default().manufacturer("PocketCW").product(product)])
+            .unwrap_or_else(|_| unreachable!("one language fits"))
+            .build();
+        Keyboard { device, hid, sent: NO_KEYS }
+    }
+
+    /// Answers the host; true while it has the keyboard configured.
+    pub fn poll(&mut self) -> bool {
+        self.device.poll(&mut [&mut self.hid]);
+        let configured = self.device.state() == UsbDeviceState::Configured;
+        if !configured {
+            self.sent = NO_KEYS;
+        }
+        configured
+    }
+
+    pub fn state(&self) -> UsbDeviceState {
+        self.device.state()
+    }
+
+    /// Sends `report` unless the host already has it. Ok(true) when the host took a new report,
+    /// Ok(false) when it has this one or the last is still in flight.
+    pub fn send(&mut self, report: Report) -> Result<bool, UsbError> {
+        if report == self.sent {
+            return Ok(false);
+        }
+        let (modifier, key) = report;
+        let keys = KeyboardReport { modifier, reserved: 0, leds: 0, keycodes: [key, 0, 0, 0, 0, 0] };
+        match self.hid.push_input(&keys) {
+            Ok(_) => {
+                self.sent = report;
+                Ok(true)
+            }
+            Err(UsbError::WouldBlock) => Ok(false),
+            Err(error) => Err(error),
+        }
+    }
 }

@@ -9,7 +9,7 @@ use pocketcw_logic::{
     decoder::Decoded,
     input::Action,
     keyer::Output,
-    settings::{Field, MAX_BRIGHTNESS, PALETTE_COUNT, Pileup, Settings},
+    settings::{Field, MAX_BRIGHTNESS, PALETTE_COUNT, Pileup, Settings, UsbOut},
 };
 
 use super::{Ui, mode_name};
@@ -34,13 +34,14 @@ const MEM_TAB: usize = 6;
 const TAB_PAD: i32 = 3;
 const TAB_GAP: i32 = 2;
 
-const KEYER_ROWS: [(&str, Field); 6] = [
+const KEYER_ROWS: [(&str, Field); 7] = [
     ("MODE", Field::Mode),
     ("PADDLES", Field::Swap),
     ("SPEED", Field::Speed),
     ("KEY OUT", Field::KeyOut),
     ("OUT TYPE", Field::Output),
     ("OUT LINES", Field::OutputSwap),
+    ("USB OUT", Field::UsbOut),
 ];
 const SOUND_ROWS: [(&str, Field); 5] = [
     ("TONE", Field::Tone),
@@ -319,6 +320,15 @@ fn value(s: &Settings, field: Field) -> Text<12> {
         Field::Reveal => write!(t, "{}", if s.reveal_lines { "EACH LINE" } else { "WHOLE OVER" }),
         Field::Wave => write!(t, "{}", if s.square { "SQUARE" } else { "SINE" }),
         Field::DecoderBoard => write!(t, "{}", on_off(s.decoder_board)),
+        Field::UsbOut => write!(
+            t,
+            "{}",
+            match s.usb_out {
+                UsbOut::Off => "OFF",
+                UsbOut::Text => "TEXT",
+                UsbOut::Vband => "VBAND",
+            }
+        ),
         Field::Noise | Field::Fading => {
             let level = if field == Field::Noise { s.noise } else { s.fading };
             if level == 0 { write!(t, "OFF") } else { write!(t, "{level}") }

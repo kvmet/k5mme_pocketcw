@@ -14,9 +14,7 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text as Label},
 };
-use usb_device::device::{StringDescriptors, UsbDeviceBuilder, UsbDeviceState, UsbVidPid};
-use usbd_hid::descriptor::{KeyboardReport, SerializedDescriptor};
-use usbd_hid::hid_class::HIDClass;
+use usb_device::device::UsbDeviceState;
 
 use pocketcw_firmware::clock::{self, SYSCLK_HZ};
 use pocketcw_firmware::gpio;
@@ -24,14 +22,13 @@ use pocketcw_firmware::i2c::I2c;
 use pocketcw_firmware::lcd::Lcd;
 use pocketcw_firmware::pins::{BACKLIGHT, F_KEYS, LED, POWER_BUTTON, RING, SPEAKER_AMP, TIP};
 use pocketcw_firmware::text::Text;
-use pocketcw_firmware::{eeprom, power, store, usb};
+use pocketcw_firmware::usb::{self, Keyboard};
+use pocketcw_firmware::{eeprom, power, store};
+use pocketcw_logic::keyboard::{self, LEFT_CTRL, NO_KEYS, RIGHT_CTRL};
 use pocketcw_logic::panel;
 
-/// pid.codes test VID and PID, for devices that never leave the bench.
-const VID_PID: UsbVidPid = UsbVidPid(0x1209, 0x0001);
 const TEST_LINE: &[u8] = b"cq test de pocketcw\n";
-const LEFT_CTRL: u8 = 0x01;
-const RIGHT_CTRL: u8 = 0x10;
+const ENTER: u8 = 0x28;
 const CYCLES_PER_MS: u32 = SYSCLK_HZ / 1000;
 const POWER_OFF_MS: u32 = 1500;
 /// Drawing a row stops USB polling for a few ms, so the counters redraw at most this often.
@@ -96,20 +93,13 @@ fn main() -> ! {
     show(&mut lcd, 8, "F1: types \"cq test de pocketcw\" and Enter");
     show(&mut lcd, 9, "Hold click 1.5 s: power off");
 
-    let usb_bus = usb::bus();
-    // No boot subclass: usbd-hid refuses every report from a boot keyboard in Report mode.
-    let mut keyboard = HIDClass::new_ep_in(&usb_bus, KeyboardReport::desc(), 1);
-    let mut device = UsbDeviceBuilder::new(&usb_bus, VID_PID)
-        .strings(&[StringDescriptors::default().manufacturer("PocketCW").product("PocketCW USB probe")])
-        .unwrap()
-        .build();
+    let usb_bus = cortex_m::singleton!(: usb::Bus = usb::bus()).unwrap();
+    let mut keyboard = Keyboard::new(usb_bus, "PocketCW USB probe");
     usb::attach();
 
     let mut state = UsbDeviceState::Default;
     let (mut resets, mut reports, mut errors) = (0u32, 0u32, 0u32);
     let mut last_error = None;
-    // (modifier, key) of the last report the host took.
-    let mut sent = (0u8, 0u8);
     // Even steps press TEST_LINE[step / 2], odd steps release it.
     let mut typing: Option<usize> = None;
     let mut f1_was = false;
@@ -118,13 +108,13 @@ fn main() -> ! {
     let mut shown_at = DWT::cycle_count();
     let mut dirty = true;
     loop {
-        device.poll(&mut [&mut keyboard]);
+        let configured = keyboard.poll();
         let now = DWT::cycle_count();
-        if device.state() != state {
-            if device.state() == UsbDeviceState::Default {
+        if keyboard.state() != state {
+            if keyboard.state() == UsbDeviceState::Default {
                 resets += 1;
             }
-            state = device.state();
+            state = keyboard.state();
             dirty = true;
         }
 
@@ -137,22 +127,20 @@ fn main() -> ! {
         }
         f1_was = f1;
 
-        let modifier = if dit { LEFT_CTRL } else { 0 } | if dah { RIGHT_CTRL } else { 0 };
-        let key = match typing {
-            Some(step) if step % 2 == 0 => usage(TEST_LINE[step / 2]),
-            _ => 0,
+        let ctrl = if dit { LEFT_CTRL } else { 0 } | if dah { RIGHT_CTRL } else { 0 };
+        let (shift, key) = match typing.map(|step| (step % 2, TEST_LINE[step / 2])) {
+            Some((0, b'\n')) => (0, ENTER),
+            Some((0, c)) => keyboard::key(c).unwrap_or(NO_KEYS),
+            _ => NO_KEYS,
         };
-        let pending = typing.is_some() || (modifier, key) != sent;
-        if state == UsbDeviceState::Configured && pending {
-            let report = KeyboardReport { modifier, reserved: 0, leds: 0, keycodes: [key, 0, 0, 0, 0, 0] };
-            match keyboard.push_input(&report) {
-                Ok(_) => {
-                    sent = (modifier, key);
+        if configured {
+            match keyboard.send((ctrl | shift, key)) {
+                Ok(true) => {
                     reports += 1;
                     typing = typing.map(|step| step + 1).filter(|&step| step < 2 * TEST_LINE.len());
                     dirty = true;
                 }
-                Err(usb_device::UsbError::WouldBlock) => {}
+                Ok(false) => {}
                 Err(error) => {
                     errors += 1;
                     last_error = Some(error);
@@ -188,18 +176,6 @@ fn main() -> ! {
             show(&mut lcd, 5, "release to power off");
             power::standby();
         }
-    }
-}
-
-/// The HID usage of a key on a US layout, typed without Shift.
-fn usage(c: u8) -> u8 {
-    match c {
-        b'a'..=b'z' => 0x04 + c - b'a',
-        b'1'..=b'9' => 0x1E + c - b'1',
-        b'0' => 0x27,
-        b'\n' => 0x28,
-        b' ' => 0x2C,
-        _ => 0,
     }
 }
 

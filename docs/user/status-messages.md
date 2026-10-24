@@ -33,6 +33,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `DIT STUCK ON: CHECK PLUG` | A contact of the key jack stayed closed too long, and stopped keying until it opens. The message names DIT, DAH, TIP or RNG. See [Keys and jacks](keys.md). |
 | `CODEC DID NOT ANSWER` | The audio chip did not take a new volume. |
 | `n INPUTS LOST` | Button presses, key changes or decoded characters came faster than the screen could handle them, and the device lost `n` of them. |
+| `n USB KEYS LOST` | The device lost `n` characters or key changes on their way to the computer. See [USB keyboard](usb.md). |
 
 ## Memories
 

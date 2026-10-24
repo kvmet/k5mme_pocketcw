@@ -12,6 +12,7 @@ This manual tells you how to install PocketCW and how to use it.
 
 - [Controls and power](controls.md): the buttons, the dial, power on and off, and what the device saves.
 - [Keys and jacks](keys.md): paddles, straight keys, sideswipers, and the radio output.
+- [USB keyboard](usb.md): type what you key on a computer, or key VBand.
 - [Menu](menu.md): every screen the menu opens.
 - [Keyer](keyer.md): the main screen.
 - [Memories](memories.md): store four messages and send them on your radio.

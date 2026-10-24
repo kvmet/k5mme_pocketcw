@@ -18,6 +18,20 @@ pub enum Pileup {
 
 const PILEUPS: [Pileup; 3] = [Pileup::Off, Pileup::TakeTurns, Pileup::Overlap];
 
+/// What the USB port sends a computer, which sees the device as a keyboard unless this is Off.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum UsbOut {
+    /// No USB device: the port only charges.
+    Off,
+    /// Each character you key, typed.
+    Text,
+    /// Your keying as VBand's Ctrl keys.
+    Vband,
+}
+
+/// In the order the setting steps through, which is also the stored value.
+const USB_OUTS: [UsbOut; 3] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband];
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Settings {
     pub wpm: u8,
@@ -60,6 +74,7 @@ pub struct Settings {
     pub fading: u8,
     /// A Pro decoder board is fitted: power it and show the RADIO screen.
     pub decoder_board: bool,
+    pub usb_out: UsbOut,
 }
 
 pub const MAX_VOLUME: u8 = volume::MAX_LEVEL;
@@ -102,6 +117,7 @@ pub enum Field {
     Noise,
     Fading,
     DecoderBoard,
+    UsbOut,
 }
 
 impl Default for Settings {
@@ -113,7 +129,7 @@ impl Default for Settings {
             output_swap: false, boot_count: 0, style: 0,
             palette: 0, callsign, rx_wpm: 0, rx_effective: 0, pileup: Pileup::TakeTurns, human_fist: true,
             spread: true, reveal_lines: false, brightness: MAX_BRIGHTNESS, square: false, noise: 0, fading: 0,
-            decoder_board: false,
+            decoder_board: false, usb_out: UsbOut::Off,
         }
     }
 }
@@ -145,12 +161,15 @@ pub const COPIES: usize = 2;
 /// QSO flags: bit 0 a pileup, then human fist, speed spread, ragchew line reveal, and bit 4 a
 /// pileup that overlaps.
 const OVERLAP_BIT: u8 = 1 << 4;
+/// Hardware flags: bit 0 the decoder board, bits 1 and 2 the index of USB OUT in `USB_OUTS`.
+const USB_OUT_SHIFT: u8 = 1;
+const USB_OUT_MASK: u8 = 0b11;
 
 impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
     /// it once that exists), style, palette, callsign, receive speed, effective speed, QSO and
-    /// ragchew flags, brightness, sound flags (bit 0 square), noise, fading, hardware flags (bit 0
-    /// decoder board), save count.
+    /// ragchew flags, brightness, sound flags (bit 0 square), noise, fading, hardware flags, save
+    /// count.
     pub fn encode(&self, count: u8) -> [u8; RECORD_LEN] {
         let mode = match self.mode {
             Mode::IambicA => 0,
@@ -181,7 +200,7 @@ impl Settings {
             self.square as u8,
             self.noise,
             self.fading,
-            self.decoder_board as u8,
+            self.decoder_board as u8 | (self.usb_out as u8) << USB_OUT_SHIFT,
         ]);
         body[COUNT_AT] = count;
         frame(&mut record, MAGIC, VERSION);
@@ -257,7 +276,8 @@ impl Settings {
         } else {
             (defaults.square as u8, defaults.noise, defaults.fading)
         };
-        let decoder_board = if len >= BODY_LEN { body[V6_BODY] & 1 != 0 } else { defaults.decoder_board };
+        let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
+        let usb_out = *USB_OUTS.get((hardware >> USB_OUT_SHIFT & USB_OUT_MASK) as usize)?;
         let pileup = match (qso & 1 != 0, qso & OVERLAP_BIT != 0) {
             (false, _) => Pileup::Off,
             (true, false) => Pileup::TakeTurns,
@@ -292,7 +312,8 @@ impl Settings {
             square: sound_flags & 1 != 0,
             noise,
             fading,
-            decoder_board,
+            decoder_board: hardware & 1 != 0,
+            usb_out,
         };
         let in_range = (MIN_WPM..=MAX_WPM).contains(&settings.wpm)
             && settings.volume <= MAX_VOLUME
@@ -354,6 +375,10 @@ impl Settings {
             Field::Spread => self.spread ^= d % 2 != 0,
             Field::Reveal => self.reveal_lines ^= d % 2 != 0,
             Field::DecoderBoard => self.decoder_board ^= d % 2 != 0,
+            Field::UsbOut => {
+                let i = USB_OUTS.iter().position(|&u| u == self.usb_out).unwrap_or(0);
+                self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(USB_OUTS.len() as i32) as usize];
+            }
             Field::Brightness => {
                 self.brightness = (self.brightness as i32 + d).clamp(MIN_BRIGHTNESS as i32, MAX_BRIGHTNESS as i32) as u8
             }
@@ -610,6 +635,26 @@ mod tests {
         s.adjust(Field::DecoderBoard, 1);
         assert!(s.decoder_board);
         assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+    }
+
+    #[test]
+    fn usb_out_steps_round_trips_and_keeps_the_decoder_board() {
+        let mut s = Settings { decoder_board: true, ..Settings::default() };
+        for (delta, expected) in [(1, UsbOut::Text), (1, UsbOut::Vband), (1, UsbOut::Off), (-1, UsbOut::Vband)] {
+            s.adjust(Field::UsbOut, delta);
+            assert_eq!(s.usb_out, expected);
+            assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+        }
+        let v7 = legacy(&Settings { decoder_board: true, ..Settings::default() }, 7, BODY_LEN);
+        assert_eq!(Settings::decode(&v7).map(|s| (s.decoder_board, s.usb_out)), Some((true, UsbOut::Off)));
+    }
+
+    #[test]
+    fn an_unknown_usb_out_is_rejected() {
+        let mut record = Settings::default().encode(0);
+        body_mut(&mut record)[V6_BODY] = USB_OUT_MASK << USB_OUT_SHIFT;
+        frame(&mut record, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&record), None);
     }
 
     #[test]
