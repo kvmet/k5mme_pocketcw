@@ -329,6 +329,8 @@
       
         
       
+        
+      
     
     
     
@@ -397,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -510,6 +512,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1803,6 +1833,10 @@
 </thead>
 <tbody>
 <tr>
+<td><code>keyboard</code></td>
+<td>USB keyboard output: the key for each decoded character, the typing queue, and the Ctrl keys for VBand.</td>
+</tr>
+<tr>
 <td><code>keyer</code></td>
 <td>The iambic and straight keyer, the key jack debounce and stuck contact rules, and the func jack output lines.</td>
 </tr>
@@ -1902,6 +1936,10 @@
 <td>The serial link to the decoder board.</td>
 </tr>
 <tr>
+<td><code>usb</code></td>
+<td>The USB device peripheral for <code>stm32-usbd</code>, and the USB keyboard.</td>
+</tr>
+<tr>
 <td><code>ui/</code></td>
 <td>One file per screen, plus shared parts: <code>exchange</code> and <code>transcript</code> for the QSO screens, <code>tape</code> for the timing tape.</td>
 </tr>
@@ -1910,8 +1948,8 @@
 <td>A re-export of the fixed size string type.</td>
 </tr>
 <tr>
-<td><code>bin/probe.rs</code></td>
-<td>A separate hardware probe image. See <a href="../building/">Build and flash</a>.</td>
+<td><code>bin/probe.rs</code>, <code>bin/usbprobe.rs</code></td>
+<td>Separate hardware and USB probe images. See <a href="../building/">Build and flash</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1944,6 +1982,12 @@
 <td>USART1 idle line</td>
 <td>2</td>
 <td>Parses a frame from the decoder board and answers it.</td>
+</tr>
+<tr>
+<td><code>usb_events</code></td>
+<td>USB interrupt, and a pend from <code>tick</code></td>
+<td>2</td>
+<td>Answers the USB host and sends the next keyboard report.</td>
 </tr>
 <tr>
 <td><code>ui</code></td>

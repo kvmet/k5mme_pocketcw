@@ -329,6 +329,8 @@
       
         
       
+        
+      
     
     
     
@@ -397,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -510,6 +512,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1780,10 +1810,10 @@
 <p><code>Font::draw</code> blends from the background color to the text color by coverage. A character that is not in the font draws as a solid cell, so the gap shows on the screen.</p>
 <p>A prosign draws as its two letters under a bar. <code>ui/mod.rs</code> does this in <code>draw_char</code>, so the fonts need no prosign glyphs.</p>
 <h2 id="make-the-fonts-again">Make the fonts again<a class="headerlink" href="#make-the-fonts-again" title="Permanent link">&para;</a></h2>
-<pre><code class="language-bash">cd tools/fontgen
-cargo build -r
-target/release/fontgen B612Mono-Regular.ttf ../../firmware/src/fonts.rs
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>tools/fontgen
+cargo<span class="w"> </span>build<span class="w"> </span>-r
+target/release/fontgen<span class="w"> </span>B612Mono-Regular.ttf<span class="w"> </span>../../firmware/src/fonts.rs
+</code></pre></div>
 <p><code>fontgen</code> is its own crate, with <code>fontdue</code> as its only dependency. It builds for your computer.</p>
 <p>The sizes and cells are in <code>SPECS</code> in <code>tools/fontgen/src/main.rs</code>. When a glyph has visible pixels outside its cell, the tool prints how many and writes nothing. When you change a cell size, change <code>CHAR_W</code>, <code>CHAR_H</code>, <code>TINY_W</code> and <code>TINY_H</code> in <code>firmware/src/gfx.rs</code> too. Asserts there stop the build when the two do not match.</p>
 <p>The hardware probe uses the <code>FONT_6X10</code> font of <code>embedded-graphics</code>, not these fonts.</p>

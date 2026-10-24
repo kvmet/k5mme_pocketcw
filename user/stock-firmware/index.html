@@ -331,6 +331,8 @@
       
         
       
+        
+      
     
     
     
@@ -399,7 +401,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -538,6 +540,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows-and-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows and Linux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        macOS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -603,6 +633,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1730,6 +1788,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Install">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows-and-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows and Linux
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        macOS
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1766,8 +1852,8 @@
 <h1 id="go-back-to-the-stock-firmware">Go back to the stock firmware<a class="headerlink" href="#go-back-to-the-stock-firmware" title="Permanent link">&para;</a></h1>
 <p>This page puts the original HamCube firmware, version V5.03, back on the device. PocketCW does not include the HamCube files. The install script downloads them from a separate source.</p>
 <h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
-<p>On board 2.64, the stock firmware has no setup for the board's sound chip (an ES8388), so the speaker is silent under the stock firmware.</p>
-<p>Boards from 2.63 have an IPS screen. Stock V5.03 has no setup for the IPS screen, so it shows that screen on its side, in strips. The beta version V5.03.13 sets up the IPS screen, but only on boards that read as version 2.63. No stock version fully supports board 2.64.</p>
+<p>Board 2.64 has a different sound chip (an ES8388). The published stock versions, V5.03 and the beta V5.03.13, have no setup for that chip, so the speaker is silent under them. At least one board 2.64 came from the factory with V5.03.15, a version HamCube has not published, and its sound worked. If your device came with a stock version newer than V5.03.13, you cannot get that version back after you install PocketCW.</p>
+<p>Boards from 2.63 have an IPS screen. Stock V5.03 has no setup for the IPS screen, so it shows that screen on its side, in strips. The beta version V5.03.13 sets up the IPS screen, but only on boards that read as version 2.63. No published stock version fully supports board 2.64.</p>
 <p>The SYSTEM screen of PocketCW shows your board version on the BOARD row.</p>
 <p>Stock firmware keeps its settings in a different part of the memory chip than PocketCW. If you install PocketCW again later, it finds its settings again.</p>
 <h2 id="the-two-stock-files">The two stock files<a class="headerlink" href="#the-two-stock-files" title="Permanent link">&para;</a></h2>
@@ -1779,41 +1865,39 @@
 <p>HamCube says to install <code>F0000C0.bin</code> before <code>A000014.bin</code>.</p>
 <p>PocketCW does not include these files. The install script downloads them from <a href="https://github.com/admvip/CW-Pokemon-Infomation">github.com/admvip/CW-Pokemon-Infomation</a>, and checks that each one matches the V5.03 file.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
+<h3 id="windows-and-linux">Windows and Linux<a class="headerlink" href="#windows-and-linux" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Do steps 1 and 2 of <a href="../install/">Install on macOS</a>.</li>
-<li>
-<p>Copy this line, paste it into the Terminal window, and press Return:</p>
-<p><code>bash
-curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock</code></p>
-</li>
-<li>
-<p>The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.</p>
-</li>
+<li>Download <code>F0000C0.bin</code> and <code>A000014.bin</code> from the "CW Pokemon V5.03 Upgrade package" folder of <a href="https://github.com/admvip/CW-Pokemon-Infomation">the HamCube files</a>. If the device has had the V5.03 images installed before, you need only <code>A000014.bin</code>.</li>
+<li>Copy <code>F0000C0.bin</code> to the update drive, as in <a href="../install/#windows-and-linux">Install</a>.</li>
+<li>Put the device in update mode again, and copy <code>A000014.bin</code> the same way.</li>
+<li>Unplug the device, then click the dial to turn it on.</li>
+</ol>
+<h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
+<p>Start the script as in <a href="../install/#start-the-script">Start the script</a>, with this line in place of the PocketCW line:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://kvmet.github.io/k5mme_pocketcw/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh<span class="w"> </span>-s<span class="w"> </span>stock
+</code></pre></div>
+<p>Then:</p>
+<ol>
+<li>The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.</li>
 <li>Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.</li>
 <li>When the script says "Finished", unplug the device, then click the dial to turn it on.</li>
 </ol>
-<p>To install PocketCW again, follow <a href="../install/">Install on macOS</a>. PocketCW needs no <code>F</code> file.</p>
+<p>To install PocketCW again, follow <a href="../install/">Install</a>. PocketCW needs no <code>F</code> file.</p>
 <h2 id="the-beta-for-board-263">The beta for board 2.63<a class="headerlink" href="#the-beta-for-board-263" title="Permanent link">&para;</a></h2>
 <p>On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 <code>A000014.bin</code>. The install script does not download the beta.</p>
 <ol>
 <li>Install the stock firmware with the steps above, so the device has the V5.03 images.</li>
 <li>In <a href="https://github.com/admvip/CW-Pokemon-Infomation">the HamCube files</a>, open the folder "CW Pokemon Beta Upgrade package", download <code>V5.03.13Beta.zip</code>, and unzip it. It holds only <code>A000014.bin</code>.</li>
-<li>
-<p>In Terminal, download the PocketCW install tool, and make it a program you can run:</p>
-<p><code>bash
-curl -fsSLo ~/Downloads/pocketcw-flash https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash</code></p>
-<p><code>bash
-chmod +x ~/Downloads/pocketcw-flash</code></p>
-</li>
-<li>
-<p>Run the tool on the beta file. Replace the path with the place of your file:</p>
-<p><code>bash
-~/Downloads/pocketcw-flash ~/Downloads/V5.03.13Beta/A000014.bin</code></p>
-</li>
-<li>
-<p>Follow the steps the tool prints.</p>
-</li>
+<li>Copy that <code>A000014.bin</code> to the update drive, as in <a href="../install/#windows-and-linux">Install</a>. On a Mac, use the install tool below in place of a copy.</li>
 </ol>
+<p>On a Mac, download the PocketCW install tool in Terminal, and make it a program you can run:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-fsSLo<span class="w"> </span>~/Downloads/pocketcw-flash<span class="w"> </span>https://github.com/kvmet/k5mme_pocketcw/releases/latest/download/pocketcw-flash
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>chmod<span class="w"> </span>+x<span class="w"> </span>~/Downloads/pocketcw-flash
+</code></pre></div>
+<p>Then run the tool on the beta file, and follow the steps it prints. Replace the path with the place of your file:</p>
+<div class="highlight"><pre><span></span><code>~/Downloads/pocketcw-flash<span class="w"> </span>~/Downloads/V5.03.13Beta/A000014.bin
+</code></pre></div>
 
 
 

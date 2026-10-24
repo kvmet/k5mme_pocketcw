@@ -329,6 +329,8 @@
       
         
       
+        
+      
     
     
     
@@ -397,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -510,6 +512,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1935,7 +1965,7 @@
 <p>Then it drives PB12 high and sets the speaker volume, R54 and R55, from the vendor volume setting (0 to 63, and 0 writes the mute bit). R52 and R53, the OUT1 volume, are written at 0x080164D4, but R2 leaves OUT1 off.</p>
 <p>PocketCW writes the same values (<code>firmware/src/wm8978.rs</code>). Its volume level 44 gives 61 in R54 and R55, which is +4 dB.</p>
 <h3 id="es8388">ES8388<a class="headerlink" href="#es8388" title="Permanent link">&para;</a></h3>
-<p>No vendor firmware sets up the ES8388, so the vendor app is silent on board 2.64.</p>
+<p>No published vendor firmware sets up the ES8388, so V5.03 and V5.03.13 are silent on board 2.64. Unpublished V5.03.15, shipped on some 2.64 units, has working sound. See <a href="../board-variants/">Board variants</a>.</p>
 <p>PocketCW (<code>firmware/src/es8388.rs</code>) follows the bypass start-up in section 10.4 of the Everest ES8388 User Guide:</p>
 <table>
 <thead>

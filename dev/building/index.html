@@ -329,6 +329,8 @@
       
         
       
+        
+      
     
     
     
@@ -397,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -510,6 +512,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1150,6 +1180,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usb-probe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        USB probe
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1765,6 +1806,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usb-probe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        USB probe
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1791,19 +1843,19 @@
 <li>Rust from <a href="https://rustup.rs">rustup</a>, version 1.88 or later. The code uses let chains, from the 2024 edition.</li>
 <li>The target for the AT32F403A, a Cortex-M4F:</li>
 </ul>
-<p><code>bash
-  rustup target add thumbv7em-none-eabihf</code></p>
+<div class="highlight"><pre><span></span><code>rustup<span class="w"> </span>target<span class="w"> </span>add<span class="w"> </span>thumbv7em-none-eabihf
+</code></pre></div>
 <ul>
 <li>The LLVM tools. <code>mkimage.sh</code> takes <code>llvm-objcopy</code> and <code>llvm-objdump</code> from the rustup toolchain folder.</li>
 </ul>
-<p><code>bash
-  rustup component add llvm-tools</code></p>
+<div class="highlight"><pre><span></span><code>rustup<span class="w"> </span>component<span class="w"> </span>add<span class="w"> </span>llvm-tools
+</code></pre></div>
 <ul>
 <li>To flash from macOS: <code>clang</code> from the Xcode command line tools.</li>
 </ul>
 <h2 id="build-the-image">Build the image<a class="headerlink" href="#build-the-image" title="Permanent link">&para;</a></h2>
-<pre><code class="language-bash">sh tools/mkimage.sh
-</code></pre>
+<div class="highlight"><pre><span></span><code>sh<span class="w"> </span>tools/mkimage.sh
+</code></pre></div>
 <p>The script builds <code>firmware/</code> in release mode and writes <code>firmware/target/A000014.bin</code>. <code>firmware/.cargo/config.toml</code> sets the target, so a plain <code>cargo build</code> in <code>firmware/</code> also builds for the device.</p>
 <p>The script stops with an error in two cases:</p>
 <ul>
@@ -1817,28 +1869,60 @@
 <ol>
 <li>Build the install tool once. <code>mkimage.sh</code> prints a command that runs it from <code>tools/</code>:</li>
 </ol>
-<p><code>bash
-   clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o tools/pocketcw-flash tools/pocketcw-flash.c -framework DiskArbitration -framework CoreFoundation</code></p>
+<div class="highlight"><pre><span></span><code>clang<span class="w"> </span>-O2<span class="w"> </span>-arch<span class="w"> </span>arm64<span class="w"> </span>-arch<span class="w"> </span>x86_64<span class="w"> </span>-mmacosx-version-min<span class="o">=</span><span class="m">10</span>.15<span class="w"> </span>-o<span class="w"> </span>tools/pocketcw-flash<span class="w"> </span>tools/pocketcw-flash.c<span class="w"> </span>-framework<span class="w"> </span>DiskArbitration<span class="w"> </span>-framework<span class="w"> </span>CoreFoundation
+</code></pre></div>
 <ol>
 <li>Run the command that <code>mkimage.sh</code> printed:</li>
 </ol>
-<p><code>bash
-   tools/pocketcw-flash firmware/target/A000014.bin</code></p>
+<div class="highlight"><pre><span></span><code>tools/pocketcw-flash<span class="w"> </span>firmware/target/A000014.bin
+</code></pre></div>
 <ol>
 <li>Follow the steps the tool prints. macOS asks for your Mac login password, because the tool writes to the raw disk through <code>authopen</code>.</li>
 </ol>
 <p><code>pocketcw-flash</code> refuses a file that would write below 0x08005000, or past the end of the 256 KB flash. The <a href="../../user/install/">install guide</a> and <a href="../../user/troubleshooting/">troubleshooting</a> pages cover the steps on the device.</p>
 <h2 id="test">Test<a class="headerlink" href="#test" title="Permanent link">&para;</a></h2>
 <p>The tests run on your computer:</p>
-<pre><code class="language-bash">cd logic
-cargo test
-</code></pre>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>logic
+cargo<span class="w"> </span><span class="nb">test</span>
+</code></pre></div>
 <p><code>logic/</code> has no target setting, so it builds for your computer. The firmware crate has no tests.</p>
 <h2 id="hardware-probe">Hardware probe<a class="headerlink" href="#hardware-probe" title="Permanent link">&para;</a></h2>
 <p><code>firmware/src/bin/probe.rs</code> is a separate image for checking a board. It shows the chip and board IDs, scans the I2C bus, shows the live inputs, and tests the audio codec, the PA8 audio output and standby.</p>
-<pre><code class="language-bash">sh tools/mkimage.sh probe
-</code></pre>
+<div class="highlight"><pre><span></span><code>sh<span class="w"> </span>tools/mkimage.sh<span class="w"> </span>probe
+</code></pre></div>
 <p>The probe image also goes to <code>firmware/target/A000014.bin</code>. Flash it the same way, and flash the app again after.</p>
+<h2 id="usb-probe">USB probe<a class="headerlink" href="#usb-probe" title="Permanent link">&para;</a></h2>
+<p><code>firmware/src/bin/usbprobe.rs</code> is a separate image for checking the USB device. It shows up on the computer as a USB keyboard named "PocketCW USB probe".</p>
+<div class="highlight"><pre><span></span><code>sh<span class="w"> </span>tools/mkimage.sh<span class="w"> </span>usbprobe
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Sends</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dit contact (tip)</td>
+<td>Holds Left Ctrl, as VBand reads a dit.</td>
+</tr>
+<tr>
+<td>Dah contact (ring)</td>
+<td>Holds Right Ctrl, as VBand reads a dah.</td>
+</tr>
+<tr>
+<td>F1</td>
+<td>Types <code>cq test de pocketcw</code> and Enter.</td>
+</tr>
+<tr>
+<td>Hold the dial 1.5 s</td>
+<td>Turns the device off.</td>
+</tr>
+</tbody>
+</table>
+<p>The screen shows the clock source, the USB state, the bus reset count, and the reports the computer took. CONFIGURED means the computer accepted the keyboard. macOS may open its Keyboard Setup Assistant the first time; close it.</p>
+<p>The image goes to <code>firmware/target/A000014.bin</code>. Flash it the same way, and flash the app again after.</p>
 
 
 

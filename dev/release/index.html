@@ -329,6 +329,8 @@
       
         
       
+        
+      
     
     
     
@@ -397,7 +399,7 @@
   <span class="md-ellipsis">
     
   
-    Install on macOS
+    Install
   
 
     
@@ -510,6 +512,34 @@
     
   
     Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
   
 
     
@@ -1784,19 +1814,19 @@
 <li>Build once, so the <code>Cargo.lock</code> files take the new version. Commit everything.</li>
 <li>Build the release:</li>
 </ol>
-<p><code>bash
-   sh tools/release.sh vX.Y.Z</code></p>
+<div class="highlight"><pre><span></span><code>sh<span class="w"> </span>tools/release.sh<span class="w"> </span>vX.Y.Z
+</code></pre></div>
 <ol>
 <li>Tag the commit and push the tag:</li>
 </ol>
-<p><code>bash
-   git tag vX.Y.Z
-   git push origin vX.Y.Z</code></p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span>vX.Y.Z
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>vX.Y.Z
+</code></pre></div>
 <ol>
 <li>Make a GitHub release for the tag, and upload every file in <code>dist/</code>. With the GitHub CLI:</li>
 </ol>
-<p><code>bash
-   gh release create vX.Y.Z dist/*</code></p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>vX.Y.Z<span class="w"> </span>dist/*
+</code></pre></div>
 <h2 id="what-releasesh-does">What release.sh does<a class="headerlink" href="#what-releasesh-does" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Stops with an error when <code>firmware/Cargo.toml</code> does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.</li>
