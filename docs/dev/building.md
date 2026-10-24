@@ -74,3 +74,22 @@ sh tools/mkimage.sh probe
 ```
 
 The probe image also goes to `firmware/target/A000014.bin`. Flash it the same way, and flash the app again after.
+
+## USB probe
+
+`firmware/src/bin/usbprobe.rs` is a separate image for checking the USB device. It shows up on the computer as a USB keyboard named "PocketCW USB probe".
+
+```bash
+sh tools/mkimage.sh usbprobe
+```
+
+| Input | Sends |
+| - | - |
+| Dit contact (tip) | Holds Left Ctrl, as VBand reads a dit. |
+| Dah contact (ring) | Holds Right Ctrl, as VBand reads a dah. |
+| F1 | Types `cq test de pocketcw` and Enter. |
+| Hold the dial 1.5 s | Turns the device off. |
+
+The screen shows the clock source, the USB state, the bus reset count, and the reports the computer took. CONFIGURED means the computer accepted the keyboard. macOS may open its Keyboard Setup Assistant the first time; close it.
+
+The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flash the app again after.

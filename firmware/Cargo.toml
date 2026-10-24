@@ -13,6 +13,9 @@ pocketcw-logic = { version = "0.2.1", path = "../logic" }
 rtic = { version = "2.3.1", features = ["thumbv7-backend"] }
 rtic-monotonics = { version = "2.2.1", features = ["cortex-m-systick"] }
 rtic-sync = "1.5.0"
+stm32-usbd = "0.8.0"
+usb-device = "0.3.2"
+usbd-hid = "0.10.2"
 
 [profile.release]
 opt-level = "s"
