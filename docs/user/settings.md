@@ -82,10 +82,10 @@ The tab says `SAME SPEEDS AS THE RECV TAB`.
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | STYLE | HAZARD, HUD, BLOCK | HAZARD | The shapes of the screen: the frame, the header, the button labels and the selection. |
-| PALETTE | 15 palettes | ORANGE | The colors of the screen and of the boot screen. |
+| PALETTE | 16 palettes | ORANGE | The colors of the screen and of the boot screen. |
 | BRIGHTNESS | 10 % to 100 %, in steps of 10 % | 100 % | The brightness of the screen. |
 
-The palettes are ORANGE, CYAN, AMBER, DAILY, and the pride flags RAINBOW, TRANS, BI, LESBIAN, PAN, NONBIN, ACE, ARO, FLUID, AGENDER and QUEER. DAILY shows a different flag each time you turn the device on, and the tab says `A NEW FLAG EACH BOOT`. Under the rows, a swatch shows the colors of each palette, with a frame around the selected one.
+The palettes are ORANGE, CYAN, AMBER, LIME, DAILY, and the pride flags RAINBOW, TRANS, BI, LESBIAN, PAN, NONBIN, ACE, ARO, FLUID, AGENDER and QUEER. DAILY shows a different flag each time you turn the device on, and the tab says `A NEW FLAG EACH BOOT`. Under the rows, a swatch shows the colors of each palette, with a frame around the selected one.
 
 The colors that grade your timing are the same in every palette: green, amber and red.
 

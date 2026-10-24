@@ -68,7 +68,8 @@ const THEME_ROWS: [(&str, Field); 3] =
 const NOTE_GAP: i32 = 7;
 
 const SWATCH_Y: i32 = 112;
-const SWATCHES_PER_ROW: u8 = 5;
+/// Six fit across MAIN at a 44 px step, so all 16 palettes fit in three rows above the note.
+const SWATCHES_PER_ROW: u8 = 6;
 const PALETTE_NOTE_Y: i32 = 202;
 
 const CALL_PX: i32 = 4;
@@ -150,11 +151,11 @@ impl Ui {
     fn draw_swatches(&self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         for i in 0..PALETTE_COUNT {
-            let x = 4 + (i % SWATCHES_PER_ROW) as i32 * 53;
+            let x = 6 + (i % SWATCHES_PER_ROW) as i32 * 44;
             let y = SWATCH_Y + (i / SWATCHES_PER_ROW) as i32 * 30;
-            rect(lcd, x - 2, y - 2, 48, 26, if i == s.palette { t.fg } else { t.bg });
-            rect(lcd, x, y, 44, 22, Rgb565::new(0, 0, 0));
-            swatch(lcd, t, self.boot_count, i, x + 2, y + 2, 40, 18);
+            rect(lcd, x - 2, y - 2, 42, 26, if i == s.palette { t.fg } else { t.bg });
+            rect(lcd, x, y, 38, 22, Rgb565::new(0, 0, 0));
+            swatch(lcd, t, self.boot_count, i, x + 2, y + 2, 34, 18);
         }
         if s.palette == DAILY {
             tiny(lcd, 4, PALETTE_NOTE_Y, "A NEW FLAG EACH BOOT", t.muted, t.bg);

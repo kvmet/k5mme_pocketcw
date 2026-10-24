@@ -130,7 +130,7 @@ struct Palette {
     stripes: &'static [Rgb565],
 }
 
-const SOLID: [Palette; 3] = [
+const SOLID: [Palette; 4] = [
     Palette { name: "ORANGE", bg: 0x000000, fg: 0xF2F2F2, muted: 0x707070, accent: 0xFF5F00, echo: 0xFFFFFF, stripes: &[rgb(0xFF5F00)] },
     Palette {
         name: "CYAN",
@@ -150,6 +150,7 @@ const SOLID: [Palette; 3] = [
         echo: 0xFF6A00,
         stripes: &[rgb(0xFFB000), rgb(0xFF6A00)],
     },
+    Palette { name: "LIME", bg: 0x000000, fg: 0xF2F2F2, muted: 0x707070, accent: 0x8CFF00, echo: 0xFFFFFF, stripes: &[rgb(0x8CFF00)] },
 ];
 /// Palette index of the flag that changes every boot. The flags follow it in `FLAGS` order.
 pub const DAILY: u8 = SOLID.len() as u8;
