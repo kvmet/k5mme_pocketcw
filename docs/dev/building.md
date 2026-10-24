@@ -15,7 +15,7 @@
   rustup component add llvm-tools
   ```
 
-- To flash from macOS: Python 3, and `clang` from the Xcode command line tools.
+- To flash from macOS: `clang` from the Xcode command line tools.
 
 ## Build the image
 
@@ -38,21 +38,21 @@ The linker script `firmware/memory.x` puts the app at 0x08005000, with 236 KB of
 
 The device installs updates through its bootloader, which shows a USB drive. macOS must not mount that drive. See [Flash layout](hardware/flash-layout.md) for the reason.
 
-1. Build `nomount` once. `flash.sh` looks for it next to itself:
+1. Build the install tool once. `mkimage.sh` prints a command that runs it from `tools/`:
 
    ```bash
-   clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o tools/nomount tools/nomount.c -framework DiskArbitration -framework CoreFoundation
+   clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o tools/pocketcw-flash tools/pocketcw-flash.c -framework DiskArbitration -framework CoreFoundation
    ```
 
 2. Run the command that `mkimage.sh` printed:
 
    ```bash
-   sh tools/flash.sh firmware/target/A000014.bin
+   tools/pocketcw-flash firmware/target/A000014.bin
    ```
 
-3. Follow the steps the script prints. It asks for your Mac login password, because `iapwrite.py` writes to the raw disk with `sudo`.
+3. Follow the steps the tool prints. macOS asks for your Mac login password, because the tool writes to the raw disk through `authopen`.
 
-`iapwrite.py` refuses a file that would write below 0x08005000, or past the end of the 256 KB flash. The [install guide](../user/install.md) and [troubleshooting](../user/troubleshooting.md) pages cover the steps on the device.
+`pocketcw-flash` refuses a file that would write below 0x08005000, or past the end of the 256 KB flash. The [install guide](../user/install.md) and [troubleshooting](../user/troubleshooting.md) pages cover the steps on the device.
 
 ## Test
 

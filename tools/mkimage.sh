@@ -20,4 +20,4 @@ if [ "$size" -gt $((236 * 1024)) ]; then
 fi
 echo "target/A000014.bin: $bin, $size bytes"
 tools=$(cd ../tools && pwd)
-echo "flash: sh $tools/flash.sh $(pwd)/target/A000014.bin"
+echo "flash: $tools/pocketcw-flash $(pwd)/target/A000014.bin"

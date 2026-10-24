@@ -26,8 +26,8 @@ rustc-ice-*.txt
 # Release output from tools/release.sh
 dist/
 
-# Built by tools/release.sh from tools/nomount.c
-tools/nomount
+# Built from tools/pocketcw-flash.c
+tools/pocketcw-flash
 
 __pycache__/
 .DS_Store

@@ -15,8 +15,11 @@ PocketCW is not made by HamCube, and is not affiliated with HamCube or Nintendo.
 
 ## Install
 
-1. Download `pocketcw-vX.Y.Z-mac.zip` from [Releases](https://github.com/kvmet/k5mme_pocketcw/releases).
-2. Unzip it, and follow `README.txt` in the folder.
+On a Mac, paste this line into Terminal, and follow the steps it prints:
+
+```bash
+curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
+```
 
 Only macOS has an install tool today. The install never changes the device's bootloader, so you can always install again or go back to the original firmware.
 
@@ -40,7 +43,7 @@ Then build the image and install it:
 sh tools/mkimage.sh
 ```
 
-`mkimage.sh` writes `firmware/target/A000014.bin` and prints the `flash.sh` command that installs it. The [developer docs](docs/index.md) cover the hardware, the code layout and the release steps.
+`mkimage.sh` writes `firmware/target/A000014.bin` and prints the `pocketcw-flash` command that installs it. The [developer docs](docs/index.md) cover the hardware, the code layout and the release steps.
 
 ## License
 

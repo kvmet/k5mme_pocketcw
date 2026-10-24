@@ -26,10 +26,7 @@ To start it: hold F1 and F4, then hold the dial until the update screen shows. P
 
 The bootloader routes file data by the name in the root directory entry. So the directory entry must reach the device before the data, as Windows writes it. macOS and mtools write the data first, and the data goes to the wrong place.
 
-On macOS, PocketCW installs with two tools that `tools/flash.sh` runs:
-
-- `tools/nomount.c` blocks the mount of the update drive, so macOS writes nothing to it.
-- `tools/iapwrite.py` writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.
+On macOS, PocketCW installs with `tools/pocketcw-flash.c`. The tool blocks the mount of the update drive, so macOS writes nothing to it. Then it writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.
 
 After a finished write, the status file reads `Success` for about 1 second. Then the drive drops off USB and comes back as `Ready`.
 

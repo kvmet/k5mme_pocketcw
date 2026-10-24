@@ -1,13 +1,16 @@
 # Release
 
-A release is a git tag `vX.Y.Z` and a GitHub release with two files:
+A release is a git tag `vX.Y.Z` and a GitHub release with these files:
 
 | File | Contents |
 | - | - |
 | `A000014.bin` | The firmware image. |
-| `pocketcw-vX.Y.Z-mac.zip` | The macOS install bundle. It unzips to a folder `pocketcw-vX.Y.Z`. |
+| `pocketcw-flash` | The macOS install tool, for Apple and Intel Macs. |
+| `LICENSE` | The PocketCW license. |
+| `B612-OFL.txt` | The license of the B612 Mono font. |
+| `THIRD-PARTY.txt` | The MIT notice of every crate linked into the firmware. |
 
-The bundle holds `A000014.bin`, `flash.sh`, `iapwrite.py`, `nomount`, `README.txt`, `LICENSE`, `B612-OFL.txt` and `THIRD-PARTY.txt`.
+The install script `docs/install.sh` downloads `A000014.bin` and `pocketcw-flash` from the newest release. The docs site serves the script, so a change to it goes live when it reaches `main`.
 
 ## The version number
 
@@ -17,7 +20,7 @@ Both crates have the same version. `firmware/Cargo.toml` also names the version 
 
 ## Steps
 
-Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and `ditto`.
+Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks.
 
 1. Set the new version in three places: `version` in `firmware/Cargo.toml`, `version` in `logic/Cargo.toml`, and the `pocketcw-logic` dependency in `firmware/Cargo.toml`.
 2. Build once, so the `Cargo.lock` files take the new version. Commit everything.
@@ -34,21 +37,19 @@ Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and `d
    git push origin vX.Y.Z
    ```
 
-5. Make a GitHub release for the tag, and upload `dist/A000014.bin` and `dist/pocketcw-vX.Y.Z-mac.zip`. With the GitHub CLI:
+5. Make a GitHub release for the tag, and upload every file in `dist/`. With the GitHub CLI:
 
    ```bash
-   gh release create vX.Y.Z dist/A000014.bin dist/pocketcw-vX.Y.Z-mac.zip
+   gh release create vX.Y.Z dist/*
    ```
 
 ## What release.sh does
 
 1. Stops with an error when `firmware/Cargo.toml` does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.
 2. Runs `tools/mkimage.sh` and copies the image to `dist/A000014.bin`.
-3. Builds `nomount` for Apple and Intel Macs, macOS 10.15 or later.
-4. Copies `flash.sh`, `iapwrite.py`, the image, `LICENSE` and `firmware/src/B612-OFL.txt` into the bundle folder.
-5. Writes `THIRD-PARTY.txt` with `tools/notices.py`: the MIT notice of every crate linked into the firmware.
-6. Writes `README.txt` from `tools/install-readme.txt`, with the version in place of `@VERSION@`.
-7. Zips the folder with `ditto`, which keeps the execute bits and leaves out macOS metadata files.
-8. Lists the zip and prints the tag and upload steps.
+3. Copies `LICENSE` and `firmware/src/B612-OFL.txt` to `dist/`.
+4. Builds `dist/pocketcw-flash` for Apple and Intel Macs, macOS 10.15 or later.
+5. Writes `dist/THIRD-PARTY.txt` with `tools/notices.py`.
+6. Lists `dist/` and prints the tag and upload steps.
 
-Git ignores `dist/` and `tools/nomount`.
+Git ignores `dist/` and `tools/pocketcw-flash`.
