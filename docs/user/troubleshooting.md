@@ -57,7 +57,7 @@ The script restores the stock firmware only from the exact V5.03 files. The down
 
 If the battery is full and the device is plugged into USB, it sometimes starts in update mode. Unplug USB and click the dial to turn it on.
 
-If the device starts in update mode every time, even unplugged, the last install did not finish. Install again.
+If the device starts in update mode every time, even unplugged, the last install did not finish. Install again, with the [first install](install.md#windows-and-linux) steps.
 
 ### The screen is turned on its side, or shows the picture in strips
 

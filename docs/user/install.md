@@ -32,12 +32,17 @@ In update mode, the device shows up on the computer as a drive named POKEMON-2 o
 
 Nobody has tested a Linux install yet. The bootloader needs the file's name to reach the drive before the file's data. Windows writes the name first. If a Linux install does not work, report it on the [issue tracker](https://github.com/kvmet/k5mme_pocketcw/issues).
 
-1. Download `A000014.bin` from the newest [release](https://github.com/kvmet/k5mme_pocketcw/releases/latest).
+The first install on a device also needs `F000400.bin`, a small PocketCW file. Without it, the first install can leave the device on the update screen. Also do the first install steps after you go back to the stock firmware.
+
+1. Download `A000014.bin` from the newest [release](https://github.com/kvmet/k5mme_pocketcw/releases/latest). For a first install, also download `F000400.bin`.
 2. Put the device in [update mode](#update-mode).
 3. Plug the USB cable into the device and the computer. The drive opens.
-4. Copy `A000014.bin` to the drive. On Linux, run `sync` after the copy, so the file goes to the device at once.
-5. Wait about 10 seconds. The drive closes, then opens again with only `READY.TXT`.
-6. Unplug the device, then click the dial to turn it on.
+4. For a first install, copy `F000400.bin` to the drive. Wait until the drive closes and opens again with only `READY.TXT`. Then hold F4 to reset the drive.
+5. Copy `A000014.bin` to the drive.
+6. Wait about 10 seconds. The drive closes, then opens again with only `READY.TXT`.
+7. Unplug the device, then click the dial to turn it on.
+
+On Linux, run `sync` after each copy, so the file goes to the device at once.
 
 If the drive holds a file other than `READY.TXT` before the copy, hold F4 to reset the drive.
 
@@ -53,7 +58,11 @@ If the drive holds a file other than `READY.TXT` before the copy, hold F4 to res
 curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 ```
 
-The script downloads the newest PocketCW release and the install tool, then says "Waiting for the device".
+The script downloads the newest PocketCW release and the install tool. Then it asks whether this is the first PocketCW install on the device. If you are not sure, press Return for yes.
+
+A first install installs two files: a small PocketCW file, then the firmware. You put the device in update mode once for each file. Without the first file, the first install can leave the device on the update screen. Also answer yes after you go back to the stock firmware.
+
+The script then says "Waiting for the device".
 
 ### Plug in the device
 
@@ -92,6 +101,7 @@ Each [release](https://github.com/kvmet/k5mme_pocketcw/releases) has these files
 | File | What it is |
 | - | - |
 | `A000014.bin` | The firmware. |
+| `F000400.bin` | A small PocketCW file for the device's memory chip, installed before the firmware on a first install. |
 | `pocketcw-flash` | The macOS install tool that the script runs. |
 | `LICENSE` | The PocketCW license, GPL-3.0-or-later. |
 | `B612-OFL.txt` | The license of the B612 Mono font. |

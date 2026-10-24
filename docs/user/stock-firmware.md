@@ -16,10 +16,10 @@ Stock firmware keeps its settings in a different part of the memory chip than Po
 
 The stock firmware is two files from HamCube's V5.03 upgrade package:
 
-- `F0000C0.bin` holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. The images stay in the image memory, so a device needs this file only once. PocketCW never reads the image memory, so PocketCW works with any version of this file.
+- `F0000C0.bin` holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. PocketCW never reads the image memory, so PocketCW works with any version of this file.
 - `A000014.bin` is the stock firmware.
 
-HamCube says to install `F0000C0.bin` before `A000014.bin`.
+Install both files, `F0000C0.bin` first, as HamCube says. The bootloader can fail an `A000014.bin` install that comes with no `F` file before it, and leave the device on the update screen.
 
 PocketCW does not include these files. The install script downloads them from [github.com/admvip/CW-Pokemon-Infomation](https://github.com/admvip/CW-Pokemon-Infomation), and checks that each one matches the V5.03 file.
 
@@ -27,10 +27,14 @@ PocketCW does not include these files. The install script downloads them from [g
 
 ### Windows and Linux
 
-1. Download `F0000C0.bin` and `A000014.bin` from the "CW Pokemon V5.03 Upgrade package" folder of [the HamCube files](https://github.com/admvip/CW-Pokemon-Infomation). If the device has had the V5.03 images installed before, you need only `A000014.bin`.
-2. Copy `F0000C0.bin` to the update drive, as in [Install](install.md#windows-and-linux).
-3. Put the device in update mode again, and copy `A000014.bin` the same way.
-4. Unplug the device, then click the dial to turn it on.
+1. Download `F0000C0.bin` and `A000014.bin` from the "CW Pokemon V5.03 Upgrade package" folder of [the HamCube files](https://github.com/admvip/CW-Pokemon-Infomation).
+2. Put the device in [update mode](install.md#update-mode), and plug it in. The drive opens.
+3. Copy `F0000C0.bin` to the drive. Wait until the drive closes and opens again with only `READY.TXT`. Then hold F4 to reset the drive.
+4. Copy `A000014.bin` to the drive.
+5. Wait about 10 seconds. The drive closes, then opens again with only `READY.TXT`.
+6. Unplug the device, then click the dial to turn it on.
+
+On Linux, run `sync` after each copy, so the file goes to the device at once.
 
 ### macOS
 
@@ -42,11 +46,10 @@ curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 
 Then:
 
-1. The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.
-2. Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.
-3. When the script says "Finished", unplug the device, then click the dial to turn it on.
+1. Follow the steps the script prints. The script installs both files, and you put the device in update mode once for each file.
+2. When the script says "Finished", unplug the device, then click the dial to turn it on.
 
-To install PocketCW again, follow [Install](install.md). PocketCW needs no `F` file.
+To install PocketCW again, follow [Install](install.md), with the first install steps.
 
 ## The beta for board 2.63
 

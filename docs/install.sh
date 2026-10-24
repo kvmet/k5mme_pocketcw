@@ -1,5 +1,7 @@
 #!/bin/sh
 # Installs PocketCW, or the stock firmware V5.03, on a HamCube from macOS.
+# A first install writes an F file to SPI flash before the A file: the bootloader can fail an A write
+# that no F write came before.
 # usage: curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 #        curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 # The shell reads this script from its stdin, so prompts and pocketcw-flash read the terminal.
@@ -30,41 +32,43 @@ flash() {
     "$work/pocketcw-flash" "$1" </dev/tty
 }
 
-install_pocketcw() {
-    mkdir "$work/pocketcw"
-    get "$release/A000014.bin" "$work/pocketcw/A000014.bin"
-    flash "$work/pocketcw/A000014.bin"
+# flash_pair F_FILE WHAT A_FILE
+flash_pair() {
+    echo
+    echo "Step 1 of 2: $2."
+    flash "$1"
+    echo "Do not turn it on yet."
+    echo
+    echo "Step 2 of 2: the firmware."
+    flash "$3"
     echo "Then click the dial to turn it on."
 }
 
-install_stock() {
-    echo "The stock firmware draws its screens from images stored on the device (F0000C0.bin)."
-    echo "Older images scramble the stock screen. The images stay on the device, so they are"
-    echo "needed only once, even if you install PocketCW in between."
-    echo
-    printf "Has this device had the V5.03 images installed before? [y/N] "
+install_pocketcw() {
+    mkdir "$work/pocketcw"
+    get "$release/A000014.bin" "$work/pocketcw/A000014.bin"
+    echo "A first install on a device writes a small PocketCW file, then the firmware."
+    printf "Is this the first PocketCW install on this device? [Y/n] "
     read -r answer </dev/tty
-    mkdir "$work/stock"
     case $answer in
-    [yY]*) images=no ;;
-    *) images=yes ;;
+    [nN]*)
+        flash "$work/pocketcw/A000014.bin"
+        echo "Then click the dial to turn it on."
+        ;;
+    *)
+        get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
+        flash_pair "$work/pocketcw/F000400.bin" "the PocketCW file" "$work/pocketcw/A000014.bin"
+        ;;
     esac
-    if [ $images = yes ]; then
-        get "$vendor/F0000C0.bin" "$work/stock/F0000C0.bin"
-        check "$work/stock/F0000C0.bin" $vendor_f_sha256
-    fi
+}
+
+install_stock() {
+    mkdir "$work/stock"
+    get "$vendor/F0000C0.bin" "$work/stock/F0000C0.bin"
+    check "$work/stock/F0000C0.bin" $vendor_f_sha256
     get "$vendor/A000014.bin" "$work/stock/A000014.bin"
     check "$work/stock/A000014.bin" $vendor_a_sha256
-    if [ $images = yes ]; then
-        echo
-        echo "Step 1 of 2: the images."
-        flash "$work/stock/F0000C0.bin"
-        echo "Do not turn it on yet."
-        echo
-        echo "Step 2 of 2: the firmware."
-    fi
-    flash "$work/stock/A000014.bin"
-    echo "Then click the dial to turn it on."
+    flash_pair "$work/stock/F0000C0.bin" "the stock screen images" "$work/stock/A000014.bin"
 }
 
 main() {

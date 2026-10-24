@@ -22,7 +22,7 @@ On a Mac, paste this line into Terminal, and follow the steps it prints:
 curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 ```
 
-On Windows and Linux, put the device in update mode and copy `A000014.bin` from the newest release to its drive. The install never changes the device's bootloader, so you can always install again or go back to the original firmware.
+On Windows and Linux, put the device in update mode and copy files from the newest release to its drive: `F000400.bin` on a first install, then `A000014.bin`. The install never changes the device's bootloader, so you can always install again or go back to the original firmware.
 
 The [user manual](docs/index.md) has the full install steps, how to go back to stock, and a guide to every screen.
 
