@@ -1,6 +1,6 @@
 [package]
 name = "pocketcw-firmware"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 license = "GPL-3.0-or-later"
 
@@ -9,7 +9,7 @@ at32f4xx-pac = { version = "0.4.0", features = ["at32f403a"] }
 cortex-m = { version = "0.7.9", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7.7", features = ["set-sp", "set-vtor"] }
 embedded-graphics = "0.8.2"
-pocketcw-logic = { version = "0.2.0", path = "../logic" }
+pocketcw-logic = { version = "0.2.1", path = "../logic" }
 rtic = { version = "2.3.1", features = ["thumbv7-backend"] }
 rtic-monotonics = { version = "2.2.1", features = ["cortex-m-systick"] }
 rtic-sync = "1.5.0"
