@@ -1822,12 +1822,17 @@
 <td>Vendor UI images, file <code>F0000C0.bin</code>.</td>
 </tr>
 <tr>
+<td>SPI flash 0x100000</td>
+<td>PocketCW file <code>F000400.bin</code>, 4 KB.</td>
+</tr>
+<tr>
 <td>SPI flash 0xE00000</td>
 <td>Vendor fonts, file <code>F003800.bin</code>.</td>
 </tr>
 </tbody>
 </table>
-<p>PocketCW uses only the MCU app area. It never reads the SPI flash.</p>
+<p>PocketCW runs from the MCU app area. It never reads the SPI flash.</p>
+<p><code>F000400.bin</code> is <code>PocketCW</code>, a format version byte (1), then 0xFF to 4 KB. <code>tools/release.sh</code> writes it. The vendor files leave 0x0C5080 to 0xDFFFFF empty, and the bootloader takes a file at this offset.</p>
 <p><code>firmware/memory.x</code> gives the app 236 KB from 0x08005000, and <code>cortex-m-rt</code> sets VTOR from its <code>set-vtor</code> feature.</p>
 <h2 id="update-files">Update files<a class="headerlink" href="#update-files" title="Permanent link">&para;</a></h2>
 <p>An update file name is a hex offset in KB, after a letter: <code>A</code> for MCU flash, <code>F</code> for SPI flash. <code>A000014.bin</code> is MCU flash plus 0x14 KB, which is 0x08005000.</p>
@@ -1838,6 +1843,7 @@
 <p>On macOS, PocketCW installs with <code>tools/pocketcw-flash.c</code>. The tool blocks the mount of the update drive, so macOS writes nothing to it. Then it writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.</p>
 <p>After a finished write, the status file reads <code>Success</code> for about 1 second. Then the drive drops off USB and comes back as <code>Ready</code>.</p>
 <p>A failed write leaves the bootloader in update mode at every power on, until a write finishes. The vendor upgrade notes say so, and a 2.64 unit did it. Likely cause on that unit: macOS mounted the drive when it came back <code>Ready</code> after <code>Success</code>, and wrote its own files to it. So the tool counts a write as done only when it reads <code>Success</code>, and it blocks the mount until the drive is back.</p>
+<p>On first installs, every user who installed only <code>A000014.bin</code> saw the device stay in update mode. Installing an <code>F</code> file first, then <code>A000014.bin</code>, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: <code>F000000.bin</code>, then <code>A000014.bin</code>. The cause is not known; no dump of the bootloader exists. So a first install writes <code>F000400.bin</code> before <code>A000014.bin</code>, and the stock install always writes <code>F0000C0.bin</code> before <code>A000014.bin</code>.</p>
 <h2 id="write-protection">Write protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
 <p>The vendor app has a one-time activation routine at 0x08018014, keyed to the chip UID. It writes these option bytes: Data0 and Data1 = <code>F2 60</code>, WRP0 = 0xE0, EOPB0 = 0xFE, Data3 and Data4 = <code>D</code>, <code>y</code>.</p>
 <p>WRP0 = 0xE0 write-protects 0x08000000 to 0x08004FFF exactly. So on an activated unit, a flash write cannot overwrite the bootloader.</p>

@@ -1859,30 +1859,32 @@
 <h2 id="the-two-stock-files">The two stock files<a class="headerlink" href="#the-two-stock-files" title="Permanent link">&para;</a></h2>
 <p>The stock firmware is two files from HamCube's V5.03 upgrade package:</p>
 <ul>
-<li><code>F0000C0.bin</code> holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. The images stay in the image memory, so a device needs this file only once. PocketCW never reads the image memory, so PocketCW works with any version of this file.</li>
+<li><code>F0000C0.bin</code> holds the images of the stock screens. The stock firmware draws its screens from the device's image memory, and an older V5.02 copy of this file scrambles the stock screen. PocketCW never reads the image memory, so PocketCW works with any version of this file.</li>
 <li><code>A000014.bin</code> is the stock firmware.</li>
 </ul>
-<p>HamCube says to install <code>F0000C0.bin</code> before <code>A000014.bin</code>.</p>
+<p>Install both files, <code>F0000C0.bin</code> first, as HamCube says. The bootloader can fail an <code>A000014.bin</code> install that comes with no <code>F</code> file before it, and leave the device on the update screen.</p>
 <p>PocketCW does not include these files. The install script downloads them from <a href="https://github.com/admvip/CW-Pokemon-Infomation">github.com/admvip/CW-Pokemon-Infomation</a>, and checks that each one matches the V5.03 file.</p>
 <h2 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h2>
 <h3 id="windows-and-linux">Windows and Linux<a class="headerlink" href="#windows-and-linux" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Download <code>F0000C0.bin</code> and <code>A000014.bin</code> from the "CW Pokemon V5.03 Upgrade package" folder of <a href="https://github.com/admvip/CW-Pokemon-Infomation">the HamCube files</a>. If the device has had the V5.03 images installed before, you need only <code>A000014.bin</code>.</li>
-<li>Copy <code>F0000C0.bin</code> to the update drive, as in <a href="../install/#windows-and-linux">Install</a>.</li>
-<li>Put the device in update mode again, and copy <code>A000014.bin</code> the same way.</li>
+<li>Download <code>F0000C0.bin</code> and <code>A000014.bin</code> from the "CW Pokemon V5.03 Upgrade package" folder of <a href="https://github.com/admvip/CW-Pokemon-Infomation">the HamCube files</a>.</li>
+<li>Put the device in <a href="../install/#update-mode">update mode</a>, and plug it in. The drive opens.</li>
+<li>Copy <code>F0000C0.bin</code> to the drive. Wait until the drive closes and opens again with only <code>READY.TXT</code>. Then hold F4 to reset the drive.</li>
+<li>Copy <code>A000014.bin</code> to the drive.</li>
+<li>Wait about 10 seconds. The drive closes, then opens again with only <code>READY.TXT</code>.</li>
 <li>Unplug the device, then click the dial to turn it on.</li>
 </ol>
+<p>On Linux, run <code>sync</code> after each copy, so the file goes to the device at once.</p>
 <h3 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h3>
 <p>Start the script as in <a href="../install/#start-the-script">Start the script</a>, with this line in place of the PocketCW line:</p>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://kvmet.github.io/k5mme_pocketcw/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh<span class="w"> </span>-s<span class="w"> </span>stock
 </code></pre></div>
 <p>Then:</p>
 <ol>
-<li>The script asks whether the device has had the V5.03 images installed before. If you are not sure, press Return: the script then installs the images first.</li>
-<li>Follow the steps the script prints. With the images, the script installs two files, and you put the device in update mode once for each file.</li>
+<li>Follow the steps the script prints. The script installs both files, and you put the device in update mode once for each file.</li>
 <li>When the script says "Finished", unplug the device, then click the dial to turn it on.</li>
 </ol>
-<p>To install PocketCW again, follow <a href="../install/">Install</a>. PocketCW needs no <code>F</code> file.</p>
+<p>To install PocketCW again, follow <a href="../install/">Install</a>, with the first install steps.</p>
 <h2 id="the-beta-for-board-263">The beta for board 2.63<a class="headerlink" href="#the-beta-for-board-263" title="Permanent link">&para;</a></h2>
 <p>On a board 2.63, you can use the beta V5.03.13 in place of the V5.03 <code>A000014.bin</code>. The install script does not download the beta.</p>
 <ol>

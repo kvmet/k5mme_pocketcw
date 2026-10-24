@@ -1983,14 +1983,17 @@
 <p>In update mode, the device shows up on the computer as a drive named POKEMON-2 or HAM MODULE. The drive holds one file, <code>READY.TXT</code>.</p>
 <h2 id="windows-and-linux">Windows and Linux<a class="headerlink" href="#windows-and-linux" title="Permanent link">&para;</a></h2>
 <p>Nobody has tested a Linux install yet. The bootloader needs the file's name to reach the drive before the file's data. Windows writes the name first. If a Linux install does not work, report it on the <a href="https://github.com/kvmet/k5mme_pocketcw/issues">issue tracker</a>.</p>
+<p>The first install on a device also needs <code>F000400.bin</code>, a small PocketCW file. Without it, the first install can leave the device on the update screen. Also do the first install steps after you go back to the stock firmware.</p>
 <ol>
-<li>Download <code>A000014.bin</code> from the newest <a href="https://github.com/kvmet/k5mme_pocketcw/releases/latest">release</a>.</li>
+<li>Download <code>A000014.bin</code> from the newest <a href="https://github.com/kvmet/k5mme_pocketcw/releases/latest">release</a>. For a first install, also download <code>F000400.bin</code>.</li>
 <li>Put the device in <a href="#update-mode">update mode</a>.</li>
 <li>Plug the USB cable into the device and the computer. The drive opens.</li>
-<li>Copy <code>A000014.bin</code> to the drive. On Linux, run <code>sync</code> after the copy, so the file goes to the device at once.</li>
+<li>For a first install, copy <code>F000400.bin</code> to the drive. Wait until the drive closes and opens again with only <code>READY.TXT</code>. Then hold F4 to reset the drive.</li>
+<li>Copy <code>A000014.bin</code> to the drive.</li>
 <li>Wait about 10 seconds. The drive closes, then opens again with only <code>READY.TXT</code>.</li>
 <li>Unplug the device, then click the dial to turn it on.</li>
 </ol>
+<p>On Linux, run <code>sync</code> after each copy, so the file goes to the device at once.</p>
 <p>If the drive holds a file other than <code>READY.TXT</code> before the copy, hold F4 to reset the drive.</p>
 <h2 id="macos">macOS<a class="headerlink" href="#macos" title="Permanent link">&para;</a></h2>
 <h3 id="start-the-script">Start the script<a class="headerlink" href="#start-the-script" title="Permanent link">&para;</a></h3>
@@ -2001,7 +2004,9 @@
 </ol>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://kvmet.github.io/k5mme_pocketcw/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
 </code></pre></div>
-<p>The script downloads the newest PocketCW release and the install tool, then says "Waiting for the device".</p>
+<p>The script downloads the newest PocketCW release and the install tool. Then it asks whether this is the first PocketCW install on the device. If you are not sure, press Return for yes.</p>
+<p>A first install installs two files: a small PocketCW file, then the firmware. You put the device in update mode once for each file. Without the first file, the first install can leave the device on the update screen. Also answer yes after you go back to the stock firmware.</p>
+<p>The script then says "Waiting for the device".</p>
 <h3 id="plug-in-the-device">Plug in the device<a class="headerlink" href="#plug-in-the-device" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Put the device in <a href="#update-mode">update mode</a>. If it already shows the firmware update screen, go to the next step.</li>
@@ -2037,6 +2042,10 @@ Then click the dial to turn it on.
 <tr>
 <td><code>A000014.bin</code></td>
 <td>The firmware.</td>
+</tr>
+<tr>
+<td><code>F000400.bin</code></td>
+<td>A small PocketCW file for the device's memory chip, installed before the firmware on a first install.</td>
 </tr>
 <tr>
 <td><code>pocketcw-flash</code></td>

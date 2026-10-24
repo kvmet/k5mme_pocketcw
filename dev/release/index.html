@@ -1786,6 +1786,10 @@
 <td>The firmware image.</td>
 </tr>
 <tr>
+<td><code>F000400.bin</code></td>
+<td>The PocketCW SPI flash file, installed before the firmware on a first install. See <a href="../hardware/flash-layout/">Flash layout</a>.</td>
+</tr>
+<tr>
 <td><code>pocketcw-flash</code></td>
 <td>The macOS install tool, for Apple and Intel Macs.</td>
 </tr>
@@ -1803,7 +1807,7 @@
 </tr>
 </tbody>
 </table>
-<p>The install script <code>docs/install.sh</code> downloads <code>A000014.bin</code> and <code>pocketcw-flash</code> from the newest release. The docs site serves the script, so a change to it goes live when it reaches <code>main</code>.</p>
+<p>The install script <code>docs/install.sh</code> downloads <code>A000014.bin</code>, <code>F000400.bin</code> and <code>pocketcw-flash</code> from the newest release. The docs site serves the script, so a change to it goes live when it reaches <code>main</code>.</p>
 <h2 id="the-version-number">The version number<a class="headerlink" href="#the-version-number" title="Permanent link">&para;</a></h2>
 <p>The version comes from <code>version</code> in <code>firmware/Cargo.toml</code>. The firmware reads it at build time, and shows it on the SYSTEM screen in the FIRMWARE row and on the boot screen.</p>
 <p>Both crates have the same version. <code>firmware/Cargo.toml</code> also names the version of its <code>pocketcw-logic</code> dependency.</p>
@@ -1827,10 +1831,14 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 </ol>
 <div class="highlight"><pre><span></span><code>gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>vX.Y.Z<span class="w"> </span>dist/*
 </code></pre></div>
+<ol>
+<li>Push <code>main</code> last. The docs site serves <code>install.sh</code> from <code>main</code>, and the script downloads files from the newest release. So a script that needs a new release file must not go live before that release.</li>
+</ol>
 <h2 id="what-releasesh-does">What release.sh does<a class="headerlink" href="#what-releasesh-does" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Stops with an error when <code>firmware/Cargo.toml</code> does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.</li>
 <li>Runs <code>tools/mkimage.sh</code> and copies the image to <code>dist/A000014.bin</code>.</li>
+<li>Writes <code>dist/F000400.bin</code>.</li>
 <li>Copies <code>LICENSE</code> and <code>firmware/src/B612-OFL.txt</code> to <code>dist/</code>.</li>
 <li>Builds <code>dist/pocketcw-flash</code> for Apple and Intel Macs, macOS 10.15 or later.</li>
 <li>Writes <code>dist/THIRD-PARTY.txt</code> with <code>tools/notices.py</code>.</li>
