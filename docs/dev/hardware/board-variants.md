@@ -14,7 +14,7 @@ Vendor V5.03.13 runs on every board from 2.60. It reads the board version in thr
 | Key output | 0x08009F86, 0x0800A5E6 and 0x08013EE8 compare Data0 and Data1 with `F2 60` | PA3, the func jack ring, is driven only on 2.60. PA2 and the PB2 LED are driven on every board. |
 | System Information | 0x0800C300 copies Data0 and Data1 to RAM 0x2000095C | Display only. |
 
-The vendor firmware knows only the WM8978 codec. So a board with an ES8388, such as 2.64, is silent under it.
+V5.03.13 knows only the WM8978 codec. So a board with an ES8388, such as 2.64, is silent under it. A 2.64 unit shipped with unpublished V5.03.15 had working sound, so V5.03.15 sets up the ES8388. No dump of V5.03.15 exists yet.
 
 Data1 does not reliably name the panel. The activation routine writes `F2 60` on every board, so an activated IPS board can read 2.60.
 

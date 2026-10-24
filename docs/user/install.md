@@ -15,7 +15,7 @@ PocketCW was tested on a Mini with board version 2.64. Other board versions and 
 
 The device has a small built-in program, the bootloader, that installs firmware. This install never touches the bootloader: the install tool refuses any file that would write over it. If an install goes wrong, the bootloader still works, and you can run the install again.
 
-To go back to the original firmware, see [Go back to the stock firmware](stock-firmware.md).
+To go back to the original firmware, see [Go back to the stock firmware](stock-firmware.md). That page installs the published stock version, V5.03. Some devices come from the factory with a newer, unpublished version, and the install replaces it for good. On board 2.64, V5.03 has no sound.
 
 ## Install
 

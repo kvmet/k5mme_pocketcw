@@ -40,7 +40,7 @@ PocketCW writes the same values (`firmware/src/wm8978.rs`). Its volume level 44 
 
 ### ES8388
 
-No vendor firmware sets up the ES8388, so the vendor app is silent on board 2.64.
+No published vendor firmware sets up the ES8388, so V5.03 and V5.03.13 are silent on board 2.64. Unpublished V5.03.15, shipped on some 2.64 units, has working sound. See [Board variants](board-variants.md).
 
 PocketCW (`firmware/src/es8388.rs`) follows the bypass start-up in section 10.4 of the Everest ES8388 User Guide:
 

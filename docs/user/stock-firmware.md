@@ -4,9 +4,9 @@ This page puts the original HamCube firmware, version V5.03, back on the device.
 
 ## Before you start
 
-On board 2.64, the stock firmware has no setup for the board's sound chip (an ES8388), so the speaker is silent under the stock firmware.
+Board 2.64 has a different sound chip (an ES8388). The published stock versions, V5.03 and the beta V5.03.13, have no setup for that chip, so the speaker is silent under them. At least one board 2.64 came from the factory with V5.03.15, a version HamCube has not published, and its sound worked. If your device came with a stock version newer than V5.03.13, you cannot get that version back after you install PocketCW.
 
-Boards from 2.63 have an IPS screen. Stock V5.03 has no setup for the IPS screen, so it shows that screen on its side, in strips. The beta version V5.03.13 sets up the IPS screen, but only on boards that read as version 2.63. No stock version fully supports board 2.64.
+Boards from 2.63 have an IPS screen. Stock V5.03 has no setup for the IPS screen, so it shows that screen on its side, in strips. The beta version V5.03.13 sets up the IPS screen, but only on boards that read as version 2.63. No published stock version fully supports board 2.64.
 
 The SYSTEM screen of PocketCW shows your board version on the BOARD row.
 
