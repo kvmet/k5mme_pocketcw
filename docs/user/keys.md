@@ -2,6 +2,8 @@
 
 The device has two jacks for Morse. The key jack, labeled "key", takes your paddle or key. The func jack, labeled "func", keys a radio or an external keyer.
 
+The USB port can also send your keying to a computer, as typed text or for VBand. See [USB keyboard](usb.md).
+
 ## Key types
 
 Set the key type with MODE on the KEYER tab of the settings. See [Settings](settings.md).

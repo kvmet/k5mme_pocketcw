@@ -32,7 +32,7 @@ unsafe fn DefaultHandler(irq: i16) {
 #[rtic::app(device = at32f4xx_pac::at32f403a, dispatchers = [USART2, USART3])]
 mod app {
     use core::fmt::Write;
-    use core::sync::atomic::{AtomicBool, AtomicU16, AtomicU32, Ordering};
+    use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU16, AtomicU32, Ordering};
 
     use at32f4xx_pac::at32f403a as pac;
     use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
@@ -53,18 +53,20 @@ mod app {
         theme::{Theme, palette_stripes},
         text::Text,
         ui::{Command, PanelFrom, SystemInfo, Ui},
+        usb::{self, Keyboard},
     };
     use pocketcw_logic::{
         battery::Gauge,
         buttons::{self, Button, Buttons, Event},
         decoder::{Decoded, KeyDecoder},
         input::{Action, Input},
+        keyboard::{self, NO_KEYS, Typist},
         panel::{self, Panel},
         board,
         keyer::{Contacts, Jack, Keyer, Mode, Output, output_lines},
         listen::Listener,
         player::Player,
-        settings::Settings,
+        settings::{Settings, UsbOut},
         synth::{PLAYERS, SIDETONE},
         volume::wm8978_speaker,
         ticks,
@@ -113,6 +115,23 @@ mod app {
     static USER_TONE: AtomicU16 = AtomicU16::new(700);
     /// The RADIO screen is open: decode the decoder board's tone line.
     static LISTENING: AtomicBool = AtomicBool::new(false);
+    /// The USB OUT setting, as `UsbOut as u8`.
+    static USB_OUT: AtomicU8 = AtomicU8::new(UsbOut::Off as u8);
+    /// The host has the keyboard configured, so typed text has somewhere to go.
+    static USB_READY: AtomicBool = AtomicBool::new(false);
+    /// The Ctrl keys VBand output holds down.
+    static VBAND_KEYS: AtomicU8 = AtomicU8::new(0);
+    /// Characters the typing queue had no room for, and reports USB refused for a reason other
+    /// than a busy endpoint; shown on screen when nonzero.
+    static USB_KEYS_LOST: AtomicU16 = AtomicU16::new(0);
+
+    fn usb_out() -> UsbOut {
+        match USB_OUT.load(Ordering::Relaxed) {
+            x if x == UsbOut::Text as u8 => UsbOut::Text,
+            x if x == UsbOut::Vband as u8 => UsbOut::Vband,
+            _ => UsbOut::Off,
+        }
+    }
 
     #[shared]
     struct Shared {
@@ -122,6 +141,8 @@ mod app {
         players: [Player; PLAYERS],
         /// Receive runs in its interrupt; the UI sends commands and switches it on and off.
         link: Link,
+        /// Characters the tick decoded, waiting for the USB task to type them.
+        typist: Typist,
     }
 
     #[local]
@@ -133,6 +154,7 @@ mod app {
         jack: Jack,
         messages: Sender<'static, Message, EVENT_QUEUE>,
         board_messages: Sender<'static, Message, EVENT_QUEUE>,
+        keyboard: Keyboard,
     }
 
     const FLASH_SIZE_ADDRESS: u32 = 0x1FFF_F7E0;
@@ -240,6 +262,13 @@ mod app {
             unreachable!("init runs once, so the UI task is not running yet")
         }
 
+        let Some(usb_bus) = cortex_m::singleton!(: usb::Bus = usb::bus()) else { unreachable!("init runs once") };
+        let keyboard = Keyboard::new(usb_bus, "PocketCW");
+        USB_OUT.store(settings.usb_out as u8, Ordering::Relaxed);
+        if settings.usb_out != UsbOut::Off {
+            usb::attach();
+        }
+
         let jack = Jack::new(jack_contacts(gpio::inputs(b)));
         let local = Local {
             timer,
@@ -249,8 +278,9 @@ mod app {
             jack,
             messages,
             board_messages,
+            keyboard,
         };
-        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link }, local)
+        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default() }, local)
     }
 
     /// The key jack's contacts from port B's input bits: a closed contact pulls its pin low.
@@ -317,12 +347,37 @@ mod app {
         }
     }
 
+    /// USB events, and the next keyboard report once the tick queues one. Below the tick, so
+    /// keying never waits on USB.
+    #[task(binds = USBFS_L_CAN1_RX0, priority = 2, shared = [typist], local = [keyboard])]
+    fn usb_events(mut cx: usb_events::Context) {
+        let ready = cx.local.keyboard.poll();
+        USB_READY.store(ready, Ordering::Relaxed);
+        if !ready {
+            cx.shared.typist.lock(Typist::clear);
+            return;
+        }
+        let out = usb_out();
+        let report = match out {
+            UsbOut::Text => cx.shared.typist.lock(|typist| typist.report()),
+            UsbOut::Vband => (VBAND_KEYS.load(Ordering::Relaxed), 0),
+            UsbOut::Off => NO_KEYS,
+        };
+        match cx.local.keyboard.send(report) {
+            Ok(true) if out == UsbOut::Text => cx.shared.typist.lock(Typist::sent),
+            Ok(_) => {}
+            Err(_) => {
+                USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+    }
+
     /// Every millisecond: paddle keyer, keyed outputs, the players and the voices they key, the
     /// decoders, then button debounce.
     #[task(
         binds = TMR3,
         priority = 3,
-        shared = [keyer, audio, players],
+        shared = [keyer, audio, players, typist],
         local = [
             timer, buttons, decoder, listener, jack, messages,
             listening: bool = false,
@@ -398,8 +453,21 @@ mod app {
             }
             audio.wake();
         });
+        let typing = usb_out() == UsbOut::Text && USB_READY.load(Ordering::Relaxed);
         if let Some(decoded) = cx.local.decoder.tick(down, dit_ms, mode == Mode::Straight) {
             send(Message::Decoded(decoded));
+            if typing {
+                if !cx.shared.typist.lock(|typist| typist.push(decoded)) {
+                    USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
+                }
+                rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+            }
+        }
+        if usb_out() == UsbOut::Vband {
+            let keys = keyboard::vband(mode, dit, dah, down);
+            if VBAND_KEYS.swap(keys, Ordering::Relaxed) != keys {
+                rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+            }
         }
         let listening = LISTENING.load(Ordering::Relaxed);
         if listening && !core::mem::replace(cx.local.listening, listening) {
@@ -464,6 +532,7 @@ mod app {
         let mut input = Input::new(gpio::is_high(port_a(), POWER_BUTTON));
         let mut save_at: Option<<Mono as Monotonic>::Instant> = None;
         let mut dropped_shown = 0;
+        let mut usb_lost_shown = 0;
         loop {
             let ui_at = ui.deadline().map(|at| Mono::now() + ticks::ms_until(TICKS.load(Ordering::Relaxed), at).millis());
             let wake_at = [save_at, ui_at, Some(poll_at)].into_iter().flatten().min();
@@ -534,6 +603,12 @@ mod app {
             if dropped != dropped_shown {
                 dropped_shown = dropped;
                 let line = Text::<32>::format(format_args!("{dropped} INPUTS LOST"));
+                ui.status(&mut lcd, line.as_str());
+            }
+            let usb_lost = USB_KEYS_LOST.load(Ordering::Relaxed);
+            if usb_lost != usb_lost_shown {
+                usb_lost_shown = usb_lost;
+                let line = Text::<32>::format(format_args!("{usb_lost} USB KEYS LOST"));
                 ui.status(&mut lcd, line.as_str());
             }
         }
@@ -609,6 +684,17 @@ mod app {
                 audio.synth.set_sound(after.sound());
                 audio.wake();
             });
+        }
+        if after.usb_out != before.usb_out {
+            USB_OUT.store(after.usb_out as u8, Ordering::Relaxed);
+            match (before.usb_out, after.usb_out) {
+                (_, UsbOut::Off) => {
+                    usb::detach();
+                    USB_READY.store(false, Ordering::Relaxed);
+                }
+                (UsbOut::Off, _) => usb::attach(),
+                _ => {}
+            }
         }
         store_output(after);
         USER_TONE.store(after.tone_hz, Ordering::Relaxed);

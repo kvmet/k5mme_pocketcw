@@ -22,4 +22,5 @@ pub mod store;
 pub mod text;
 pub mod theme;
 pub mod ui;
+pub mod usb;
 pub mod wm8978;

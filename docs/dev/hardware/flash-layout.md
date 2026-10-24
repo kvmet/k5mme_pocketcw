@@ -30,6 +30,8 @@ On macOS, PocketCW installs with `tools/pocketcw-flash.c`. The tool blocks the m
 
 After a finished write, the status file reads `Success` for about 1 second. Then the drive drops off USB and comes back as `Ready`.
 
+A failed write leaves the bootloader in update mode at every power on, until a write finishes. The vendor upgrade notes say so, and a 2.64 unit did it. Likely cause on that unit: macOS mounted the drive when it came back `Ready` after `Success`, and wrote its own files to it. So the tool counts a write as done only when it reads `Success`, and it blocks the mount until the drive is back.
+
 ## Write protection
 
 The vendor app has a one-time activation routine at 0x08018014, keyed to the chip UID. It writes these option bytes: Data0 and Data1 = `F2 60`, WRP0 = 0xE0, EOPB0 = 0xFE, Data3 and Data4 = `D`, `y`.

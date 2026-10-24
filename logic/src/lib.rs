@@ -9,6 +9,7 @@ pub mod decoder;
 pub mod drill;
 pub mod hunt;
 pub mod input;
+pub mod keyboard;
 pub mod keyer;
 pub mod letters;
 pub mod listen;

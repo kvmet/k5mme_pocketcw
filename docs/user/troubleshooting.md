@@ -4,13 +4,15 @@ This page lists install problems first, then problems on the device. Step number
 
 ## Install messages
 
+When the install tool finds a problem, it prints `Problem:` and one of these messages, then waits. Do what the message says, press Return, and follow the steps the tool prints again.
+
 ### "could not download"
 
 The script could not reach GitHub. Check that the Mac is connected to the internet, and run the line from step 3 again.
 
-### "the update drive is already mounted"
+### "the update drive is mounted"
 
-The device was in update mode before the script started, so macOS opened its drive. Eject the drive in Finder. Its name is POKEMON-2 or HAM MODULE. Unplug the device, and start again at step 3.
+The device was in update mode before the script started, so macOS opened its drive. Eject the drive in Finder. Its name is POKEMON-2 or HAM MODULE. Unplug the device, and press Return.
 
 ### "no update drive appeared in 180 seconds"
 
@@ -19,27 +21,31 @@ The Mac did not find the device in update mode. Check these two things:
 - The device showed the firmware update screen before you plugged it in (step 4).
 - The cable carries data. Try another cable or another USB port.
 
-Then start again at step 3.
+Then press Return.
 
 ### "macOS did not allow writing to the device"
 
-The password box was closed with Cancel. Start again at step 3, and type your Mac login password when macOS asks. If the box shakes, the password was wrong: type it again.
+The password box was closed with Cancel. Press Return, and type your Mac login password when macOS asks. If the box shakes, the password was wrong: type it again.
 
-### "drive status is ..., not Ready"
+### "the device status is ..., not Ready"
 
-The update drive is not ready to take a file. The message tells you to hold F4, which resets the drive. If the message comes back, unplug the device and start again at step 3.
+The update drive is not ready to take a file. Hold F4, which resets the drive, then press Return. If the message comes back, unplug the device and press Return.
 
-### "root directory has entries after the volume label; replug the device"
+### "the drive already holds a file"
 
-macOS wrote something to the drive before the install tool could stop it. Unplug the device, and start again at step 3.
+macOS wrote something to the drive before the install tool could stop it. Hold F4 to reset the drive, then press Return.
 
-### "status still Ready after 10 s; the device did not take the file"
+### "the status stayed Ready for 10 s; the device did not take the file"
 
-The write did not finish. Unplug the device, and start again at step 3.
+The write did not finish. Press Return to install again.
 
-### "the device did not return within 15 s"
+### "the device dropped off USB before showing Success"
 
-The device dropped off USB after the write and did not come back in time. Unplug the device and turn it on. If the SYSTEM screen does not show the new version, run the install again from step 1.
+The tool cannot tell whether the write finished. Press Return to install again.
+
+### "the device status is ..., not Success"
+
+The device reported a problem with the file. Press Return to install again. If the message comes back, report it on the [issue tracker](https://github.com/kvmet/k5mme_pocketcw/issues) with the status the message shows.
 
 ### "is not the V5.03 file this script expects"
 
@@ -50,6 +56,8 @@ The script restores the stock firmware only from the exact V5.03 files. The down
 ### The device shows the update screen when you only want to use it
 
 If the battery is full and the device is plugged into USB, it sometimes starts in update mode. Unplug USB and click the dial to turn it on.
+
+If the device starts in update mode every time, even unplugged, the last install did not finish. Install again.
 
 ### The screen is turned on its side, or shows the picture in strips
 

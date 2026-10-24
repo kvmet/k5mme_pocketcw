@@ -19,6 +19,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 
 | Module | What it does |
 | - | - |
+| `keyboard` | USB keyboard output: the key for each decoded character, the typing queue, and the Ctrl keys for VBand. |
 | `keyer` | The iambic and straight keyer, the key jack debounce and stuck contact rules, and the func jack output lines. |
 | `decoder` | Decodes your own keying into characters. |
 | `listen` | Decodes a keyed line at any speed from 5 to 60 WPM: straight key keying, and the decoder board's tone line. |
@@ -46,9 +47,10 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `i2c`, `eeprom`, `store` | The I2C bus, the EEPROM, and where each record lives. |
 | `battery` | ADC readings of the battery and the supply. |
 | `link` | The serial link to the decoder board. |
+| `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard. |
 | `ui/` | One file per screen, plus shared parts: `exchange` and `transcript` for the QSO screens, `tape` for the timing tape. |
 | `text` | A re-export of the fixed size string type. |
-| `bin/probe.rs` | A separate hardware probe image. See [Build and flash](building.md). |
+| `bin/probe.rs`, `bin/usbprobe.rs` | Separate hardware and USB probe images. See [Build and flash](building.md). |
 
 ## Tasks
 
@@ -59,6 +61,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `sample` | TMR1 overflow, 17,578 times a second while sound plays | 4 | The next audio sample. |
 | `tick` | TMR3, every 1 ms | 3 | Key jack debounce, the keyer, the func jack and LED, the four players and the sidetone, both decoders, and button debounce. |
 | `board_frame` | USART1 idle line | 2 | Parses a frame from the decoder board and answers it. |
+| `usb_events` | USB interrupt, and a pend from `tick` | 2 | Answers the USB host and sends the next keyboard report. |
 | `ui` | Async, software task | 1 | The boot screen, all drawing, settings changes, saves, battery polls, and power off. |
 
 `tick` and `board_frame` send messages to `ui` on a channel 64 messages deep. When the channel is full, a message is lost and the status line shows `n INPUTS LOST`.
