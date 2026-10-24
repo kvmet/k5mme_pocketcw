@@ -428,7 +428,7 @@ checksum = "13bee6c73da26345c729282832b60b0363cf3dd9f4bfd81d8551b7a1c889a113"
 
 [[package]]
 name = "pocketcw-firmware"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "at32f4xx-pac",
  "cortex-m",
@@ -445,7 +445,7 @@ dependencies = [
 
 [[package]]
 name = "pocketcw-logic"
-version = "0.2.1"
+version = "0.3.0"
 
 [[package]]
 name = "portable-atomic"
