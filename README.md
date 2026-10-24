@@ -1,6 +1,6 @@
 # PocketCW
 
-Free replacement firmware for the HamCube "CW Pokemon Mini" Morse code trainer.
+Free replacement firmware for the HamCube Morse code trainer. It runs on both variants: the Mini, and the Pro, which adds a decoder board for radio audio.
 
 PocketCW is not made by HamCube, and is not affiliated with HamCube or Nintendo.
 

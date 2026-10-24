@@ -1,8 +1,8 @@
 # Install on macOS
 
-This page installs PocketCW on a HamCube "CW Pokemon Mini" from a Mac. Only macOS has an install tool today.
+This page installs PocketCW on a HamCube from a Mac. Only macOS has an install tool today.
 
-PocketCW was tested on board version 2.64. Other board versions may work, but nobody has tried them yet.
+PocketCW was tested on a Mini with board version 2.64. Other board versions and the Pro may work, but nobody has tried them yet.
 
 ## What you need
 

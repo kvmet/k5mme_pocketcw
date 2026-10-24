@@ -1,5 +1,5 @@
 #!/bin/sh
-# Installs PocketCW, or the stock HamCube firmware V5.03, on a CW Pokemon Mini from macOS.
+# Installs PocketCW, or the stock firmware V5.03, on a HamCube from macOS.
 # usage: curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 #        curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 # The shell reads this script from its stdin, so prompts and pocketcw-flash read the terminal.

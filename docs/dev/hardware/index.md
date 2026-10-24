@@ -1,8 +1,8 @@
 # Hardware reference
 
-These pages describe the HamCube CW Pokemon Mini as PocketCW uses it. The facts about the hardware and the vendor firmware were found by static analysis and emulation of vendor firmware V5.03. Addresses such as 0x080185E0 point into the vendor app image, which starts at 0x08005000.
+These pages describe the HamCube as PocketCW uses it. The Mini and the Pro run the same firmware, and the Pro adds the [decoder board](decoder-board.md). The facts about the hardware and the vendor firmware were found by static analysis and emulation of vendor firmware V5.03. Addresses such as 0x080185E0 point into the vendor app image, which starts at 0x08005000.
 
-PocketCW was tested on board version 2.64 only. No Pro model with the decoder board has been checked.
+PocketCW was tested on a Mini with board version 2.64 only. No Pro has been checked.
 
 ## Markers
 

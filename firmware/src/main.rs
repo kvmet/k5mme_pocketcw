@@ -1,4 +1,4 @@
-//! CW keyer firmware for the HamCube CW Pokemon, boards 2.60 and later.
+//! CW keyer firmware for the HamCube, Mini and Pro, boards 2.60 and later.
 #![no_std]
 #![no_main]
 

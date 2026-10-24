@@ -1,6 +1,6 @@
 # PocketCW
 
-PocketCW is open-source replacement firmware for the HamCube "CW Pokemon Mini" Morse code trainer. It is free software under the GPL-3.0-or-later license.
+PocketCW is open-source replacement firmware for the HamCube Morse code trainer. The Mini and the Pro run the same firmware, so PocketCW runs on both. The Pro adds a decoder board that listens to a radio. PocketCW is free software under the GPL-3.0-or-later license.
 
 PocketCW is not affiliated with HamCube or Nintendo.
 
@@ -13,7 +13,7 @@ PocketCW is not affiliated with HamCube or Nintendo.
 - Four memories that key your radio, with repeat for calling CQ.
 - Copy accuracy per character, your most common mixups, and practice history.
 
-PocketCW was tested on board version 2.64. Other boards from 2.60 may work, but nobody has tried them yet.
+PocketCW was tested on a Mini with board version 2.64. Other boards from 2.60 and the Pro may work, but nobody has tried them yet.
 
 ## Documentation
 
