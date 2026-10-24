@@ -24,6 +24,8 @@ theme:
 markdown_extensions:
   - toc:
       permalink: true
+  # Renders code blocks inside list items.
+  - pymdownx.superfences
 
 # Page titles come from each page's first heading. Keep this order in step with the index pages.
 nav:
