@@ -46,7 +46,7 @@ curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 
 Then:
 
-1. Follow the steps the script prints. The script installs both files, and you put the device in update mode once for each file.
+1. Follow the steps the script prints. The script installs both files in one update mode session, so you put the device in update mode only once. macOS can ask for your password once for each file.
 2. When the script says "Finished", unplug the device, then click the dial to turn it on.
 
 To install PocketCW again, follow [Install](install.md), with the first install steps.

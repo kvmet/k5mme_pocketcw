@@ -35,7 +35,7 @@ After a finished write, the status file reads `Success` for about 1 second. Then
 
 A failed write leaves the bootloader in update mode at every power on, until a write finishes. The vendor upgrade notes say so, and a 2.64 unit did it. Likely cause on that unit: macOS mounted the drive when it came back `Ready` after `Success`, and wrote its own files to it. So the tool counts a write as done only when it reads `Success`, and it blocks the mount until the drive is back.
 
-On first installs, every user who installed only `A000014.bin` saw the device stay in update mode. Installing an `F` file first, then `A000014.bin`, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: `F000000.bin`, then `A000014.bin`. The cause is not known; no dump of the bootloader exists. So a first install writes `F000400.bin` before `A000014.bin`, and the stock install always writes `F0000C0.bin` before `A000014.bin`.
+On first installs, every user who installed only `A000014.bin` saw the device stay in update mode. Installing an `F` file first, then `A000014.bin`, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: `F000000.bin`, then `A000014.bin`. The cause is not known; no dump of the bootloader exists. So a first install writes `F000400.bin` before `A000014.bin`, and the stock install always writes `F0000C0.bin` before `A000014.bin`. `pocketcw-flash` writes both files in one update mode session, as a Windows copy does: after `Success` on the F file, it waits for the drive to come back `Ready`, then writes the A file. A retry starts again at the F file.
 
 ## Write protection
 

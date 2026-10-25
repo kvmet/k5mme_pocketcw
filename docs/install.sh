@@ -28,19 +28,9 @@ check() {
     [ "$(shasum -a 256 "$1" | cut -d ' ' -f 1)" = "$2" ] || fail "$(basename "$1") is not the V5.03 file this script expects"
 }
 
+# flash FILE...
 flash() {
-    "$work/pocketcw-flash" "$1" </dev/tty
-}
-
-# flash_pair F_FILE WHAT A_FILE
-flash_pair() {
-    echo
-    echo "Step 1 of 2: $2."
-    flash "$1"
-    echo "Do not turn it on yet."
-    echo
-    echo "Step 2 of 2: the firmware."
-    flash "$3"
+    "$work/pocketcw-flash" "$@" </dev/tty
     echo "Then click the dial to turn it on."
 }
 
@@ -53,11 +43,10 @@ install_pocketcw() {
     case $answer in
     [nN]*)
         flash "$work/pocketcw/A000014.bin"
-        echo "Then click the dial to turn it on."
         ;;
     *)
         get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
-        flash_pair "$work/pocketcw/F000400.bin" "the PocketCW file" "$work/pocketcw/A000014.bin"
+        flash "$work/pocketcw/F000400.bin" "$work/pocketcw/A000014.bin"
         ;;
     esac
 }
@@ -68,7 +57,7 @@ install_stock() {
     check "$work/stock/F0000C0.bin" $vendor_f_sha256
     get "$vendor/A000014.bin" "$work/stock/A000014.bin"
     check "$work/stock/A000014.bin" $vendor_a_sha256
-    flash_pair "$work/stock/F0000C0.bin" "the stock screen images" "$work/stock/A000014.bin"
+    flash "$work/stock/F0000C0.bin" "$work/stock/A000014.bin"
 }
 
 main() {

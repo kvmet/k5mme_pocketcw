@@ -1,7 +1,8 @@
-// Installs one HamCube update file through the device's update drive, from macOS.
+// Installs HamCube update files through the device's update drive, from macOS, in order and in one
+// update-mode session.
 // build: clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o pocketcw-flash pocketcw-flash.c
 //            -framework DiskArbitration -framework CoreFoundation
-// usage: pocketcw-flash FILE   (A000014.bin, F0000C0.bin, ...)
+// usage: pocketcw-flash FILE...   (F000400.bin A000014.bin, ...)
 //
 // The bootloader routes file data by the name in the root directory entry, so the entry must
 // reach the device before the data, as Windows writes it: directory entry, data, FAT, directory
@@ -39,6 +40,13 @@ extern char **environ;
 // Board 2.64 names the drive POKEMON-2; the vendor manual calls it HAM MODULE.
 static const char *drive_names[] = {"POKEMON-2", "HAM MODULE"};
 static char found_disk[64];
+struct update {
+    const char *path;
+    char base[8];
+    uint8_t *payload;
+    size_t len;
+};
+
 // Why the current attempt stopped. Attempt steps set it through `stop` and return 0.
 static char problem[512];
 
@@ -276,8 +284,27 @@ static int wait_for_success(int fd, off_t root) {
     return stop("the status stayed Ready for 10 s; the device did not take the file.");
 }
 
-// One install attempt, from the setup steps to Success.
-static int install(const char *base, const uint8_t *payload, size_t len) {
+// Writes one file to the drive in found_disk, and waits for Success.
+static int write_file(const struct update *file) {
+    char raw[80];
+    snprintf(raw, sizeof raw, "/dev/r%s", found_disk);
+    printf("Found the device at %s.\n\n", raw);
+    printf("macOS can ask for your Mac login password, to allow writing to the device.\n");
+    fflush(stdout);
+    int fd = authopen_rw(raw);
+    if (fd < 0) return 0;
+
+    printf("Writing %s.BIN...\n", file->base);
+    fflush(stdout);
+    off_t root;
+    int ok = write_update(fd, file->base, file->payload, file->len, &root) && wait_for_success(fd, root);
+    close(fd);
+    return ok;
+}
+
+// One install attempt, from the setup steps to Success on the last file. Every attempt starts at
+// the first file, because the bootloader can fail an A write that no F write came before.
+static int install(const struct update *files, int count) {
     if (!check_not_mounted()) return 0;
     printf("1. Unplug the device, and turn it off.\n");
     printf("2. Hold F1 and F4. Keep holding them, and hold the dial down too.\n");
@@ -289,40 +316,39 @@ static int install(const char *base, const uint8_t *payload, size_t len) {
     if (!wait_for_drive(WAIT_S))
         return stop("no update drive appeared in %d seconds. Check that the device shows the firmware update screen, and that the cable carries data.", WAIT_S);
 
-    char raw[80];
-    snprintf(raw, sizeof raw, "/dev/r%s", found_disk);
-    printf("Found the device at %s.\n\n", raw);
-    printf("macOS now asks for your Mac login password, to allow writing to the device.\n");
-    fflush(stdout);
-    int fd = authopen_rw(raw);
-    if (fd < 0) return 0;
-
-    printf("Writing...\n");
-    fflush(stdout);
-    off_t root;
-    int ok = write_update(fd, base, payload, len, &root) && wait_for_success(fd, root);
-    close(fd);
-    return ok;
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            printf("\nWaiting for the device to come back (up to 15 s)...\n");
+            fflush(stdout);
+            found_disk[0] = 0;
+            if (!wait_for_drive(15)) return stop("the device did not come back after %s.BIN.", files[i - 1].base);
+        }
+        if (!write_file(&files[i])) return 0;
+    }
+    return 1;
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s FILE   (A000014.bin, F0000C0.bin, ...)\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "usage: %s FILE...   (F000400.bin A000014.bin, ...)\n", argv[0]);
         return 1;
     }
-    const char *path = argv[1];
-    char base[8];
-    update_name(path, base);
-    size_t len;
-    uint8_t *payload = read_file(path, &len);
-    check_range(path, base, len);
+    int count = argc - 1;
+    struct update *files = calloc(count, sizeof *files);
+    for (int i = 0; i < count; i++) {
+        files[i].path = argv[i + 1];
+        update_name(files[i].path, files[i].base);
+        files[i].payload = read_file(files[i].path, &files[i].len);
+        check_range(files[i].path, files[i].base, files[i].len);
+    }
 
     DASessionRef session = DASessionCreate(kCFAllocatorDefault);
     DARegisterDiskMountApprovalCallback(session, NULL, approve_mount, NULL);
     DASessionScheduleWithRunLoop(session, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
 
-    printf("Installing %s.BIN (%zu bytes).\n\n", base, len);
-    while (!install(base, payload, len)) {
+    for (int i = 0; i < count; i++) printf("Installing %s.BIN (%zu bytes).\n", files[i].base, files[i].len);
+    printf("\n");
+    while (!install(files, count)) {
         printf("\nProblem: %s\n", problem);
         printf("Press Return to try again, or Control-C to stop.\n");
         fflush(stdout);

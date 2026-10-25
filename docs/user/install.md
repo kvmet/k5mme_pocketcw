@@ -1,6 +1,6 @@
 # Install
 
-This page installs PocketCW on a HamCube. On Windows and Linux, you copy one file to the device. On macOS, an install script does the copy, because macOS writes its own files to the device, and those files break the install.
+This page installs PocketCW on a HamCube. On Windows and Linux, you copy two files to the device on a first install, and one file on an update. On macOS, an install script does the copy, because macOS writes its own files to the device, and those files break the install.
 
 PocketCW was tested on a Mini with board version 2.64. Other board versions and the Pro may work, but nobody has tried them yet.
 
@@ -60,7 +60,7 @@ curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 
 The script downloads the newest PocketCW release and the install tool. Then it asks whether this is the first PocketCW install on the device. If you are not sure, press Return for yes.
 
-A first install installs two files: a small PocketCW file, then the firmware. You put the device in update mode once for each file. Without the first file, the first install can leave the device on the update screen. Also answer yes after you go back to the stock firmware.
+A first install installs two files: a small PocketCW file, then the firmware. Both install in one update mode session, so you put the device in update mode only once. Without the first file, the first install can leave the device on the update screen. Also answer yes after you go back to the stock firmware.
 
 The script then says "Waiting for the device".
 
@@ -68,7 +68,7 @@ The script then says "Waiting for the device".
 
 1. Put the device in [update mode](#update-mode). If it already shows the firmware update screen, go to the next step.
 2. Plug the USB cable into the device and the Mac. After a few seconds, the script says "Found the device".
-3. macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that.
+3. macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that. On a first install, macOS can ask again for the second file.
 
 ### Finish
 
