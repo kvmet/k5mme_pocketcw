@@ -9,12 +9,13 @@ use usb_device::bus::UsbBusAllocator;
 use usb_device::device::{StringDescriptors, UsbDevice, UsbDeviceBuilder, UsbDeviceState, UsbVidPid};
 use usbd_hid::descriptor::{KeyboardReport, SerializedDescriptor};
 use usbd_hid::hid_class::HIDClass;
+use usbd_serial::SerialPort;
 
 use crate::clock;
 
-/// Artery's VID and the PID of its keyboard example: the chip maker's ID for this class of
-/// device, as the vendor bootloader uses Artery's mass storage example ID.
-pub const VID_PID: UsbVidPid = UsbVidPid(0x2E3C, 0x6040);
+/// Artery's VID and the PID of its keyboard and serial port composite example: the chip maker's
+/// ID for this class of device, as the vendor bootloader uses Artery's mass storage example ID.
+pub const VID_PID: UsbVidPid = UsbVidPid(0x2E3C, 0x5750);
 
 /// How long the host sees no device before `attach`. USB needs only 2.5 us; the margin covers
 /// hosts that poll their ports slowly.
@@ -74,34 +75,42 @@ fn registers() -> &'static pac::usbfs::RegisterBlock {
 
 pub type Bus = UsbBusAllocator<UsbBus<Usb>>;
 
-/// A USB keyboard that sends one report at a time.
-pub struct Keyboard {
+/// The USB device: a keyboard that sends one report at a time, and a serial port.
+pub struct Port {
     device: UsbDevice<'static, UsbBus<Usb>>,
     // No boot subclass: usbd-hid refuses every report from a boot keyboard in Report mode.
     hid: HIDClass<'static, UsbBus<Usb>>,
+    serial: SerialPort<'static, UsbBus<Usb>>,
     /// The last report the host took.
     sent: Report,
 }
 
-impl Keyboard {
+impl Port {
     /// The device stays off the bus until `attach`.
-    pub fn new(bus: &'static Bus, product: &'static str) -> Keyboard {
+    pub fn new(bus: &'static Bus, product: &'static str) -> Port {
         let hid = HIDClass::new_ep_in(bus, KeyboardReport::desc(), 1);
+        let serial = SerialPort::new(bus);
         let device = UsbDeviceBuilder::new(bus, VID_PID)
+            .composite_with_iads()
             .strings(&[StringDescriptors::default().manufacturer("PocketCW").product(product)])
             .unwrap_or_else(|_| unreachable!("one language fits"))
             .build();
-        Keyboard { device, hid, sent: NO_KEYS }
+        Port { device, hid, serial, sent: NO_KEYS }
     }
 
-    /// Answers the host; true while it has the keyboard configured.
+    /// Answers the host; true while it has the device configured.
     pub fn poll(&mut self) -> bool {
-        self.device.poll(&mut [&mut self.hid]);
+        self.device.poll(&mut [&mut self.hid, &mut self.serial]);
         let configured = self.device.state() == UsbDeviceState::Configured;
         if !configured {
             self.sent = NO_KEYS;
         }
         configured
+    }
+
+    /// The computer has the serial port open: it holds DTR.
+    pub fn serial_open(&self) -> bool {
+        self.serial.dtr()
     }
 
     pub fn state(&self) -> UsbDeviceState {
@@ -124,5 +133,22 @@ impl Keyboard {
             Err(UsbError::WouldBlock) => Ok(false),
             Err(error) => Err(error),
         }
+    }
+    /// Bytes the computer sent on the serial port, into `bytes`: how many.
+    pub fn read_serial(&mut self, bytes: &mut [u8]) -> Result<usize, UsbError> {
+        none_on_block(self.serial.read(bytes))
+    }
+
+    /// Queues the front of `bytes` on the serial port: how many fit.
+    pub fn write_serial(&mut self, bytes: &[u8]) -> Result<usize, UsbError> {
+        none_on_block(self.serial.write(bytes))
+    }
+}
+
+/// A busy or empty endpoint moves no bytes; it is not an error.
+fn none_on_block(result: Result<usize, UsbError>) -> Result<usize, UsbError> {
+    match result {
+        Err(UsbError::WouldBlock) => Ok(0),
+        other => other,
     }
 }

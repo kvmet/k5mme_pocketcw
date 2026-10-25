@@ -52,6 +52,21 @@ The BOARD row of the SYSTEM screen shows where the choice came from:
 | SET | The saved choice. |
 | NOSAVE | F2 was held, but the EEPROM write failed. The flip still applies until power off. |
 
+## Memory read
+
+Screenshots need the panel to send its memory back with RAMRD (0x2E). Neither datasheet fixes the serial framing: the dummy bits before the data, 2 or 3 bytes a pixel, and the channel order.
+
+On the 2.64 Mini (IPS panel), the panel answers on PB4 with one dummy byte, then 3 bytes a pixel in RGB order, each channel in the top 6 bits. Pulled up and pulled down agree, so PB4 is driven; PB5 reads all ones. Because the dummy is a whole byte, SPI1 can read the memory with MISO on PB4. Red and blue come back with a sixth bit the host never wrote: written 0xF800 reads F8 00 00, and 0x07E0 reads 04 FC 04. Confirmed on 2.64. The ILI9341 panel is not checked.
+
+The [hardware probe](../building.md#hardware-probe) writes 8 known pixels at the top left, then bit-bangs RAMRD on PB4 and PB5, once pulled up and once pulled down. `panel::find_framing` searches 0 to 16 skipped bits, RGB565 and RGB666, and RGB and BGR order for the framing that gives the pixels back. The last two rows of the probe show, for each pin:
+
+| Item | Meaning |
+| - | - |
+| `up`, `dn` | The framing found with the pin pulled up and pulled down, as skipped bits / format / order, such as `9/666/RGB`. NONE when no framing gives the pixels back. |
+| Hex | The first 64 bits read pulled up. |
+
+The same framing pulled up and pulled down on one pin means the panel drives that pin, and screenshots can use it.
+
 ## Backlight
 
 PB8 drives the backlight from TMR4 channel 3, PWM at 20 kHz. PocketCW holds it off until the first screen clear, because the panel shows random pixels before that.

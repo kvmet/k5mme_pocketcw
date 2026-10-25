@@ -63,6 +63,76 @@ pub fn detect(reads: &[IdRead]) -> Option<Panel> {
     reads.iter().filter_map(|read| read.driven()).find(|answer| answer >> ID_SHIFT & 0xFF_FFFF == ST7789V_ID).map(|_| Panel::Ips)
 }
 
+/// How a panel sends its memory back for RAMRD (0x2E): leading bits to skip, the pixel format,
+/// and the channel order. Neither datasheet pins these down for the serial interface.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Framing {
+    pub skip_bits: usize,
+    pub format: PixelFormat,
+    /// Blue comes first.
+    pub bgr: bool,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum PixelFormat {
+    /// Two bytes a pixel, as written.
+    Rgb565,
+    /// Three bytes a pixel, each channel in the top 6 bits of its byte.
+    Rgb666,
+}
+
+impl PixelFormat {
+    pub fn bits(self) -> usize {
+        match self {
+            PixelFormat::Rgb565 => 16,
+            PixelFormat::Rgb666 => 24,
+        }
+    }
+}
+
+/// Both datasheets put one dummy clock or one dummy byte before the data; the search allows two
+/// bytes.
+pub const MAX_SKIP_BITS: usize = 16;
+
+/// RGB565 pixels to write and read back. Red and blue differ in every pixel but black and white,
+/// so a swapped channel order cannot match.
+pub const READBACK_PATTERN: [u16; 8] = [0xF800, 0x07E0, 0x001F, 0xFFFF, 0x0000, 0x8410, 0x4A69, 0xB5B6];
+/// Words that hold the pattern read back at the widest format and the most skipped bits.
+pub const READBACK_WORDS: usize = (MAX_SKIP_BITS + READBACK_PATTERN.len() * 24).div_ceil(32);
+
+impl Framing {
+    /// Pixel `i` of a read whose first bit is bit 31 of `bits[0]`, as RGB565; None past the end.
+    /// RGB666 keeps the top 5 bits of red and blue, which hold all of what was written.
+    pub fn pixel(self, bits: &[u32], i: usize) -> Option<u16> {
+        let at = self.skip_bits + i * self.format.bits();
+        if at + self.format.bits() > bits.len() * 32 {
+            return None;
+        }
+        let field = |offset: usize, len: usize| (0..len).fold(0u16, |v, k| v << 1 | bit(bits, at + offset + k) as u16);
+        let (first, green, last) = match self.format {
+            PixelFormat::Rgb565 => (field(0, 5), field(5, 6), field(11, 5)),
+            PixelFormat::Rgb666 => (field(0, 5), field(8, 6), field(16, 5)),
+        };
+        let (red, blue) = if self.bgr { (last, first) } else { (first, last) };
+        Some(red << 11 | green << 5 | blue)
+    }
+}
+
+fn bit(bits: &[u32], i: usize) -> bool {
+    bits[i / 32] >> (31 - i % 32) & 1 != 0
+}
+
+/// The framing under which `bits` read back as `expected`, fewest skipped bits first.
+pub fn find_framing(bits: &[u32], expected: &[u16]) -> Option<Framing> {
+    (0..=MAX_SKIP_BITS)
+        .flat_map(|skip_bits| {
+            [PixelFormat::Rgb666, PixelFormat::Rgb565]
+                .into_iter()
+                .flat_map(move |format| [false, true].map(move |bgr| Framing { skip_bits, format, bgr }))
+        })
+        .find(|framing| expected.iter().enumerate().all(|(i, &want)| framing.pixel(bits, i) == Some(want)))
+}
+
 /// What picked the panel type.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Source {
@@ -190,6 +260,56 @@ mod tests {
     fn floating_bits_around_the_id_still_detect() {
         assert_eq!(released(0x85_85_52).driven(), Some(released(0x85_85_52).pulled_up));
         assert_eq!(detect(&[released(0x85_85_52)]), Some(Panel::Ips));
+    }
+
+    /// `pixels` as a panel sends them under `framing`. Skipped bits and the unused low bits of
+    /// RGB666 bytes read as ones, as on a pulled-up line.
+    fn read_back(framing: Framing, pixels: &[u16]) -> [u32; READBACK_WORDS] {
+        let mut bits = [u32::MAX; READBACK_WORDS];
+        let mut at = framing.skip_bits;
+        let mut put = |value: u16, len: usize| {
+            for k in (0..len).rev() {
+                if value >> k & 1 == 0 {
+                    bits[at / 32] &= !(1 << (31 - at % 32));
+                }
+                at += 1;
+            }
+        };
+        for &p in pixels {
+            let (red, green, blue) = (p >> 11, p >> 5 & 0x3F, p & 0x1F);
+            let (first, last) = if framing.bgr { (blue, red) } else { (red, blue) };
+            match framing.format {
+                PixelFormat::Rgb565 => [(first, 5), (green, 6), (last, 5)].iter().for_each(|&(v, len)| put(v, len)),
+                PixelFormat::Rgb666 => {
+                    let widen = |c: u16| (c << 1 | c >> 4) << 2 | 0b11;
+                    [widen(first), green << 2 | 0b11, widen(last)].iter().for_each(|&byte| put(byte, 8));
+                }
+            }
+        }
+        bits
+    }
+
+    #[test]
+    fn each_framing_is_found_and_no_other() {
+        for skip_bits in [0, 1, 7, 8, 9, MAX_SKIP_BITS] {
+            for format in [PixelFormat::Rgb565, PixelFormat::Rgb666] {
+                for bgr in [false, true] {
+                    let framing = Framing { skip_bits, format, bgr };
+                    let bits = read_back(framing, &READBACK_PATTERN);
+                    assert_eq!(find_framing(&bits, &READBACK_PATTERN), Some(framing));
+                    let decoded: [Option<u16>; 8] = core::array::from_fn(|i| framing.pixel(&bits, i));
+                    assert_eq!(decoded, READBACK_PATTERN.map(Some));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_read_without_the_pattern_has_no_framing() {
+        assert_eq!(find_framing(&[u32::MAX; READBACK_WORDS], &READBACK_PATTERN), None, "nobody drives the line");
+        assert_eq!(find_framing(&[0; READBACK_WORDS], &READBACK_PATTERN), None);
+        let late = Framing { skip_bits: MAX_SKIP_BITS + 1, format: PixelFormat::Rgb666, bgr: false };
+        assert_eq!(find_framing(&read_back(late, &READBACK_PATTERN), &READBACK_PATTERN), None, "past the most skipped bits");
     }
 
     #[test]

@@ -67,7 +67,7 @@ cargo test
 
 ## Hardware probe
 
-`firmware/src/bin/probe.rs` is a separate image for checking a board. It shows the chip and board IDs, scans the I2C bus, shows the live inputs, and tests the audio codec, the PA8 audio output and standby.
+`firmware/src/bin/probe.rs` is a separate image for checking a board. It shows the chip and board IDs, reads the LCD memory back, scans the I2C bus, shows the live inputs, and tests the audio codec, the PA8 audio output and standby.
 
 ```bash
 sh tools/mkimage.sh probe
@@ -77,7 +77,7 @@ The probe image also goes to `firmware/target/A000014.bin`. Flash it the same wa
 
 ## USB probe
 
-`firmware/src/bin/usbprobe.rs` is a separate image for checking the USB device. It shows up on the computer as a USB keyboard named "PocketCW USB probe".
+`firmware/src/bin/usbprobe.rs` is a separate image for checking the USB device. It shows up on the computer as a USB keyboard and serial port named "PocketCW USB probe".
 
 ```bash
 sh tools/mkimage.sh usbprobe
@@ -93,3 +93,39 @@ sh tools/mkimage.sh usbprobe
 The screen shows the clock source, the USB state, the bus reset count, and the reports the computer took. CONFIGURED means the computer accepted the keyboard. macOS may open its Keyboard Setup Assistant the first time; close it.
 
 The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flash the app again after.
+
+## Remote control and screenshots
+
+`tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys text, shows what the device decodes and plays, and saves the screen as a PNG. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.
+
+1. Set USB OUT to TEXT, VBAND or RADIO, so the device is on USB.
+2. Plug the device into the computer.
+3. Run the steps, such as:
+
+```bash
+python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
+```
+
+| Step | Does |
+| - | - |
+| `F1` to `F4`, `LEFT`, `RIGHT`, `CLICK` | Presses and releases that button. `LEFT` and `RIGHT` turn the dial one step. |
+| `shot FILE.png` | Saves the screen. |
+| `wait MS` | Pauses, for a screen that changes on its own. |
+| `send TEXT` | Keys the text and waits until it is sent, then shows what the device decoded. Put text with spaces in quotes. |
+| `expect REGEX` | Waits up to 60 s for an event line that matches from its start, such as `expect "PLAY "`. |
+| `listen MS` | Shows the event lines that arrive in that time. |
+| `shots DIR` | Saves every screen into the folder. See [Every screen](#every-screen). |
+
+Event lines show as they arrive, after `< `. The script finds the serial port by itself when there is only one; else give it with `--port PORT` before the steps.
+
+A Python script can load the file and use its `Device` class: `press`, `shot`, `send`, `expect`, `listen` and `drain` do what the steps do.
+
+### Every screen
+
+The `shots DIR` step saves a screenshot of every screen into a folder: KEYER and its MEM row, the menu, TIMING, the five receive drills, POTA, SOTA, HUNT, LETTERS, PROGRESS, SYSTEM, and each settings tab. Start it with the device on the KEYER screen; it ends there.
+
+```bash
+python3 -I tools/pocketcw.py shots shots
+```
+
+It keys back one group in each of the Koch, words and calls drills, so each shows a scored row. The ragchews run until one over ends, and each QSO runs for 4 s. All of them add to the practice history. The run takes about 3 minutes. RADIO is left out, because it shows only with the decoder board on.

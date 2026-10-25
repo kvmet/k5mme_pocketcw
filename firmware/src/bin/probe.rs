@@ -1,5 +1,5 @@
-//! Hardware probe: shows chip and board IDs, scans I2C2, shows live inputs, tests the audio codec, PWM
-//! audio and standby.
+//! Hardware probe: shows chip and board IDs, reads the LCD memory back, scans I2C2, shows live
+//! inputs, tests the audio codec, PWM audio and standby.
 #![no_std]
 #![no_main]
 
@@ -10,8 +10,9 @@ use at32f4xx_pac::at32f403a as pac;
 use cortex_m_rt::entry;
 use embedded_graphics::{
     mono_font::{MonoTextStyleBuilder, ascii::FONT_6X10},
-    pixelcolor::Rgb565,
+    pixelcolor::{Rgb565, raw::RawU16},
     prelude::*,
+    primitives::Rectangle,
     text::{Baseline, Text},
 };
 
@@ -44,6 +45,7 @@ const AUDIO_ROW: i32 = 7;
 const DUMP_ROW: i32 = 14;
 const CHANGED_ROW: i32 = 19;
 const STATUS_ROW: i32 = 20;
+const READBACK_ROW: i32 = 21;
 /// Bits of each port's input register that this probe or the USB and SWD pins drive, left out of
 /// the changed-bits line: PA2, PA3, PA8, PA11..PA15; PB2..PB9, PB12, PB15; PC13.
 const DRIVEN: [u16; 3] = [0xF90C, 0x93FC, 0x2000];
@@ -123,11 +125,12 @@ fn main() -> ! {
     let detected = panel::detect(&lcd.read_id());
     lcd.init(panel::choose(saved, detected, unsafe { read_volatile(0x1FFF_F806 as *const u8) }).0);
     lcd.clear(Rgb565::BLACK).unwrap();
+    let readback = readback_lines(&mut lcd);
 
     let tone = Tone::new(&dp.TMR1, gpioa);
 
     let mut line = Line::new();
-    show(&mut lcd, 0, "HamCube hardware probe 5");
+    show(&mut lcd, 0, "HamCube hardware probe 6");
     let (serial, flash_kb) = unsafe { (read_volatile(0x1FFF_F7F0 as *const u32), read_volatile(0x1FFF_F7E0 as *const u16)) };
     let id = dp.DEBUG.idcode().read().bits();
     let _ = write!(line.start(), "SN {serial:08X}  ID {id:08X}  flash {flash_kb}K");
@@ -152,6 +155,10 @@ fn main() -> ! {
         show(&mut lcd, row, text);
     }
     show(&mut lcd, STATUS_ROW, if woke_from_standby { "woke from standby" } else { "cold start" });
+    show(&mut lcd, READBACK_ROW, "LCD read back: pin, framing pulled up and down, bits");
+    for (row, line) in (READBACK_ROW + 1..).zip(&readback) {
+        show(&mut lcd, row, line.as_str());
+    }
 
     let mut output = 0;
     let mut volume = VOLUME_START;
@@ -377,6 +384,30 @@ fn enter_standby(
     lcd.wake();
     gpio::set_high(gpiob, BACKLIGHT);
     pending
+}
+
+/// Writes `READBACK_PATTERN` at the top left and reads it back. A line for each of PB4 and PB5:
+/// the framing found with the pin pulled up and pulled down (skipped bits, format, channel order),
+/// then the first 64 bits read pulled up.
+fn readback_lines(lcd: &mut Lcd) -> [Line; 2] {
+    let area = Rectangle::new(Point::zero(), Size::new(panel::READBACK_PATTERN.len() as u32, 1));
+    lcd.fill_contiguous(&area, panel::READBACK_PATTERN.map(|raw| Rgb565::from(RawU16::new(raw)))).unwrap();
+    let [up, down] = [true, false].map(|pull_up| lcd.read_memory::<{ panel::READBACK_WORDS }>(&area, pull_up));
+    core::array::from_fn(|pin| {
+        let mut line = Line::new();
+        let _ = write!(line, "PB{}", 4 + pin);
+        for (pull, bits) in [("up", &up[pin]), ("dn", &down[pin])] {
+            let _ = match panel::find_framing(bits, &panel::READBACK_PATTERN) {
+                Some(f) => {
+                    let format = if f.format == panel::PixelFormat::Rgb666 { 666 } else { 565 };
+                    write!(line, " {pull} {}/{format}/{}", f.skip_bits, if f.bgr { "BGR" } else { "RGB" })
+                }
+                None => write!(line, " {pull} NONE"),
+            };
+        }
+        let _ = write!(line, " {:08X}{:08X}", up[pin][0], up[pin][1]);
+        line
+    })
 }
 
 fn show(lcd: &mut Lcd, row: i32, text: &str) {

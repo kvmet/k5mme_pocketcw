@@ -23,6 +23,7 @@ pub mod qso;
 pub mod ragchew;
 pub mod record;
 pub mod rng;
+pub mod serial;
 pub mod settings;
 pub mod synth;
 pub mod text;

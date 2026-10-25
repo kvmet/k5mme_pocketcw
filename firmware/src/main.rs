@@ -45,7 +45,7 @@ mod app {
         codec::Codec,
         gpio::{self, port_a, port_b, port_c},
         i2c::I2c,
-        lcd::Lcd,
+        lcd::{self, Lcd},
         link::{self, Link},
         pins::*,
         power,
@@ -53,7 +53,7 @@ mod app {
         theme::{Theme, palette_stripes},
         text::Text,
         ui::{Command, PanelFrom, SystemInfo, Ui},
-        usb::{self, Keyboard},
+        usb::{self, Port},
     };
     use pocketcw_logic::{
         battery::Gauge,
@@ -65,7 +65,9 @@ mod app {
         board,
         keyer::{Contacts, Jack, Keyer, Mode, Output, output_lines},
         listen::Listener,
-        player::Player,
+        morse,
+        player::{Keying, MAX_TEXT, Player},
+        serial::{Command as SerialCommand, CommandLine},
         settings::{Settings, UsbOut},
         synth::{PLAYERS, SIDETONE},
         volume::wm8978_speaker,
@@ -93,6 +95,37 @@ mod app {
         Board(board::Event),
         /// A character decoded from the decoder board's tone line, heard at `wpm`.
         Heard { decoded: Decoded, wpm: u16 },
+        /// The computer asked for the screen over USB serial.
+        Shot,
+        /// The computer sent text over USB serial to key.
+        Send(Text<MAX_TEXT>),
+        /// The serial key finished its text, a word gap ago.
+        Sent,
+    }
+
+    const CHUNK_LEN: usize = 64;
+    /// Chunks waiting for the USB task: 512 bytes.
+    const CHUNKS: usize = 8;
+    /// How long the UI waits for room in the serial queue before it gives up on a screenshot.
+    const SHOT_WAIT_MS: u32 = 500;
+
+    /// Bytes for the serial port, one USB packet at most. `start` steps past what the port took.
+    pub struct Chunk {
+        bytes: [u8; CHUNK_LEN],
+        start: usize,
+        end: usize,
+    }
+
+    impl Chunk {
+        fn new(piece: &[u8]) -> Chunk {
+            let mut bytes = [0; CHUNK_LEN];
+            bytes[..piece.len()].copy_from_slice(piece);
+            Chunk { bytes, start: 0, end: piece.len() }
+        }
+
+        fn unsent(&self) -> &[u8] {
+            &self.bytes[self.start..self.end]
+        }
     }
     const SAVE_DELAY_MS: u32 = 2000;
     const BOOT_FRAME_MS: u32 = 10;
@@ -124,6 +157,13 @@ mod app {
     /// Characters the typing queue had no room for, and reports USB refused for a reason other
     /// than a busy endpoint; shown on screen when nonzero.
     static USB_KEYS_LOST: AtomicU16 = AtomicU16::new(0);
+    /// Serial port reads and writes USB refused for a reason other than a busy or empty endpoint;
+    /// shown on screen when nonzero.
+    static SERIAL_ERRORS: AtomicU16 = AtomicU16::new(0);
+    /// The computer has the serial port open, so event lines have somewhere to go.
+    static SERIAL_OPEN: AtomicBool = AtomicBool::new(false);
+    /// Event lines the serial queue had no room for; shown on screen when nonzero.
+    static SERIAL_LINES_LOST: AtomicU16 = AtomicU16::new(0);
 
     fn usb_out() -> UsbOut {
         match USB_OUT.load(Ordering::Relaxed) {
@@ -144,6 +184,8 @@ mod app {
         link: Link,
         /// Characters the tick decoded, waiting for the USB task to type them.
         typist: Typist,
+        /// Keys text from the serial port as a straight key, into the same path as the paddle.
+        serial_key: Player,
     }
 
     #[local]
@@ -155,7 +197,10 @@ mod app {
         jack: Jack,
         messages: Sender<'static, Message, EVENT_QUEUE>,
         board_messages: Sender<'static, Message, EVENT_QUEUE>,
-        keyboard: Keyboard,
+        port: Port,
+        command_line: CommandLine,
+        usb_messages: Sender<'static, Message, EVENT_QUEUE>,
+        chunks: Receiver<'static, Chunk, CHUNKS>,
     }
 
     const FLASH_SIZE_ADDRESS: u32 = 0x1FFF_F7E0;
@@ -249,6 +294,8 @@ mod app {
 
         let (messages, receiver) = rtic_sync::make_channel!(Message, EVENT_QUEUE);
         let board_messages = messages.clone();
+        let usb_messages = messages.clone();
+        let (chunk_sender, chunks) = rtic_sync::make_channel!(Chunk, CHUNKS);
         let Some(frame_buffer) = cortex_m::singleton!(: [u8; link::FRAME_LEN] = [0; link::FRAME_LEN]) else {
             unreachable!("init runs once")
         };
@@ -259,12 +306,12 @@ mod app {
         let adc = Adc::new(dp.ADC1).ok();
         let system = SystemInfo { flash_kb, board, panel, panel_from, panel_id, uid, clock: clock_source, codec, codec_ok, eeprom_ok, adc_ok: adc.is_some() };
         let devices = Devices { adc, backlight: Backlight::new(dp.TMR4, settings.brightness), codec };
-        if ui::spawn(lcd, bus, saved, receiver, system, devices).is_err() {
+        if ui::spawn(lcd, bus, saved, receiver, chunk_sender, system, devices).is_err() {
             unreachable!("init runs once, so the UI task is not running yet")
         }
 
         let Some(usb_bus) = cortex_m::singleton!(: usb::Bus = usb::bus()) else { unreachable!("init runs once") };
-        let keyboard = Keyboard::new(usb_bus, "PocketCW");
+        let port = Port::new(usb_bus, "PocketCW");
         USB_OUT.store(settings.usb_out as u8, Ordering::Relaxed);
         if settings.usb_out != UsbOut::Off {
             usb::attach();
@@ -279,9 +326,12 @@ mod app {
             jack,
             messages,
             board_messages,
-            keyboard,
+            port,
+            command_line: CommandLine::default(),
+            usb_messages,
+            chunks,
         };
-        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default() }, local)
+        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default(), serial_key: Player::new() }, local)
     }
 
     /// The key jack's contacts from port B's input bits: a closed contact pulls its pin low.
@@ -348,15 +398,65 @@ mod app {
         }
     }
 
-    /// USB events, and the next keyboard report once the tick queues one. Below the tick, so
-    /// keying never waits on USB.
-    #[task(binds = USBFS_L_CAN1_RX0, priority = 2, shared = [typist], local = [keyboard])]
+    /// USB events, serial commands and screenshot bytes, and the next keyboard report once the
+    /// tick queues one. Below the tick, so keying never waits on USB.
+    #[task(
+        binds = USBFS_L_CAN1_RX0,
+        priority = 2,
+        shared = [typist],
+        local = [port, command_line, usb_messages, chunks, unsent: Option<Chunk> = None]
+    )]
     fn usb_events(mut cx: usb_events::Context) {
-        let ready = cx.local.keyboard.poll();
+        let port = cx.local.port;
+        let ready = port.poll();
         USB_READY.store(ready, Ordering::Relaxed);
+        SERIAL_OPEN.store(ready && port.serial_open(), Ordering::Relaxed);
         if !ready {
             cx.shared.typist.lock(Typist::clear);
+            // Left over, these would land in front of the next screenshot.
+            *cx.local.unsent = None;
+            while cx.local.chunks.try_recv().is_ok() {}
             return;
+        }
+        let mut received = [0; CHUNK_LEN];
+        match port.read_serial(&mut received) {
+            Ok(n) => {
+                let mut send = |message| {
+                    if cx.local.usb_messages.try_send(message).is_err() {
+                        DROPPED_EVENTS.fetch_add(1, Ordering::Relaxed);
+                    }
+                };
+                for &byte in &received[..n] {
+                    // Through the same queue as SHOT, so a screenshot after a press shows its result.
+                    match cx.local.command_line.push(byte) {
+                        Some(SerialCommand::Shot) => send(Message::Shot),
+                        Some(SerialCommand::Send(text)) => send(Message::Send(text)),
+                        Some(SerialCommand::Press(button)) => {
+                            send(Message::Button(Event::Press(button)));
+                            send(Message::Button(Event::Release(button)));
+                        }
+                        None => {}
+                    }
+                }
+            }
+            Err(_) => {
+                SERIAL_ERRORS.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        while let Some(mut chunk) = cx.local.unsent.take().or_else(|| cx.local.chunks.try_recv().ok()) {
+            match port.write_serial(chunk.unsent()) {
+                Ok(n) => {
+                    chunk.start += n;
+                    if !chunk.unsent().is_empty() {
+                        *cx.local.unsent = Some(chunk);
+                        break;
+                    }
+                }
+                Err(_) => {
+                    SERIAL_ERRORS.fetch_add(1, Ordering::Relaxed);
+                    break;
+                }
+            }
         }
         let out = usb_out();
         let report = match out {
@@ -364,7 +464,7 @@ mod app {
             UsbOut::Vband => (VBAND_KEYS.load(Ordering::Relaxed), 0),
             UsbOut::Off => NO_KEYS,
         };
-        match cx.local.keyboard.send(report) {
+        match port.send(report) {
             Ok(true) if matches!(out, UsbOut::Text | UsbOut::Radio) => cx.shared.typist.lock(Typist::sent),
             Ok(_) => {}
             Err(_) => {
@@ -378,9 +478,10 @@ mod app {
     #[task(
         binds = TMR3,
         priority = 3,
-        shared = [keyer, audio, players, typist],
+        shared = [keyer, audio, players, typist, serial_key],
         local = [
             timer, buttons, decoder, listener, jack, messages,
+            sent_after_ms: Option<u32> = None,
             listening: bool = false,
             key_down: bool = false, keyed: bool = false, key_out: (bool, bool) = (false, false), contacts: Contacts = Contacts { tip: false, ring: false },
             playing: bool = false,
@@ -394,7 +495,15 @@ mod app {
 
         cx.local.jack.tick(jack_contacts(b));
         let (contacts, keying) = (cx.local.jack.closed(), cx.local.jack.keying());
-        let (down, dit_ms, mode, swap) = cx.shared.keyer.lock(|keyer| (keyer.tick(keying), keyer.dit_ms(), keyer.mode(), keyer.swap));
+        let (keyer_down, dit_ms, mode, swap) = cx.shared.keyer.lock(|keyer| (keyer.tick(keying), keyer.dit_ms(), keyer.mode(), keyer.swap));
+        // Active before its tick, so a text with no Morse in it still ends with SENT.
+        let (serial_active, serial) = cx.shared.serial_key.lock(|player| {
+            if keying.tip || keying.ring {
+                player.stop();
+            }
+            (player.is_active(), player.tick())
+        });
+        let down = keyer_down || serial == Some(true);
         let copy_dit_ms = cx.local.decoder.dit_ms();
 
         let messages = cx.local.messages;
@@ -402,6 +511,16 @@ mod app {
             if messages.try_send(message).is_err() {
                 DROPPED_EVENTS.fetch_add(1, Ordering::Relaxed);
             }
+        };
+
+        // A word gap after the text, so the decoder ends the last word before SENT.
+        *cx.local.sent_after_ms = match (serial_active, *cx.local.sent_after_ms) {
+            (true, _) => Some(7 * dit_ms as u32),
+            (false, Some(0)) => {
+                send(Message::Sent);
+                None
+            }
+            (false, after) => after.map(|ms| ms - 1),
         };
 
         let old = *cx.local.contacts;
@@ -497,13 +616,15 @@ mod app {
         cx.local.buttons.tick(raw, |event| send(Message::Button(event)));
     }
 
-    #[task(priority = 1, shared = [keyer, audio, players, link])]
+    #[task(priority = 1, shared = [keyer, audio, players, link, serial_key])]
+    #[allow(clippy::too_many_arguments)]
     async fn ui(
         mut cx: ui::Context,
         mut lcd: Lcd,
         mut bus: I2c,
         saved: Saved,
         mut messages: Receiver<'static, Message, EVENT_QUEUE>,
+        mut chunks: Sender<'static, Chunk, CHUNKS>,
         system: SystemInfo,
         mut devices: Devices,
     ) {
@@ -533,6 +654,7 @@ mod app {
         }
         while messages.try_recv().is_ok() {}
 
+        let readable = system.panel == Panel::Ips;
         let gauge = Gauge::new(battery_full, TICKS.load(Ordering::Relaxed));
         let mut ui = Ui::new(&settings, system, letters, history, memories, gauge);
         ui.poll(&mut lcd, read_battery(&mut devices.adc), TICKS.load(Ordering::Relaxed));
@@ -542,6 +664,10 @@ mod app {
         let mut save_at: Option<<Mono as Monotonic>::Instant> = None;
         let mut dropped_shown = 0;
         let mut usb_lost_shown = 0;
+        let mut serial_errors_shown = 0;
+        let mut serial_lines_lost_shown = 0;
+        // From a SEND until its SENT, so a second SEND gets BUSY.
+        let mut sending = false;
         loop {
             let ui_at = ui.deadline().map(|at| Mono::now() + ticks::ms_until(TICKS.load(Ordering::Relaxed), at).millis());
             let wake_at = [save_at, ui_at, Some(poll_at)].into_iter().flatten().min();
@@ -551,7 +677,24 @@ mod app {
             };
             let before = settings;
             match received {
-                Ok(Ok(message)) => handle(&mut ui, &mut lcd, &mut settings, &mut input, message, save_at.is_some(), &mut bus),
+                Ok(Ok(Message::Shot)) => {
+                    if !send_screen(&mut lcd, &mut chunks, readable).await {
+                        ui.status(&mut lcd, "SCREENSHOT NOT SENT");
+                    }
+                }
+                Ok(Ok(Message::Send(_))) if sending => emit(&mut chunks, "BUSY\n"),
+                Ok(Ok(Message::Send(text))) => {
+                    let keying = Keying { wpm: settings.wpm, effective: 0, fist: 0 };
+                    cx.shared.serial_key.lock(|player| player.start(text.as_str(), keying, 1, 0, 0));
+                    sending = true;
+                }
+                Ok(Ok(message)) => {
+                    sending &= !matches!(message, Message::Sent);
+                    if let Some(line) = event_line(&message) {
+                        emit(&mut chunks, line.as_str());
+                    }
+                    handle(&mut ui, &mut lcd, &mut settings, &mut input, message, save_at.is_some(), &mut bus);
+                }
                 Ok(Err(_)) => unreachable!("the tick task holds the sender forever"),
                 Err(_) => {
                     if save_at.is_some_and(|at| at <= Mono::now()) {
@@ -591,6 +734,7 @@ mod app {
                             }
                             players[i].start(p.text.as_str(), p.keying, p.seed, p.delay_ms, p.pitch_hz);
                             PLAYS_STARTED.fetch_add(1, Ordering::Relaxed);
+                            emit(&mut chunks, Text::<CHUNK_LEN>::format(format_args!("PLAY {}\n", p.text.as_str())).as_str());
                         }
                         Command::Stop => {
                             PLAYER_KEYS.store(false, Ordering::Relaxed);
@@ -620,6 +764,18 @@ mod app {
                 let line = Text::<32>::format(format_args!("{usb_lost} USB KEYS LOST"));
                 ui.status(&mut lcd, line.as_str());
             }
+            let serial_errors = SERIAL_ERRORS.load(Ordering::Relaxed);
+            if serial_errors != serial_errors_shown {
+                serial_errors_shown = serial_errors;
+                let line = Text::<32>::format(format_args!("{serial_errors} SERIAL ERRORS"));
+                ui.status(&mut lcd, line.as_str());
+            }
+            let serial_lines_lost = SERIAL_LINES_LOST.load(Ordering::Relaxed);
+            if serial_lines_lost != serial_lines_lost_shown {
+                serial_lines_lost_shown = serial_lines_lost;
+                let line = Text::<32>::format(format_args!("{serial_lines_lost} SERIAL LINES LOST"));
+                ui.status(&mut lcd, line.as_str());
+            }
         }
     }
 
@@ -642,7 +798,75 @@ mod app {
             Message::Played { .. } => {}
             Message::Board(event) => ui.board_event(lcd, event),
             Message::Heard { decoded, wpm } => ui.heard(lcd, decoded, wpm),
+            Message::Shot => unreachable!("the UI loop sends the screen, since that waits on USB"),
+            Message::Send(_) => unreachable!("the UI loop starts the serial key, since that needs its lock"),
+            Message::Sent => {}
         }
+    }
+
+    /// The serial event line for `message`: KEY or HEARD and one decoded character, SENT, or
+    /// PLAYED for the Played message `handle` acts on.
+    fn event_line(message: &Message) -> Option<Text<CHUNK_LEN>> {
+        let (name, decoded) = match message {
+            Message::Decoded(decoded) => ("KEY", *decoded),
+            Message::Heard { decoded, .. } => ("HEARD", *decoded),
+            Message::Sent => return Some(Text::format(format_args!("SENT\n"))),
+            Message::Played { play } if *play == PLAYS_STARTED.load(Ordering::Relaxed) => {
+                return Some(Text::format(format_args!("PLAYED\n")));
+            }
+            _ => return None,
+        };
+        let line = |c: &str| Some(Text::format(format_args!("{name} {c}\n")));
+        match decoded {
+            Decoded::Char(c) => line(morse::text(&c)),
+            Decoded::Unknown => line("*"),
+            Decoded::Space => line(" "),
+        }
+    }
+
+    /// Queues an event line for the USB task while the computer has the port open. A line the
+    /// full queue has no room for counts in SERIAL_LINES_LOST.
+    fn emit(chunks: &mut Sender<'static, Chunk, CHUNKS>, line: &str) {
+        if !SERIAL_OPEN.load(Ordering::Relaxed) {
+            return;
+        }
+        if chunks.try_send(Chunk::new(line.as_bytes())).is_err() {
+            SERIAL_LINES_LOST.fetch_add(1, Ordering::Relaxed);
+        }
+        rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+    }
+
+    /// Sends the screen on the serial port: a header line, then each row as the panel reads it
+    /// back. A panel whose read is not checked gets a refusal line instead. False when USB took
+    /// nothing for SHOT_WAIT_MS.
+    async fn send_screen(lcd: &mut Lcd, chunks: &mut Sender<'static, Chunk, CHUNKS>, readable: bool) -> bool {
+        if !readable {
+            return send_serial(chunks, b"SHOT UNCHECKED PANEL\n").await;
+        }
+        let header = Text::<32>::format(format_args!("SHOT {} {} RGB666\n", lcd::WIDTH, lcd::HEIGHT));
+        if !send_serial(chunks, header.as_str().as_bytes()).await {
+            return false;
+        }
+        let mut row = [0; lcd::ROW_BYTES];
+        for y in 0..lcd::HEIGHT as i32 {
+            lcd.read_row(y, &mut row);
+            if !send_serial(chunks, &row).await {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Queues `bytes` for the USB task; false when it took nothing for SHOT_WAIT_MS.
+    async fn send_serial(chunks: &mut Sender<'static, Chunk, CHUNKS>, bytes: &[u8]) -> bool {
+        for piece in bytes.chunks(CHUNK_LEN) {
+            let sent = Mono::timeout_after(SHOT_WAIT_MS.millis(), chunks.send(Chunk::new(piece))).await;
+            rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+            if !matches!(sent, Ok(Ok(()))) {
+                return false;
+            }
+        }
+        true
     }
 
     /// Saves everything unsaved and enters standby. `unsaved`: settings changed since the last save.

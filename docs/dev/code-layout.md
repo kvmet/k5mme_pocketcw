@@ -32,7 +32,8 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `progress` | Practice history, one slot per session. |
 | `memories`, `settings` | The memories and the settings, with their EEPROM records. |
 | `record` | The EEPROM record frame and its CRC. |
-| `battery`, `panel`, `board` | The battery gauge, the choice of screen type, and the decoder board protocol. |
+| `battery`, `panel`, `board` | The battery gauge, the choice of screen type and its memory read framing, and the decoder board protocol. |
+| `serial` | Commands from the computer on the USB serial port. |
 | `buttons`, `input`, `ticks`, `rng`, `math` | Button debounce and events, button actions, tick arithmetic, random numbers, and math helpers. |
 
 ## firmware modules
@@ -47,7 +48,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `i2c`, `eeprom`, `store` | The I2C bus, the EEPROM, and where each record lives. |
 | `battery` | ADC readings of the battery and the supply. |
 | `link` | The serial link to the decoder board. |
-| `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard. |
+| `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard and serial port. |
 | `ui/` | One file per screen, plus shared parts: `exchange` and `transcript` for the QSO screens, `tape` for the timing tape. |
 | `text` | A re-export of the fixed size string type. |
 | `bin/probe.rs`, `bin/usbprobe.rs` | Separate hardware and USB probe images. See [Build and flash](building.md). |

@@ -15,9 +15,12 @@ pub const WIDTH: u32 = 320;
 pub const HEIGHT: u32 = 240;
 
 const SPI_DIV_2: u8 = 0b000;
+/// 4.5 MHz: both controllers need at least 150 ns a clock to read.
+const SPI_DIV_8: u8 = 0b010;
+/// A screen row as RAMRD sends it: 3 bytes a pixel, red first, each channel in its top 6 bits.
+pub const ROW_BYTES: usize = WIDTH as usize * 3;
 const RDDID: u8 = 0x04;
-/// One dummy clock, 24 ID bits, and 7 more so a wrong dummy count shows in the raw answer.
-const ID_BITS: u32 = 32;
+const RAMRD: u8 = 0x2E;
 
 fn init_sequence(panel: Panel) -> &'static [(u8, &'static [u8], u32)] {
     match panel {
@@ -110,14 +113,16 @@ impl Lcd {
     /// SDO pin when it has one wired, else on its bidirectional SDA. Bit-banged, since the SPI
     /// block cannot clock the single dummy bit. Call between `reset` and `init`.
     pub fn read_id(&mut self) -> [IdRead; 2] {
-        let b = port_b();
-        gpio::set_low(b, SCK);
-        gpio::configure(b, SCK, gpio::OUTPUT_LARGE);
-        let up = read_rddid(true);
-        let down = read_rddid(false);
-        gpio::configure(b, SCK, gpio::PERIPHERAL_OUTPUT_MAXIMUM);
-        gpio::configure(b, MOSI, gpio::PERIPHERAL_OUTPUT_MAXIMUM);
-        [0, 1].map(|pin| IdRead { pulled_up: up[pin], pulled_down: down[pin] })
+        // One dummy clock, 24 ID bits, and 7 more so a wrong dummy count shows in the raw answer.
+        let [up, down] = [true, false].map(|pull_up| bit_banged(|| read_bits::<1>(RDDID, pull_up)));
+        [0, 1].map(|pin| IdRead { pulled_up: up[pin][0], pulled_down: down[pin][0] })
+    }
+
+    /// RAMRD over `area`, read raw on PB4 and on PB5 in that order, with both pins pulled up or
+    /// down. `panel::find_framing` finds the pixels in the bits.
+    pub fn read_memory<const N: usize>(&mut self, area: &Rectangle, pull_up: bool) -> [[u32; N]; 2] {
+        self.set_window(area);
+        bit_banged(|| read_bits(RAMRD, pull_up))
     }
 
     pub fn init(&mut self, panel: Panel) {
@@ -168,11 +173,53 @@ impl Lcd {
         gpio::set_high(port_b(), CS);
     }
 
-    fn write_pixels(&mut self, area: &Rectangle, colors: impl IntoIterator<Item = Rgb565>) {
+    /// Screen row `y` read back through SPI1 on PB4. Confirmed on the IPS panel only; the panel
+    /// sends one dummy byte first.
+    pub fn read_row(&mut self, y: i32, row: &mut [u8; ROW_BYTES]) {
+        self.set_window(&Rectangle::new(Point::new(0, y), Size::new(WIDTH, 1)));
+        let b = port_b();
+        gpio::set_high(b, MISO);
+        gpio::configure(b, MISO, gpio::INPUT_PULL);
+        self.set_divider(SPI_DIV_8);
+        gpio::set_low(b, CS);
+        gpio::set_low(b, DC);
+        self.send(RAMRD);
+        self.wait_idle();
+        gpio::set_high(b, DC);
+        // Writes leave a byte and the overrun flag in the receiver; reading data then status
+        // clears both.
+        let _ = self.spi.dt().read();
+        let _ = self.spi.sts().read();
+        self.transfer();
+        for byte in row.iter_mut() {
+            *byte = self.transfer();
+        }
+        gpio::set_high(b, CS);
+        self.set_divider(SPI_DIV_2);
+    }
+
+    fn transfer(&mut self) -> u8 {
+        self.send(0);
+        while self.spi.sts().read().rdbf().bit_is_clear() {}
+        self.spi.dt().read().bits() as u8
+    }
+
+    /// The divider changes only while SPI1 is off.
+    fn set_divider(&mut self, divider: u8) {
+        self.spi.ctrl1().modify(|_, w| w.spien().clear_bit());
+        self.spi.ctrl1().modify(|_, w| unsafe { w.mdiv2_0().bits(divider) });
+        self.spi.ctrl1().modify(|_, w| w.spien().set_bit());
+    }
+
+    fn set_window(&mut self, area: &Rectangle) {
         let (x0, y0) = (area.top_left.x as u16, area.top_left.y as u16);
         let (x1, y1) = (x0 + area.size.width as u16 - 1, y0 + area.size.height as u16 - 1);
         self.command(0x2A, &[(x0 >> 8) as u8, x0 as u8, (x1 >> 8) as u8, x1 as u8]);
         self.command(0x2B, &[(y0 >> 8) as u8, y0 as u8, (y1 >> 8) as u8, y1 as u8]);
+    }
+
+    fn write_pixels(&mut self, area: &Rectangle, colors: impl IntoIterator<Item = Rgb565>) {
+        self.set_window(area);
         gpio::set_low(port_b(), CS);
         gpio::set_low(port_b(), DC);
         self.send(0x2C);
@@ -188,9 +235,21 @@ impl Lcd {
     }
 }
 
-/// One RDDID read with PB4 and PB5 pulled up or down while the panel answers: the bits from PB4
-/// and from PB5. Both controllers allow a read clock of 150 ns; a 2 us clock is far inside it.
-fn read_rddid(pull_up: bool) -> [u32; 2] {
+/// Runs `read` with SCK as a plain output, then gives SCK and MOSI back to SPI1.
+fn bit_banged<R>(read: impl FnOnce() -> R) -> R {
+    let b = port_b();
+    gpio::set_low(b, SCK);
+    gpio::configure(b, SCK, gpio::OUTPUT_LARGE);
+    let result = read();
+    gpio::configure(b, SCK, gpio::PERIPHERAL_OUTPUT_MAXIMUM);
+    gpio::configure(b, MOSI, gpio::PERIPHERAL_OUTPUT_MAXIMUM);
+    result
+}
+
+/// Sends `command` and reads N words with PB4 and PB5 pulled up or down while the panel answers:
+/// the bits from PB4 and from PB5, first bit in bit 31. Both controllers allow a read clock of
+/// 150 ns; a 2 us clock is far inside it.
+fn read_bits<const N: usize>(command: u8, pull_up: bool) -> [[u32; N]; 2] {
     let b = port_b();
     gpio::configure(b, MISO, gpio::INPUT_PULL);
     gpio::set(b, MISO, pull_up);
@@ -198,7 +257,7 @@ fn read_rddid(pull_up: bool) -> [u32; 2] {
     gpio::set_low(b, DC);
     gpio::set_low(b, CS);
     for bit in (0..8).rev() {
-        gpio::set(b, MOSI, RDDID >> bit & 1 != 0);
+        gpio::set(b, MOSI, command >> bit & 1 != 0);
         delay_us(1);
         gpio::set_high(b, SCK);
         delay_us(1);
@@ -210,13 +269,13 @@ fn read_rddid(pull_up: bool) -> [u32; 2] {
         gpio::set_low(b, SCK);
     }
     gpio::set_high(b, DC);
-    let mut bits = [0u32; 2];
-    for _ in 0..ID_BITS {
+    let mut bits = [[0u32; N]; 2];
+    for i in 0..N * 32 {
         // The panel shifts out on the falling edge; sample just before the rising edge.
         delay_us(1);
         let inputs = gpio::inputs(b);
-        for (pin, bits) in [MISO, MOSI].into_iter().zip(&mut bits) {
-            *bits = *bits << 1 | (inputs >> pin & 1) as u32;
+        for (pin, words) in [MISO, MOSI].into_iter().zip(&mut bits) {
+            words[i / 32] = words[i / 32] << 1 | (inputs >> pin & 1) as u32;
         }
         gpio::set_high(b, SCK);
         delay_us(1);

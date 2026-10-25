@@ -34,6 +34,9 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `CODEC DID NOT ANSWER` | The audio chip did not take a new volume. |
 | `n INPUTS LOST` | Button presses, key changes or decoded characters came faster than the screen could handle them, and the device lost `n` of them. |
 | `n USB KEYS LOST` | The device lost `n` characters or key changes on their way to the computer. See [USB keyboard](usb.md). |
+| `n SERIAL ERRORS` | USB refused `n` reads or writes on the serial port. |
+| `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
+| `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
 
 ## Memories
 

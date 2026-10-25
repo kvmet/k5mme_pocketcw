@@ -22,7 +22,7 @@ use pocketcw_firmware::i2c::I2c;
 use pocketcw_firmware::lcd::Lcd;
 use pocketcw_firmware::pins::{BACKLIGHT, F_KEYS, LED, POWER_BUTTON, RING, SPEAKER_AMP, TIP};
 use pocketcw_firmware::text::Text;
-use pocketcw_firmware::usb::{self, Keyboard};
+use pocketcw_firmware::usb::{self, Port};
 use pocketcw_firmware::{eeprom, power, store};
 use pocketcw_logic::keyboard::{self, LEFT_CTRL, NO_KEYS, RIGHT_CTRL};
 use pocketcw_logic::panel;
@@ -94,7 +94,7 @@ fn main() -> ! {
     show(&mut lcd, 9, "Hold click 1.5 s: power off");
 
     let usb_bus = cortex_m::singleton!(: usb::Bus = usb::bus()).unwrap();
-    let mut keyboard = Keyboard::new(usb_bus, "PocketCW USB probe");
+    let mut keyboard = Port::new(usb_bus, "PocketCW USB probe");
     usb::attach();
 
     let mut state = UsbDeviceState::Default;
