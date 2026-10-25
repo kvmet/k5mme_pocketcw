@@ -3,7 +3,7 @@
 a bad one with a respelling or phonemes. Marks go to review.txt and fixes to fixes.txt in the
 voice's folder. A fixed clip goes to the pack's cache, so the next pack build takes it as it is.
 
-With the list focused: G good, B bad, N note (Enter in the note marks bad), Space plays again,
+Good and Bad mark the clip as it is now. With the list focused: G good, B bad, N note (Enter in the note marks bad), Space plays again,
 Up and Down move. Enter in the respelling or phonemes speaks the fix, Keep fix saves it and
 marks the clip good, and Reset puts back the word list's said. Esc goes back to the list.
 
@@ -49,7 +49,7 @@ COLUMNS = ("Text", "Clip", "Mark", "Says", "Note")
 # Keys under the phonemes field: the misaki phonemes a keyboard lacks or that differ from their
 # letter, each with a word it sounds in. Kokoro has no g; it takes ɡ.
 PHONEME_KEYS = {
-    "Stress and pitch, before the vowel": [("ˈ", "stress"), ("ˌ", "light stress"), ("↗", "pitch up"), ("↘", "pitch down"), ("…", "pause")],
+    "Stress and pitch, before the vowel": [("ˈ", "stress"), ("ˌ", "light stress"), ("↗", "pitch up"), ("↘", "pitch down"), ("ː", "long"), ("…", "pause")],
     "Vowels": [
         ("i", "see"), ("ɪ", "sit"), ("A", "day"), ("ɛ", "bed"), ("æ", "cat"), ("ɑ", "father"),
         ("ɔ", "law"), ("O", "go"), ("ʊ", "book"), ("u", "you"), ("ʌ", "cup"), ("ə", "about"),
@@ -261,6 +261,8 @@ class Window(QMainWindow):
             field.setValidator(QRegularExpressionValidator(f"[^{pack.BREAKS.pattern[1:-1]}]*", field))
         self.status = QLabel()
         self.status.setWordWrap(True)
+        good = QPushButton("Good (G)")
+        bad = QPushButton("Bad (B)")
         speak = QPushButton("Speak")
         play_kept = QPushButton("Play kept")
         keep = QPushButton("Keep fix")
@@ -275,7 +277,13 @@ class Window(QMainWindow):
             buttons.addWidget(button)
         form.addRow(buttons)
         right = QVBoxLayout()
-        for widget in (self.word, self.says, QLabel("Note"), self.note, fix, self.phoneme_keys(), self.status):
+        for widget in (self.word, self.says, QLabel("Note"), self.note):
+            right.addWidget(widget)
+        marks = QHBoxLayout()
+        marks.addWidget(good)
+        marks.addWidget(bad)
+        right.addLayout(marks)
+        for widget in (fix, self.phoneme_keys(), self.status):
             right.addWidget(widget)
         right.addStretch()
         left = QVBoxLayout()
@@ -297,7 +305,11 @@ class Window(QMainWindow):
         self.play_timer.timeout.connect(self.play_kept)
         self.filter.currentTextChanged.connect(self.set_filter)
         self.table.selectionModel().currentRowChanged.connect(self.show_row)
-        self.note.returnPressed.connect(lambda: self.mark("bad", self.note.text()))
+        mark_good = lambda: self.mark("good", "")
+        mark_bad = lambda: self.mark("bad", self.note.text())
+        self.note.returnPressed.connect(mark_bad)
+        good.clicked.connect(mark_good)
+        bad.clicked.connect(mark_bad)
         self.respelling.textEdited.connect(self.respelled)
         self.respelling.returnPressed.connect(self.speak)
         self.phonemes.returnPressed.connect(self.speak)
@@ -306,8 +318,8 @@ class Window(QMainWindow):
         keep.clicked.connect(self.keep)
         reset.clicked.connect(self.reset)
         for key, action in (
-            ("G", lambda: self.mark("good", "")),
-            ("B", lambda: self.mark("bad", self.note.text())),
+            ("G", mark_good),
+            ("B", mark_bad),
             ("N", self.note.setFocus),
             ("Space", self.play_kept),
         ):
