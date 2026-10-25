@@ -38,8 +38,8 @@ const POCKETCW_HEADER: &[u8; 9] = b"PocketCW\x01";
 const TEST_TAG: &[u8; 8] = b"PCWTEST\0";
 const MARK_TAG: &[u8; 8] = b"PCWMARK\0";
 const TAG_LEN: usize = 12;
-/// The end of a 1022-cluster test file at 2 KB clusters, the largest `pocketcw-flash` writes.
-const TEST_END: u32 = POCKETCW_FILE + 1022 * 2048;
+/// The end of the test file from `tools/flashtest.py`.
+const TEST_END: u32 = POCKETCW_FILE + 511 * SECTOR;
 /// Markers past the test file's end (in its 64 KB block, then 4 KB, 64 KB and 1 MB on) and in
 /// the planned log range.
 const MARKS: [u32; 6] = [TEST_END, TEST_END + 0x1000, TEST_END + 0x1_0000, TEST_END + 0x10_0000, 0xC0_0000, 0xDF_F000];

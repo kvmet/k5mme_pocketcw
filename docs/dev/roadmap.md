@@ -25,9 +25,10 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 
 - `opt-level = "z"` is adopted: the app ran fine on hardware. The worst-case synth sample costs 1900 of 4096 cycles at `"z"` and 1400 at `"s"`, measured on board 2.64.
 - USB MIDI is planned next, and will take MCU flash.
-- SPI flash: 16 MB, on SPI1 with the LCD (`LCD_CS` PB6, `FLASH_CS` PB9). Only the read command 0x03 is confirmed. The part is not known and may be a clone.
-- Vendor regions in SPI flash: 0x000000 (boot screen), 0x030000 to 0x0C507F (UI images), 0xE00000 up (fonts). Free by file layout: 0x0C5080 to 0xDFFFFF. The stock firmware has a contact log whose location is not known.
-- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:247`): 1022 clusters, 2,093,056 bytes at 2 KB clusters. The largest F file ever installed is the vendor `F003800.bin`, 2,019,328 bytes.
+- SPI flash: 16 MB GigaDevice GD25Q128 (JEDEC C8 40 18), on SPI1 with the LCD (`LCD_CS` PB6, `FLASH_CS` PB9). No write protection is set. SFDP 1.0 with 9 dwords lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, but no erase times and no page size.
+- SPI flash in use, by scan: 0x000000 to 0x025FFF (boot screen), 0x030000 to 0x0C5FFF (UI images), 0x100000 to 0x100FFF (`F000400.bin`), 0xE00000 to 0xFECFFF (fonts). Free: 0x0C6000 to 0xDFFFFF apart from `F000400.bin`. The stock firmware has a contact log whose location is not known.
+- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:250`): 1022 clusters. The update drive has 8 KB clusters, so 8,372,224 bytes. Installs of 2 MB are tested; larger ones are not.
+- An install erases and writes only the 4 KB sectors its file covers. Data in the next sector is kept.
 - No RTC (PC14 and PC15 carry the dial) and no audio input (no I2S lines to the MCU).
 - Task model: `sample` at priority 4, `tick` at 3, `ui` at 1. The `audio` resource is shared by `tick` and `ui`, so its lock masks the 1 ms tick. The event queue to `ui` is 64 deep.
 - The serial port is in main: text commands, WinKeyer mode and the VBand CW Hotline (`docs/dev/serial.md`). The port is up while USB OUT is anything but OFF; USB OUT SERIAL gives the port alone, with no typing.
@@ -47,13 +48,12 @@ All four go in probe images. None needs the flash driver in the main image. Each
 
 ### Bootloader erase
 
-1. Read the update drive's boot sector cluster size and total sectors. The per-file limit is 1022 clusters (`pocketcw-flash.c:247`), so this gives it in bytes: 2,093,056 at 2 KB clusters.
-2. Build a test F file of exactly 1022 clusters for 0x100000.
-3. Write markers past its end: end plus 4 KB, plus 64 KB, plus 1 MB, and in the candidate log range 0xC00000 to 0xDFFFFF.
-4. Install the test file with `pocketcw-flash`, then read the markers back.
-5. Check that `pocketcw-flash` refuses a file one cluster larger.
+Done on 2026-10-25 with `firmware/src/bin/flashprobe.rs` and `tools/flashtest.py`. See [SPI flash probe](building.md#spi-flash-probe).
 
-Pass: the log range markers survive. The other markers show how far past a file the bootloader erases.
+- The update drive has 8 KB clusters and 51,200 sectors of 2 KB. `pocketcw-flash` prints both.
+- A 2,093,056 byte test file at 0x100000 installed in full: 511 tagged sectors, 0x100000 to 0x2FEFFF.
+- Markers at the file's end, plus 4 KB, plus 64 KB, plus 1 MB, and at 0xC00000 and 0xDFF000 all survived.
+- Result: an install touches only the sectors its file covers. The log range is safe.
 
 ### Vendor log
 
@@ -84,7 +84,7 @@ Done on 2026-10-25 with `firmware/src/bin/voiceprobe.rs`. See [Voice probe](buil
 
 Only the log is persisted user data, so only its location is fixed now. It goes at the top of the free area, for example 0xC00000 to 0xDFFFFF (2 MB), with a 64 KB guard below. The probes in step 1 decide the final addresses.
 
-The packs grow up from 0x100000. Installs rewrite them and they ship with matching firmware, so each release can move or resize them. Each pack file is 1022 clusters or less, at a 64 KB aligned offset (`F000400.bin` at 0x100000, `F000C00.bin` at 0x300000, and so on).
+The packs grow up from 0x100000. Installs rewrite them and they ship with matching firmware, so each release can move or resize them. Each pack file is 8,372,224 bytes or less, at a 64 KB aligned offset (`F000400.bin` at 0x100000, `F000C00.bin` at 0x300000, and so on).
 
 The logic crate holds the layout and an `allowed(address, len)` check. The driver refuses any erase or program outside the log range. Host tests cover the check.
 
@@ -122,7 +122,7 @@ Flash cost: about 1 KB.
 
 - The clip builder records the voice name, version and license in `THIRD-PARTY.txt`.
 - Format: 4-bit IMA ADPCM at 5859 Hz (17578 / 3), about 2.9 KB a second. Playback draws three output samples per input on straight lines (`logic/src/adpcm.rs`), so no fractional resampler is needed. Packs are rebuilt for each release, so a headphone check can still move the rate to 8789 Hz.
-- Size: each voice pack file is 1022 clusters or less, about 710 s of speech. 3000 words at about 0.6 s is about 5.3 MB, so 3 files. Start with one file of the most common words and abbreviations.
+- Size: each voice pack file is 8,372,224 bytes or less, about 2850 s of speech. 3000 words at about 0.6 s is about 5.3 MB, so one file. Installs over 2 MB are not tested yet. Start with one file of the most common words and abbreviations.
 
 ### Playback
 

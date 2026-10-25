@@ -131,12 +131,12 @@ It erases and programs only between 0x0C6000 and 0xE00000, the free space betwee
 | Control | Action |
 | - | - |
 | F1 | Erase and program test in two blank sectors from 0xD00000: erase times, page program time, a page written in 16 pieces, read back, then erased again. |
-| F2 | Writes a `PCWMARK` tag in each marker sector that reads blank: just past the end of the largest test file, 4 KB, 64 KB and 1 MB past it, and at each end of the planned log range. |
+| F2 | Writes a `PCWMARK` tag in each marker sector that reads blank: just past the end of the test file, 4 KB, 64 KB and 1 MB past it, and at each end of the planned log range. |
 | F3 | Shows whether each marker is still there, then scans again. |
 | F4, twice | Erases every sector that starts with a `PCWMARK` or `PCWTEST` tag. |
 | Hold the dial 1.5 s | Turns the device off. |
 
-The bootloader test shows what installing an F file erases past the file's end. `tools/flashtest.py` writes a 1022 cluster `F000400.bin`, the largest `pocketcw-flash` writes, with every 4 KB sector tagged `PCWTEST`:
+The bootloader test shows what installing an F file erases past the file's end. `tools/flashtest.py` writes a 2 MB `F000400.bin` with every 4 KB sector tagged `PCWTEST`:
 
 ```bash
 python tools/flashtest.py --out firmware/target/flashtest
@@ -146,12 +146,10 @@ python tools/flashtest.py --out firmware/target/flashtest
 sh tools/mkimage.sh flashprobe
 ```
 
-1. Flash the probe. Read the scan, then press F1, then F2.
+1. Build and flash the probe. Read the scan, then press F1, then F2.
 2. Flash `firmware/target/flashtest/F000400.bin`.
 3. Turn the device on and press F3. The tags line counts the test sectors.
 4. Press F4 twice, then flash `dist/F000400.bin` from `tools/release.sh` and the app.
-
-To check that `pocketcw-flash` refuses a file one cluster larger, run `tools/flashtest.py --clusters 1023` and try to flash that file.
 
 ## Remote control and screenshots
 
