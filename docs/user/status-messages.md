@@ -6,7 +6,7 @@ The status line at the bottom of the screen shows short messages. In this list, 
 
 | Message | Meaning |
 | - | - |
-| `RELEASE TO POWER OFF` | You held the dial for 1.5 seconds. Let go of the dial to turn the device off. |
+| `RELEASE TO POWER OFF` | You held the dial for 1 second. Let go of the dial to turn the device off, or press an F button or turn the dial to stay on. |
 | `BATTERY LOW: PLUG IN USB` | The battery is below 3.4 V. Connect USB power to charge it. |
 | `BATTERY EMPTY: POWERING OFF` | The battery is empty. After 2 seconds the device saves everything and turns off. |
 

@@ -6,8 +6,8 @@
 | - | - |
 | F1 to F4 | The four buttons beside the screen, F1 at the top. Press a button to use it. The right edge of the screen shows what each button does on the current screen. A blank label means the button does nothing there. |
 | Dial turn | Turn the dial left or right. Hold it turned to step again and again. |
-| Dial click | Press the dial and let go within 1.5 seconds. |
-| Dial hold | Press the dial and keep it down for 1.5 seconds. This turns the device off on every screen after the boot screen. |
+| Dial click | Press the dial and let go within 1 second. |
+| Dial hold | Press the dial and keep it down for 1 second. This turns the device off on every screen after the boot screen. |
 | Key | The paddle, straight key or sideswiper in the key jack. See [Keys and jacks](keys.md). |
 
 Each screen page in this manual has a table of what these controls do on that screen.
@@ -22,7 +22,9 @@ To skip the boot screen, press any F button or turn the dial. The KEYER screen o
 
 ## Turn off
 
-Hold the dial. After 1.5 seconds the status line says `RELEASE TO POWER OFF`. Let go of the dial, and the device saves everything and turns off.
+Hold the dial. After 1 second the status line says `RELEASE TO POWER OFF`. Let go of the dial, and the device saves everything and turns off.
+
+To stay on, press an F button or turn the dial before you let go. The status line clears, and the button does nothing else.
 
 If a save fails, the status line names what was not saved, and the device waits 3 seconds before it turns off.
 

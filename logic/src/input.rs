@@ -12,6 +12,8 @@ pub enum Action {
     Soft(u8),
     /// The dial is held long enough to power off; power off on release.
     PowerHold,
+    /// A button or dial turn during the power-off hold: stay on.
+    PowerCancel,
     PowerOff,
 }
 
@@ -29,6 +31,12 @@ impl Input {
 
     pub fn map(&mut self, event: Event) -> Option<Action> {
         match event {
+            // The click is still down; disarm so its release does nothing.
+            Event::Press(_) if self.holding => {
+                self.holding = false;
+                self.armed = false;
+                Some(Action::PowerCancel)
+            }
             Event::Press(Button::Right) | Event::Repeat(Button::Right) => Some(Action::Turn(1)),
             Event::Press(Button::Left) | Event::Repeat(Button::Left) => Some(Action::Turn(-1)),
             Event::Press(Button::F1) => Some(Action::Soft(0)),
@@ -72,6 +80,21 @@ mod tests {
         let mut input = Input::new(false);
         let events = [Event::Press(Button::Click), Event::Hold(Button::Click), Event::Release(Button::Click)];
         assert_eq!(map(&mut input, &events), [Action::PowerHold, Action::PowerOff]);
+    }
+
+    #[test]
+    fn a_press_during_the_hold_cancels_power_off() {
+        let mut input = Input::new(false);
+        let events = [
+            Event::Press(Button::Click),
+            Event::Hold(Button::Click),
+            Event::Press(Button::Right),
+            Event::Release(Button::Right),
+            Event::Release(Button::Click),
+            Event::Press(Button::Click),
+            Event::Release(Button::Click),
+        ];
+        assert_eq!(map(&mut input, &events), [Action::PowerHold, Action::PowerCancel, Action::Click]);
     }
 
     #[test]

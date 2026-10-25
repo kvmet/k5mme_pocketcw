@@ -19,7 +19,7 @@ The dial click also closes the dial left contact: PC14 reads high while PA0 is p
 | Debounce | 8 ms. |
 | Press event | Sent at the press, without waiting for release. |
 | Dial repeat | While the dial stays turned: a repeat after 400 ms, then every 80 ms. |
-| Dial click hold | 1500 ms, the vendor power off time. Release after the hold turns the device off. |
+| Dial click hold | 1000 ms; the vendor uses 1500 ms. Release after the hold turns the device off. A button press or dial turn before the release cancels it. |
 | Dial left after a click | Ignored while the click is down and for 50 ms after it opens. |
 
 The click that wakes the device is still down when the app starts. `logic/src/input.rs` ignores that click until it is released.
