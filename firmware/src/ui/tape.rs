@@ -169,12 +169,25 @@ impl Tape {
             Some(page) => page,
             None => self.start_page(lcd, theme, since, dit_ms, lanes),
         };
+        if let Some((x, end)) = self.span(page, since, until) {
+            rect(lcd, x, CONTACT_Y[lane], end - x, 4, theme.accent);
+        }
+    }
+
+    /// Both contacts closed from `since` to `until`: a squeeze, drawn as one bar across both lanes.
+    pub fn squeeze(&self, lcd: &mut crate::lcd::Lcd, theme: &Theme, since: u32, until: u32) {
+        let Some(page) = self.page.filter(|_| !self.zoom) else { return };
+        if let Some((x, end)) = self.span(page, since, until) {
+            rect(lcd, x, CONTACT_Y[0] + 4, end - x, CONTACT_Y[1] - CONTACT_Y[0] - 4, theme.accent);
+        }
+    }
+
+    /// The x range of `since` to `until` on `page`, cut to the page.
+    fn span(&self, page: Page, since: u32, until: u32) -> Option<(i32, i32)> {
         let since = if ticks::reached(since, page.origin) { since } else { page.origin };
         let x = self.x(since).max(HOME.x0);
         let end = self.x(until).min(X1);
-        if end > x {
-            rect(lcd, x, CONTACT_Y[lane], end - x, 4, theme.accent);
-        }
+        (end > x).then_some((x, end))
     }
 
     /// Labels a decoded letter under its marks.

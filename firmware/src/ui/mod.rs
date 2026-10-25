@@ -551,6 +551,11 @@ impl Ui {
                 {
                     let lane = if s.mode.dit_on_ring(s.swap) { 1 - i } else { i };
                     self.tape.contact(lcd, &self.theme, lane, since, at_ms, dit, lanes(s));
+                    // The first contact of a squeeze to open draws it, from the later close.
+                    if let Some(other) = self.contact_since[1 - i] {
+                        let both = if ticks::reached(since, other) { since } else { other };
+                        self.tape.squeeze(lcd, &self.theme, both, at_ms);
+                    }
                 }
             }
         }
