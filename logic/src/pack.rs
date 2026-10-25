@@ -7,7 +7,7 @@
 //!
 //! `WORD`: entry count u16, two zero bytes, then one `WORD_ENTRY` byte entry each: text length
 //! u8, flags u8, text padded with zeros to `WORD_TEXT` bytes, then two clip offsets u32 in
-//! `CLIP` or `NO_CLIP`: the word, and its meaning, which follows the word when it is said on its own. The characters come first, for spelling, then ham words, then common words, each
+//! `CLIP` or `NO_CLIP`: the word, and its meaning, which follows the word when it is said on its own. A word with no clip of its own, such as `QTH`, is spelled from the characters' clips. The characters come first, for spelling, then ham words, then common words, each
 //! group of words most frequent first. A character's text can also be a word's: `K` is a letter
 //! and "over".
 //!
@@ -15,7 +15,7 @@
 //! clips. Each clip is its length u16, then IMA ADPCM bytes (`adpcm.rs`).
 
 pub const MAGIC: &[u8; 8] = b"PocketCW";
-pub const FORMAT: u8 = 3;
+pub const FORMAT: u8 = 4;
 pub const MAX_SECTIONS: usize = 8;
 const TABLE: usize = 12;
 const ENTRY: usize = 16;
@@ -171,7 +171,7 @@ mod tests {
 
     /// Built by `python tools/pack/pack.py --fixture logic/fixtures/pack.bin`: the character `K` (clip
     /// byte 5), the words `CQ` (ham, clip bytes 1 2 3, its meaning 4 4), `<BK>` (ham, no
-    /// clip) and `THE` (clip bytes 9 8).
+    /// clip, its meaning 6) and `THE` (clip bytes 9 8).
     const FIXTURE: &[u8] = include_bytes!("../fixtures/pack.bin");
 
     fn section(header: &Header, kind: [u8; 4]) -> &'static [u8] {
@@ -215,6 +215,7 @@ mod tests {
         assert_eq!(k.meaning, None);
         let bk = word(words, 2);
         assert_eq!((bk.text(), bk.ham, bk.clip), (&b"<BK>"[..], true, None));
+        assert_eq!(clip(clips, bk.meaning.unwrap()), [6]);
         let the = word(words, 3);
         assert_eq!((the.text(), the.char, the.ham), (&b"THE"[..], false, false));
         assert_eq!(clip(clips, the.clip.unwrap()), [9, 8]);

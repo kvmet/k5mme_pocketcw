@@ -23,6 +23,9 @@ pub struct Pack {
     char_count: usize,
     /// The first entry that is a word, not a character.
     first_word: u16,
+    /// The characters have clips, so the voice can say every word: one without a clip of its
+    /// own is spelled. A listening pack has word clips only.
+    pub voiced: bool,
 }
 
 impl Pack {
@@ -46,6 +49,7 @@ impl Pack {
         let mut chars = [(0, 0); MAX_CHARS];
         let mut char_count = 0;
         let mut first_word = count;
+        let mut voiced = false;
         scan(lcd, words, count, |index, entry| {
             crc.update(entry);
             let word = Word::parse(entry);
@@ -56,6 +60,7 @@ impl Pack {
             {
                 chars[char_count] = (c, index);
                 char_count += 1;
+                voiced |= word.clip.is_some();
             }
             if word.is_some_and(|w| !w.char) {
                 first_word = first_word.min(index);
@@ -66,7 +71,7 @@ impl Pack {
             return Err(Error::Corrupt);
         }
         lcd.spi_flash().read(ADDRESS + clips.offset, &mut start);
-        Ok(Pack { words, clips, count, factor: start[0], chars, char_count, first_word })
+        Ok(Pack { words, clips, count, factor: start[0], chars, char_count, first_word, voiced })
     }
 
     pub fn count(&self) -> u16 {

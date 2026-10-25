@@ -44,7 +44,7 @@ const FOOT_Y: i32 = 226;
 const START_MS: u32 = 5000;
 /// NINJA's time to start keying before the voice says the word.
 const THINK_MS: u32 = 1500;
-/// Pack words to try for one that fits a group and has a clip.
+/// Pack words to try for one that fits a group.
 const PICK_TRIES: usize = 20;
 const NEXT_GROUP_MS: u32 = 900;
 const GROUP_DELAY_MS: u32 = 400;
@@ -445,7 +445,7 @@ impl Ui {
     }
 }
 
-/// A NINJA word among the first `limit`: one with a clip that fits left of `COPY_X`, as the pack
+/// A NINJA word among the first `limit`: one the voice can say that fits left of `COPY_X`, as the pack
 /// spells it for the voice and as the group to send.
 fn ninja_word(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd, limit: u16) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
     let cells = |group: &Text<MAX_GROUP>| group.as_str().bytes().map(char_cells).sum::<usize>();
@@ -466,7 +466,7 @@ fn head_words(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd, count: u8, len: Ran
 }
 
 /// A pack word among the first `limit` that `fits` takes, given the word as a group and whether
-/// it has a clip. Returns it as the pack spells it and as a group. Random picks come first, then
+/// the voice can say it. Returns it as the pack spells it and as a group. Random picks come first, then
 /// a scan on from the last pick, so a rare length still ends. None only when no word fits.
 fn pack_word(
     drill: &mut Drill,
@@ -482,7 +482,7 @@ fn pack_word(
         let mut group = Text::new();
         let whole = morse::chars(word.text()).all(|c| group.push(c));
         let text = Text::format(format_args!("{}", core::str::from_utf8(word.text()).ok()?));
-        (whole && fits(&group, word.clip.is_some())).then_some((text, group))
+        (whole && fits(&group, word.clip.is_some() || pack.voiced)).then_some((text, group))
     };
     let mut last = first;
     for _ in 0..PICK_TRIES {

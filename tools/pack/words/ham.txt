@@ -44,14 +44,14 @@ QSX	Q S X	listening on
 
 # Signal reports
 RST	R S T	readability, strength, tone
-5NN	five N N
-599	five nine nine
-579	five seven nine
-569	five six nine
-559	five five nine
-549	five four nine
-449	four four nine
-339	three three nine
+5NN	5 N N
+599	5 9 9
+579	5 7 9
+569	5 6 9
+559	5 5 9
+549	5 4 9
+449	4 4 9
+339	3 3 9
 
 # Greetings and thanks
 GM	G M	good morning
@@ -94,7 +94,7 @@ NW	N W	now
 NM	N M	name
 BTU	B T U	back to you
 MNI	M N I	many
-B4	B four	before
+B4	B 4	before
 SKED	sked	schedule
 WX	W X	weather
 CONDX	C O N D X	conditions
@@ -167,8 +167,8 @@ IOTA	I O T A	islands on the air
 PARK	park
 SUMMIT	summit
 REF	R E F	reference
-P2P	P two P	park to park
-S2S	S two S	summit to summit
+P2P	P 2 P	park to park
+S2S	S 2 S	summit to summit
 LOTW	L O T W	logbook of the world
 SKCC	S K C C	straight key century club
 CWOPS	C W ops

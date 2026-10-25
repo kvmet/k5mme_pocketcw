@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Builds the content pack F000400.bin (format in `logic/src/pack.rs`): the characters in
 tools/pack/words/chars.txt and the words in tools/pack/words/ham.txt and tools/pack/words/common.txt, each with
-a clip of a voice in tools/pack/voices at 8789 Hz. A ham word with a meaning gets a second clip
-of the meaning, which the device says after the word. The least common words are left out until the pack fits
+a clip of a voice in tools/pack/voices at 8789 Hz. A word said letter by letter, such as QTH,
+has no clip: the device spells it from the characters' clips. A ham word with a meaning gets a
+clip of the meaning, which the device says after the word. The least common words are left out until the pack fits
 in one update file.
 
 A voice's folder holds voice.toml (the engine, its settings and model files), fixes.txt (what
@@ -31,12 +32,13 @@ import zlib
 from pathlib import Path
 
 MAGIC = b"PocketCW"
-FORMAT = 3
+FORMAT = 4
 WORD_TEXT = 18
 NO_CLIP = 0xFFFFFFFF
 FLAGS = {"char": 2, "ham": 1, "common": 0}
 FACTOR = 2
-# The speech buffer in firmware/src/speech.rs, which holds a word's clip and its meaning's.
+# The speech buffer in firmware/src/speech.rs, which holds a word's clip, or its letters' clips,
+# and its meaning's.
 CLIP_MAX = 16384
 # The largest update file: 1022 clusters of 8 KB (docs/dev/hardware/flash-layout.md).
 FILE_MAX = 8_372_224
@@ -56,8 +58,8 @@ VOICE = "kokoro-af_heart"
 # clip's text in that form.
 PHONEMES = re.compile(r"/([^/]+)/")
 FIXED = re.compile(r"/([^/]+)/(.*)")
-# A said with a lone capital letter spells a word.
-SPELLED = re.compile(r"(?<!\S)[A-Z](?![^\s.,!?;:])")
+# A said with a lone letter or digit, such as "Q T H" or "5 N N", spells a word.
+CHARACTER = re.compile("[A-Z0-9]")
 ENDS = ".,!?;:"
 # Phonemes with a sentence end inside them, after which the voice pauses.
 SENTENCES = re.compile(r"[.!?] +\S")
@@ -86,16 +88,17 @@ def read_list(name: str, kind: str) -> list[tuple[str, str, str | None, str]]:
     return entries
 
 
-def clips_of(said: str, meaning: str | None, kind: str) -> list[tuple[str, str]]:
+def clips_of(said: str | None, meaning: str | None, kind: str) -> list[tuple[str, str]]:
     """(clip, said) for each clip of an entry: its char or word clip, then its meaning's. A, I,
     K, R and W are both characters and words, so a fix or a mark names the clip."""
-    first = [("char" if kind == "char" else "word", said)]
+    first = [("char" if kind == "char" else "word", said)] if said else []
     return first + [("meaning", meaning)] if meaning else first
 
 
 def read_words(fixes: dict[tuple[str, str], str] | None = None) -> list[tuple[str, str, str | None, str]]:
     """(text, said, meaning, kind) for each entry: characters, ham words, then common words
-    that are not also ham words, with the said and meaning of `fixes` over the lists'."""
+    that are not also ham words, with the said and meaning of `fixes` over the lists'. Said is
+    None for a word the device spells from the characters' clips."""
     chars = read_list("chars.txt", "char")
     ham = read_list("ham.txt", "ham")
     ham_texts = {e[0] for e in ham}
@@ -108,15 +111,18 @@ def read_words(fixes: dict[tuple[str, str], str] | None = None) -> list[tuple[st
             sys.exit(f"cannot send {text!r} in a word entry")
     if len(texts(ham + common)) != len(ham + common):
         sys.exit("a word is listed twice")
-    entries = chars + ham + common
+    for text, said, _, _ in ham + common:
+        if all_letters(said) and said.replace(" ", "") != text.strip("<>"):
+            sys.exit(f"{text}: the device spells the text, so {said!r} must spell it too")
+    entries = chars + [(text, None if all_letters(said) else said, meaning, kind) for text, said, meaning, kind in ham + common]
     fixes = fixes or {}
     unknown = set(fixes) - {(text, clip) for text, said, meaning, kind in entries for clip, _ in clips_of(said, meaning, kind)}
     if unknown:
         sys.exit(f"fixes.txt has clips in no list: {' '.join(f'{text} {clip}' for text, clip in sorted(unknown))}")
     fixed = []
     for text, said, meaning, kind in entries:
-        first, _ = clips_of(said, meaning, kind)[0]
-        fixed.append((text, fixes.get((text, first), said), meaning and fixes.get((text, "meaning"), meaning), kind))
+        first = "char" if kind == "char" else "word"
+        fixed.append((text, said and fixes.get((text, first), said), meaning and fixes.get((text, "meaning"), meaning), kind))
     return fixed
 
 
@@ -134,9 +140,19 @@ def spoken(clip: str, said: str) -> str:
         return ended(said.replace(",", "…"))
     if clip != "word":
         return ended(said)
-    if not PHONEMES.fullmatch(said) and SPELLED.search(said):
+    if spelled(said):
         return " ".join(ended(part) for part in said.split())
     return said
+
+
+def spelled(said: str) -> bool:
+    return not PHONEMES.fullmatch(said) and any(CHARACTER.fullmatch(part.rstrip(ENDS)) for part in said.split())
+
+
+def all_letters(said: str) -> bool:
+    """A said of only letters and digits, such as "Q T H", which the device spells from the
+    characters' clips."""
+    return not PHONEMES.fullmatch(said) and all(CHARACTER.fullmatch(part.rstrip(ENDS)) for part in said.split())
 
 
 def read_table(path: Path, columns: int) -> list[list[str]]:
@@ -206,9 +222,12 @@ def build(words: list[tuple[str, str, bytes | None, bytes | None]], factor: int 
         clips.extend(struct.pack("<H", len(clip)) + clip)
         return offset
 
+    chars = {text: clip for text, kind, clip, _ in words if kind == "char"}
     for text, kind, clip, meaning in words:
-        if clip and meaning and len(clip) + len(meaning) > CLIP_MAX:
-            sys.exit(f"the clips for {text} and its meaning are {len(clip) + len(meaning)} bytes, more than {CLIP_MAX}")
+        # The device spells a word with no clip from the characters' clips it finds.
+        played = clip or b"".join(chars.get(c) or b"" for c in text)
+        if meaning and len(played) + len(meaning) > CLIP_MAX:
+            sys.exit(f"the clips for {text} and its meaning are {len(played) + len(meaning)} bytes, more than {CLIP_MAX}")
         encoded = text.encode()
         entries += struct.pack("<BB", len(encoded), FLAGS[kind]) + encoded.ljust(WORD_TEXT, b"\0")
         entries += struct.pack("<II", add(text, clip), add(text, meaning))
@@ -345,7 +364,7 @@ def main():
         fixture = [
             ("K", "char", bytes([5]), None),
             ("CQ", "ham", bytes([1, 2, 3]), bytes([4, 4])),
-            ("<BK>", "ham", None, None),
+            ("<BK>", "ham", None, bytes([6])),
             ("THE", "common", bytes([9, 8]), None),
         ]
         args.fixture.write_bytes(build(fixture))
@@ -362,7 +381,7 @@ def main():
         speech_keys = {}
         came = {"spoken": 0, "made": 0, "cached": 0}
         for i, (text, said, meaning, kind) in enumerate(words):
-            pair = []
+            made = {}
             for clip_name, clip_said in clips_of(said, meaning, kind):
                 phonemes = voice.phonemes(spoken(clip_name, clip_said))
                 speech_keys[text, clip_name] = voice.speech_key(phonemes)
@@ -370,11 +389,11 @@ def main():
                     clip, how = voice.clip(phonemes)
                 except ValueError as error:
                     sys.exit(f"{text}: {error}")
-                pair.append(clip)
+                made[clip_name] = clip
                 came[how] += 1
                 if how != "cached" and came[how] % 100 == 0:
                     print(f"{how} {came[how]}, at {i}/{len(words)} {text}", flush=True)
-            clips.append(tuple(pair + [None] * (2 - len(pair))))
+            clips.append((made.get("char") or made.get("word"), made.get("meaning")))
         print(f"spoke {came['spoken']} clips, made {came['made']} from kept speech, took {came['cached']} from the cache")
         report_review(voice, speech_keys)
     entries = [(text, kind, clip, meaning) for (text, _, _, kind), (clip, meaning) in zip(words, clips)]

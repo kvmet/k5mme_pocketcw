@@ -375,7 +375,7 @@ mod tests {
     fn speech_plays_its_clip_then_lets_go() {
         static CLIP: [u8; 64] = [0x77; 64];
         let mut synth = Synth::new(RATE, SOUND);
-        synth.say(Some(Upsample::new(Clips::new(&CLIP, &[CLIP.len() as u16], 0), 3)));
+        synth.say(Some(Upsample::new(Clips::new(&CLIP, &[crate::adpcm::Slot { end: CLIP.len() as u16, gap: 0 }]), 3)));
         assert!(!synth.is_silent());
         let samples: std::vec::Vec<f32> = (0..3 * 2 * CLIP.len()).map(|_| synth.sample()).collect();
         assert!(samples.iter().any(|&s| s > 0.1), "speech never got loud");

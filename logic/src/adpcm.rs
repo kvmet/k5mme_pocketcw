@@ -56,37 +56,42 @@ impl Iterator for Clip<'_> {
 /// The most clips one `Clips` plays.
 pub const MAX_CLIPS: usize = 32;
 
-/// How many samples `Upsample::new(Clips::new(..), factor)` gives for `clips` clips of `bytes`
-/// in all, `gap` apart: two per byte and `gap` between clips, each `factor` times.
-pub fn played_samples(bytes: usize, clips: usize, gap: u16, factor: u8) -> u32 {
-    (2 * bytes as u32 + clips.saturating_sub(1) as u32 * gap as u32) * factor.max(1) as u32
+/// Where a clip ends in the bytes of `Clips`, and the silent samples played before it.
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
+pub struct Slot {
+    pub end: u16,
+    pub gap: u16,
 }
 
-/// Clips one after another in one buffer, each decoded from a fresh start, with `gap` silent
-/// samples between them.
+/// How many samples `Upsample::new(Clips::new(..), factor)` gives for `slots` when it keeps them
+/// all: two per byte and each gap, each `factor` times.
+pub fn played_samples(slots: &[Slot], factor: u8) -> u32 {
+    let bytes = slots.last().map_or(0, |s| s.end as u32);
+    (2 * bytes + slots.iter().map(|s| s.gap as u32).sum::<u32>()) * factor.max(1) as u32
+}
+
+/// Clips one after another in one buffer, each decoded from a fresh start after its gap.
 pub struct Clips<'a> {
     bytes: &'a [u8],
-    /// Where each clip ends in `bytes`.
-    ends: [u16; MAX_CLIPS],
+    slots: [Slot; MAX_CLIPS],
     count: usize,
     index: usize,
     clip: Clip<'a>,
-    gap: u16,
     /// Silent samples left before the current clip starts.
     silence: u16,
 }
 
 impl<'a> Clips<'a> {
-    /// The clips that end at `ends` in `bytes`, the first starting at 0. Ends past `MAX_CLIPS`
-    /// or past `bytes` are left out.
-    pub fn new(bytes: &'a [u8], ends: &[u16], gap: u16) -> Clips<'a> {
-        let mut kept = [0; MAX_CLIPS];
+    /// The clips of `slots` in `bytes`, the first starting at 0. Slots past `MAX_CLIPS` or
+    /// ending past `bytes` are left out.
+    pub fn new(bytes: &'a [u8], slots: &[Slot]) -> Clips<'a> {
+        let mut kept = [Slot::default(); MAX_CLIPS];
         let mut count = 0;
-        for (slot, &end) in kept.iter_mut().zip(ends).take_while(|&(_, &end)| end as usize <= bytes.len()) {
-            *slot = end;
+        for (slot, &given) in kept.iter_mut().zip(slots).take_while(|&(_, given)| given.end as usize <= bytes.len()) {
+            *slot = given;
             count += 1;
         }
-        Clips { bytes, ends: kept, count, index: 0, clip: Clip::new(&bytes[..kept[0] as usize]), gap, silence: 0 }
+        Clips { bytes, slots: kept, count, index: 0, clip: Clip::new(&bytes[..kept[0].end as usize]), silence: kept[0].gap }
     }
 }
 
@@ -106,8 +111,8 @@ impl Iterator for Clips<'_> {
             if self.index >= self.count {
                 return None;
             }
-            self.clip = Clip::new(&self.bytes[self.ends[self.index - 1] as usize..self.ends[self.index] as usize]);
-            self.silence = self.gap;
+            self.clip = Clip::new(&self.bytes[self.slots[self.index - 1].end as usize..self.slots[self.index].end as usize]);
+            self.silence = self.slots[self.index].gap;
         }
     }
 }
@@ -167,7 +172,8 @@ mod tests {
     fn clips_play_in_turn_from_a_fresh_start_with_gaps() {
         let bytes = [0x77, 0x77, 0x07, 0x07];
         let one: [i16; 4] = core::array::from_fn(|i| Clip::new(&bytes[..2]).nth(i).unwrap());
-        let mut both = Clips::new(&bytes, &[2, 4], 3);
+        let mut both = Clips::new(&bytes, &[Slot { end: 2, gap: 1 }, Slot { end: 4, gap: 3 }]);
+        assert_eq!(both.next(), Some(0));
         assert!(both.by_ref().take(4).eq(one));
         assert!(both.by_ref().take(3).eq([0, 0, 0]));
         assert!(both.eq(Clip::new(&bytes[2..])));
@@ -175,7 +181,7 @@ mod tests {
 
     #[test]
     fn clips_leave_out_ends_past_the_bytes() {
-        assert_eq!(Clips::new(&[0x77; 2], &[1, 5], 0).count(), 2);
+        assert_eq!(Clips::new(&[0x77; 2], &[Slot { end: 1, gap: 0 }, Slot { end: 5, gap: 0 }]).count(), 2);
     }
 
     #[test]
@@ -189,8 +195,8 @@ mod tests {
     #[test]
     fn played_samples_counts_what_the_clips_play() {
         let bytes = [0x12, 0x34, 0x56, 0x78, 0x9A];
-        let ends = [2, 3, 5];
-        let played = Upsample::new(Clips::new(&bytes, &ends, 7), 2).count();
-        assert_eq!(played as u32, played_samples(bytes.len(), ends.len(), 7, 2));
+        let slots = [Slot { end: 2, gap: 0 }, Slot { end: 3, gap: 7 }, Slot { end: 5, gap: 11 }];
+        let played = Upsample::new(Clips::new(&bytes, &slots), 2).count();
+        assert_eq!(played as u32, played_samples(&slots, 2));
     }
 }
