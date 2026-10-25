@@ -81,17 +81,29 @@ pub struct Drill {
     rng: Rng,
     window_right: u16,
     window_total: u16,
+    /// The level a hand change left and its window.
+    left: Option<(u8, (u16, u16))>,
 }
 
 impl Drill {
     pub fn new(kind: Kind, level: u8, seed: u32) -> Drill {
-        Drill { kind, level: level.clamp(MIN_LEVEL, MAX_LEVEL), rng: Rng::new(seed), window_right: 0, window_total: 0 }
+        Drill { kind, level: level.clamp(MIN_LEVEL, MAX_LEVEL), rng: Rng::new(seed), window_right: 0, window_total: 0, left: None }
     }
 
+    /// Sets the level by hand. Turning back to the level just left restores its window, so a
+    /// stray dial turn costs no progress.
     pub fn set_level(&mut self, level: u8) {
-        self.level = level.clamp(MIN_LEVEL, MAX_LEVEL);
-        self.window_right = 0;
-        self.window_total = 0;
+        let level = level.clamp(MIN_LEVEL, MAX_LEVEL);
+        if level == self.level {
+            return;
+        }
+        let window = match self.left {
+            Some((left, window)) if left == level => window,
+            _ => (0, 0),
+        };
+        self.left = Some((self.level, self.window()));
+        self.level = level;
+        self.resume(window);
     }
 
     /// Progress toward the next level over the current window: (right less extra, total sent).
@@ -149,7 +161,9 @@ impl Drill {
             self.window_total += score.len as u16;
             let passed = self.window_right * 100 >= self.window_total * LEVEL_PERCENT;
             if self.window_total >= LEVEL_WINDOW && passed && self.level < MAX_LEVEL {
-                self.set_level(self.level + 1);
+                self.level += 1;
+                self.resume((0, 0));
+                self.left = None;
                 score.level_up = true;
             } else if self.window_total >= LEVEL_WINDOW {
                 self.window_right = 0;
@@ -260,6 +274,33 @@ mod tests {
         assert_eq!((drill.level, drill.window()), (3, (0, 0)));
         let k = letters::index(b'K').unwrap();
         assert_eq!(letters.accuracy(k), Some((96, 30)));
+    }
+
+    #[test]
+    fn turning_back_to_a_level_keeps_its_progress() {
+        let mut drill = Drill::new(Kind::Koch, 4, 5);
+        let mut letters = Letters::default();
+        drill.score("KMRSK", "KMRSK", &mut letters);
+        drill.set_level(5);
+        assert_eq!(drill.window(), (0, 0));
+        drill.set_level(4);
+        assert_eq!(drill.window(), (5, 5));
+        drill.set_level(5);
+        drill.set_level(6);
+        drill.set_level(4);
+        assert_eq!(drill.window(), (0, 0));
+    }
+
+    #[test]
+    fn a_level_up_leaves_no_window_to_return_to() {
+        let mut drill = Drill::new(Kind::Koch, 2, 5);
+        let mut letters = Letters::default();
+        for _ in 0..10 {
+            drill.score("KMKMK", "KMKMK", &mut letters);
+        }
+        assert_eq!(drill.level, 3);
+        drill.set_level(2);
+        assert_eq!(drill.window(), (0, 0));
     }
 
     #[test]
