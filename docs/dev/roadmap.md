@@ -9,8 +9,9 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 5. Two-way ragchew bot: deferred
 6. In-line logger: deferred until after MIDI, Vail and F key long presses
 7. Stats export: built
-8. Later: send drill, keyer extras, games
-9. Revisit at the end: F key long presses, when the serial port is up
+8. More QSO kinds: P2P and S2S callers, short contest exchanges
+9. Later: send drill, keyer extras, games
+10. Revisit at the end: F key long presses, when the serial port is up
 
 ## Ground facts
 
@@ -18,7 +19,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 
   | Store | Size | Free | Holds |
   | - | - | - | - |
-  | MCU flash | 241,664 bytes | 46.1 KiB at `opt-level = "z"` (image 194,452 bytes on 2026-10-25) | Code, and small tables the core features need without a pack. Code cannot run from the SPI flash: it sits on SPI1, not a memory-mapped interface. |
+  | MCU flash | 241,664 bytes | 30.7 KiB at `opt-level = "z"` (image 210,260 bytes on 2026-10-25) | Code, and small tables the core features need without a pack. Code cannot run from the SPI flash: it sits on SPI1, not a memory-mapped interface. |
   | SPI flash (F files) | 16 MB | About 13 MB outside the vendor regions | Content pack, voice packs, log. |
   | EEPROM (I2C) | 2 KB | 64 bytes (0x7C0 to 0x7FF) | Settings, letter stats, progress, memories. Too small for the log; the plan only appends the LOG setting to the settings record. |
   | RAM | 64 KB | About 56 KB | Buffers, such as the 16 KB voice clip buffer. |
@@ -275,6 +276,35 @@ Built: `STATS LETTERS`, `STATS PROGRESS` and `STATS TIMING` on the serial port, 
 
 Flash cost: about 1 KB.
 
+## 8. More QSO kinds
+
+### P2P and S2S callers
+
+Park to park (P2P) and summit to summit (S2S) contacts are common. Today only Hunt takes a P2P call from you, and no bot sends a reference.
+
+- Activate: some hunters are at a park or on a summit. Such a hunter sends `P2P` or `S2S` and its reference in the exchange, such as `RR TU 559 CA CA P2P US-1234 72` or `S2S W7O/CN-001`. Confirm the current POTA reference format before building: POTA moved from `K-1234` to country codes such as `US-1234`.
+- Hunt: from a park or summit you send `P2P` or `S2S` and your reference; the activator answers with its own.
+- Copy check: the contact counts as copied when your closing holds the other station's reference.
+- Tables: a few dozen park and summit references per call area, chosen to match the hunter's state.
+
+Flash cost: 1 to 2 KB.
+
+### Short contest exchanges
+
+Contests are short, fixed exchanges at speed: no 72 or 73, often only `TU` and your call to close. Add them as programs in Activate, beside POTA and SOTA: you call `CQ TEST`, the bot sends a pileup, and each caller sends one exchange.
+
+| Contest | Exchange | Example |
+| - | - | - |
+| CWT | Name and member number, or state for a non-member | `BOB 1234`, `BOB TX` |
+| SST | Name and state | `BOB TX` |
+| SKCC sprint | RST, state, name and member number | `579 TX BOB 12345T` |
+| Field Day | Class and ARRL section | `2A STX` |
+
+- Copy check: you key the exchange you copied, as Hunt logs a callsign. Each field scores apart.
+- Names and states come from the ragchew and hunter tables. New tables: member numbers (made at random), Field Day classes and ARRL sections.
+
+Flash cost: 2 to 3 KB.
+
 ## Flash budget
 
 | Item | Estimate |
@@ -285,9 +315,11 @@ Flash cost: about 1 KB.
 | Two-way ragchew (deferred) | 6 to 10 KB |
 | Logger, LOG screen, `DUMP LOG` (deferred) | 4 to 5 KB; capture and `DUMP LOG` measured 5.6 KB |
 | Stats export | 1 KB |
-| Total, without the deferred items | 9 KB |
+| P2P and S2S callers | 1 to 2 KB |
+| Short contest exchanges | 2 to 3 KB |
+| Total, without the deferred items | 12 to 14 KB |
 
-The plan needs 9 KB of 46.1 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
+The plan needs 12 to 14 KB of 30.7 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
 
 - Float formatting: about 10 KB of `core::fmt` float code (grisu, dragon, `float_to_decimal_common_exact`), from `{:.1}` in `ui/tape.rs:156` and `ui/home.rs:234` and at least one shortest-form float print. Fixed-point integer formatting removes it.
 - Move fixed text tables (ragchew names, cities, rigs; bot phrases) into the content pack, with a small fallback in MCU flash so the bots still work without a pack.
