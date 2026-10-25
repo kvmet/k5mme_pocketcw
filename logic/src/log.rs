@@ -310,11 +310,11 @@ impl Ring {
     pub fn next_frame<'a>(&self, flash: &mut impl Flash, cursor: &mut Cursor, buf: &'a mut [u8; MAX_FRAME]) -> Option<&'a [u8]> {
         while cursor.after_head <= self.sectors {
             let sector = sector_address((self.head + cursor.after_head) % self.sectors);
-            if cursor.offset > 0 || header(flash, sector).is_some() {
-                if let Found::Frame(len) = read_at(flash, sector, cursor.offset, buf) {
-                    cursor.offset += len as u32;
-                    return Some(&buf[..len]);
-                }
+            if (cursor.offset > 0 || header(flash, sector).is_some())
+                && let Found::Frame(len) = read_at(flash, sector, cursor.offset, buf)
+            {
+                cursor.offset += len as u32;
+                return Some(&buf[..len]);
             }
             (cursor.after_head, cursor.offset) = (cursor.after_head + 1, 0);
         }
