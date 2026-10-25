@@ -25,6 +25,7 @@ pub mod pack;
 pub mod panel;
 pub mod player;
 pub mod progress;
+pub mod pwm;
 pub mod qso;
 pub mod ragchew;
 pub mod record;
