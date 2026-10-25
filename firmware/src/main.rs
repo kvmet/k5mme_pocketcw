@@ -833,6 +833,8 @@ mod app {
         let mut wk_bytes_lost_shown = 0;
         // From a SEND until its SENT, so a second SEND gets BUSY.
         let mut sending = false;
+        // EDGES ON, until EDGES OFF or the port closes.
+        let mut edges = false;
         loop {
             let ui_at = ui.deadline().map(|at| Mono::now() + ticks::ms_until(TICKS.load(Ordering::Relaxed), at).millis());
             let wake_at = [save_at, ui_at, Some(poll_at)].into_iter().flatten().min();
@@ -841,6 +843,7 @@ mod app {
                 None => Ok(messages.recv().await),
             };
             let before = settings;
+            edges &= SERIAL_OPEN.load(Ordering::Relaxed);
             match received {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
                     if !send_screen(&mut lcd, &mut chunks, readable).await {
@@ -856,10 +859,15 @@ mod app {
                         None => emit(&mut chunks, "BUSY\n"),
                     }
                 }
+                Ok(Ok(Message::Serial(SerialCommand::Stop))) => {
+                    cx.shared.serial_key.lock(sender::Sender::clear);
+                    ui.stop_serial();
+                }
+                Ok(Ok(Message::Serial(SerialCommand::Edges(on)))) => edges = on,
                 Ok(Ok(Message::Serial(command))) => answer(&mut ui, &mut lcd, &mut settings, &mut chunks, command).await,
                 Ok(Ok(message)) => {
                     sending &= !matches!(message, Message::Sent);
-                    if let Some(line) = event_line(&message) {
+                    if let Some(line) = event_line(&message, edges) {
                         emit(&mut chunks, line.as_str());
                     }
                     handle(&mut ui, &mut lcd, &mut settings, &mut input, message, save_at.is_some(), &mut bus);
@@ -987,10 +995,18 @@ mod app {
         }
     }
 
-    /// The serial event line for `message`: KEY or HEARD and one decoded character, SENT, or
-    /// PLAYED for the Played message `handle` acts on.
-    fn event_line(message: &Message) -> Option<Text<CHUNK_LEN>> {
+    /// The serial event line for `message`: KEY or HEARD and one decoded character, SENT,
+    /// PLAYED for the Played message `handle` acts on, or with `edges` an EDGE line.
+    fn event_line(message: &Message, edges: bool) -> Option<Text<CHUNK_LEN>> {
         let (name, decoded) = match message {
+            Message::Edge { line, down, at_ms, .. } if edges => {
+                let line = match line {
+                    Line::Key => "KEY",
+                    Line::Tip => "TIP",
+                    Line::Ring => "RING",
+                };
+                return Some(Text::format(format_args!("EDGE {line} {} {at_ms}\n", *down as u8)));
+            }
             Message::Decoded(decoded) => ("KEY", *decoded),
             Message::Heard { decoded, .. } => ("HEARD", *decoded),
             Message::Sent => return Some(Text::format(format_args!("SENT\n"))),
@@ -1019,9 +1035,13 @@ mod app {
                 let line = ui.set(lcd, settings, name, value.as_str());
                 reply(chunks, [line]).await
             }
+            SerialCommand::Play(text) => ui.play_serial(settings, text),
+            SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Press(_) => unreachable!("the UI loop handles these itself"),
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edges(_) | SerialCommand::Press(_) => {
+                unreachable!("the UI loop handles these itself")
+            }
         }
     }
 

@@ -1,13 +1,17 @@
-//! Serial port commands the UI answers: settings and memories by name, and INFO.
+//! Serial port commands the UI answers: settings and memories by name, PLAY, INFO and the stats.
 //! Each reply line ends with `\n`.
 
 use pocketcw_logic::{
     config::{self, Name},
+    letters::{KOCH, Mastery},
+    morse,
     panel::Panel,
+    player::{Keying, MAX_TEXT},
+    serial::Stats,
     settings::{Field, Settings},
 };
 
-use super::{Screen, Session, Ui, settings};
+use super::{Play, Screen, Session, Ui, settings};
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::Theme;
@@ -71,5 +75,48 @@ impl Ui {
         }
         let value = config::get(name, s, &self.memories, settings::value);
         Text::format(format_args!("OK {} {}\n", name.as_str(), value.as_str()))
+    }
+
+    /// Sounds `text` as the receive drills do, with band noise on any screen until it ends.
+    pub fn play_serial(&mut self, s: &Settings, text: Text<MAX_TEXT>) {
+        let (wpm, effective) = s.receive_speed(s.wpm);
+        let keying = Keying { wpm, effective, fist: 0 };
+        let seed = self.next_seed();
+        self.play = Some(Play { text, keying, seed, delay_ms: 0, pitch_hz: s.tone_hz, transmit: false });
+        self.serial_play = true;
+    }
+
+    pub fn stop_serial(&mut self) {
+        self.stop_players();
+        self.serial_play = false;
+    }
+
+    /// The stats lines, then `END`. Letters: `LEVEL n`, then `LETTER C TRIES PERCENT MASTERY`
+    /// for each Koch character, then `MIXUP SENT COPIED COUNT`, most common first. Progress:
+    /// `SESSION SEQ ACTIVE_S CONTACTS RX_CHARS RX_RIGHT SENT_CHARS`, oldest first.
+    pub fn stats(&self, stats: Stats) -> impl Iterator<Item = Reply> + '_ {
+        let letters = &self.letters;
+        let level = (stats == Stats::Letters).then(|| Text::format(format_args!("LEVEL {}\n", letters.level)));
+        let each_letter = KOCH.iter().enumerate().filter(move |_| stats == Stats::Letters).map(move |(i, c)| {
+            let (percent, tries) = letters.accuracy(i).unwrap_or((0, 0));
+            let mastery = match letters.mastery(i) {
+                None => "NEW",
+                Some(Mastery::Known) => "KNOWN",
+                Some(Mastery::Unsure) => "UNSURE",
+                Some(Mastery::Weak) => "WEAK",
+            };
+            Text::format(format_args!("LETTER {} {tries} {percent} {mastery}\n", morse::text(c)))
+        });
+        let mixups = letters.mixups().filter(move |_| stats == Stats::Letters).map(|m| {
+            Text::format(format_args!("MIXUP {} {} {}\n", morse::text(&m.sent), morse::text(&m.copied), m.count))
+        });
+        let (sessions, n) = self.history.sessions();
+        let sessions = sessions.into_iter().take(if stats == Stats::Progress { n } else { 0 }).map(|s| {
+            Text::format(format_args!(
+                "SESSION {} {} {} {} {} {}\n",
+                s.seq, s.active_s, s.contacts, s.rx_chars, s.rx_right, s.sent_chars
+            ))
+        });
+        level.into_iter().chain(each_letter).chain(mixups).chain(sessions).chain([Text::format(format_args!("END\n"))])
     }
 }

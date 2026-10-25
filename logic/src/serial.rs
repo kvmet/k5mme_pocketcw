@@ -19,9 +19,22 @@ pub enum Command {
     Get(Option<Name>),
     /// Set a setting or memory to this value, upper case.
     Set(Name, Text<MAX_TEXT>),
+    /// Sound this text, upper case, as the device sends to you.
+    Play(Text<MAX_TEXT>),
+    /// Stop what `Send` and `Play` started.
+    Stop,
+    /// Send a line for each change on the key lines, or stop.
+    Edges(bool),
+    Stats(Stats),
     /// A line or text longer than a command takes.
     TooLong,
     Unknown,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Stats {
+    Letters,
+    Progress,
 }
 
 const SET: &[u8] = b"SET ";
@@ -81,12 +94,19 @@ fn parse(line: &[u8]) -> Command {
         b"SHOT" => Some(Command::Shot),
         b"INFO" => Some(Command::Info),
         b"GET" => Some(Command::Get(None)),
+        b"STOP" => Some(Command::Stop),
+        b"EDGES ON" => Some(Command::Edges(true)),
+        b"EDGES OFF" => Some(Command::Edges(false)),
+        b"STATS LETTERS" => Some(Command::Stats(Stats::Letters)),
+        b"STATS PROGRESS" => Some(Command::Stats(Stats::Progress)),
         _ => None,
     };
     if let Some(command) = command {
         command
     } else if let Some(text) = line.strip_prefix(b"SEND ") {
         upper(text).map_or(Command::TooLong, Command::Send)
+    } else if let Some(text) = line.strip_prefix(b"PLAY ") {
+        upper(text).map_or(Command::TooLong, Command::Play)
     } else if let Some(button) = line.strip_prefix(b"PRESS ") {
         BUTTON_NAMES.iter().find(|(n, _)| *n == button).map_or(Command::Unknown, |&(_, b)| Command::Press(b))
     } else if let Some(n) = line.strip_prefix(b"GET ") {
@@ -149,6 +169,11 @@ mod tests {
     fn plain_commands() {
         assert_eq!(one("INFO\n"), Command::Info);
         assert_eq!(one("GET\n"), Command::Get(None));
+        assert_eq!(one("STOP\n"), Command::Stop);
+        assert_eq!(one("EDGES ON\n"), Command::Edges(true));
+        assert_eq!(one("EDGES OFF\n"), Command::Edges(false));
+        assert_eq!(one("STATS LETTERS\n"), Command::Stats(Stats::Letters));
+        assert_eq!(one("STATS PROGRESS\n"), Command::Stats(Stats::Progress));
     }
 
     #[test]
@@ -171,9 +196,10 @@ mod tests {
     }
 
     #[test]
-    fn send_takes_its_text_in_upper_case() {
+    fn send_and_play_take_their_text_in_upper_case() {
         assert_eq!(one("SEND cq de K5MME <ar>\n"), Command::Send(text("CQ DE K5MME <AR>")));
         assert_eq!(one("SEND \n"), Command::Send(text("")));
+        assert_eq!(one("PLAY cq\n"), Command::Play(text("CQ")));
     }
 
     #[test]

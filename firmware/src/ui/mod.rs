@@ -157,6 +157,8 @@ pub struct Ui {
     stop: bool,
     /// A transmission to start, after any stop.
     play: Option<Play>,
+    /// A PLAY from the serial port is sounding.
+    serial_play: bool,
     seed: u32,
     system: SystemInfo,
     /// None when the ADC did not answer.
@@ -204,6 +206,7 @@ impl Ui {
             confirm_clear: false,
             stop: false,
             play: None,
+            serial_play: false,
             seed: settings.boot_count as u32 * 7919 + 1,
             system,
             battery: None,
@@ -391,6 +394,9 @@ impl Ui {
 
     /// The player finished a transmission at `now_ms`.
     pub fn played(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
+        if core::mem::take(&mut self.serial_play) {
+            return;
+        }
         match self.screen {
             Screen::Qso => self.qso_played(),
             Screen::Hunt => self.hunt_played(now_ms),
@@ -419,16 +425,17 @@ impl Ui {
         self.play = None;
     }
 
-    /// The current screen plays band noise: practice while it runs, and the SOUND tab, so you
-    /// hear the noise level you set.
+    /// Band noise plays: practice while it runs, the SOUND tab, so you hear the noise level you
+    /// set, and a PLAY from the serial port.
     pub fn band(&self) -> bool {
-        match (self.screen, &self.session) {
+        let screen = match (self.screen, &self.session) {
             (Screen::Qso | Screen::Hunt, _) => true,
             (Screen::Receive, Some(Session::Receive(rx))) => rx.running(),
             (Screen::Ragchew, Some(Session::Ragchew(c))) => c.running(),
             (Screen::Settings, _) => self.tab == settings::SOUND_TAB,
             _ => false,
-        }
+        };
+        screen || self.serial_play
     }
 
     /// Tick count at which `timeout` wants to run.
