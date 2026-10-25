@@ -1,6 +1,7 @@
 //! Hardware-free parts of the firmware, tested on the host with `cargo test`.
 #![no_std]
 
+pub mod adpcm;
 pub mod battery;
 pub mod board;
 pub mod buttons;

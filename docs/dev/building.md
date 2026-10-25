@@ -94,6 +94,34 @@ The screen shows the clock source, the USB state, the bus reset count, and the r
 
 The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flash the app again after.
 
+## Voice probe
+
+`firmware/src/bin/voiceprobe.rs` plays spoken words through PA8, so you can score by ear whether a voice is clear enough. Each image holds one voice: 20 words at 8789 Hz and 20 at 5859 Hz, the 17,578 Hz sample rate divided by 2 and 3. It also times the synth's heaviest load against the sample period, and shows it as `SYNTH worst/4096 MEAN n` in CPU cycles.
+
+`tools/voiceclips.py` builds the clips. It needs Python 3.12, since it encodes with `audioop`, which Python 3.13 removed. It also needs numpy, soundfile, ffmpeg and espeak-ng, and for the neural voices kokoro-onnx or piper-tts and their model files. Then build the image with the clip folder in `VOICE_CLIPS`:
+
+```bash
+python tools/voiceclips.py kokoro --models MODELS --out firmware/target/voice-kokoro
+```
+
+```bash
+VOICE_CLIPS=$PWD/firmware/target/voice-kokoro sh tools/mkimage.sh voiceprobe
+```
+
+Without `VOICE_CLIPS`, the image builds with no clips and says so.
+
+| Control | Action |
+| - | - |
+| F1 | Plays the next word, with its text hidden. |
+| F2 | Plays the word again. |
+| F3 | Shows the word. |
+| F1 or F4, with the word shown | Scores it right or wrong. |
+| Dial click | Switches the rate. |
+| Dial turn | Volume. |
+| Hold the dial 1.5 s | Turns the device off. |
+
+A rate passes at 19 of 20 right. Flash the app again after.
+
 ## Remote control and screenshots
 
 `tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys and plays text, shows what the device decodes and plays, reads and changes settings, saves the screen as a PNG, and saves the stats and the key timing as CSV. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.

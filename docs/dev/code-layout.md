@@ -27,6 +27,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `morse`, `text` | The Morse table, prosigns, fixed size strings, and word wrap. |
 | `player` | Sends text as Morse, with optional human timing errors. |
 | `synth`, `volume` | Mixes the sidetone, up to four stations, band noise and fading into one signal. Maps volume levels to codec registers. |
+| `adpcm` | Decodes voice clips and raises their sample rate by a whole factor. |
 | `drill`, `letters`, `ragchew` | Receive drills, Koch levels, letter statistics, and ragchew QSOs. |
 | `qso`, `hunt` | The bots for activating and for hunting. |
 | `progress` | Practice history, one slot per session. |
@@ -54,7 +55,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard and serial port. |
 | `ui/` | One file per screen, plus shared parts: `dial` for the header values, `exchange` and `transcript` for the QSO screens, `tape` for the timing tape, `serial` for the serial commands the screen answers. |
 | `text` | A re-export of the fixed size string type. |
-| `bin/probe.rs`, `bin/usbprobe.rs` | Separate hardware and USB probe images. See [Build and flash](building.md). |
+| `bin/probe.rs`, `bin/usbprobe.rs`, `bin/voiceprobe.rs` | Separate hardware, USB and voice probe images. See [Build and flash](building.md). |
 
 ## Tasks
 

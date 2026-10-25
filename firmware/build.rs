@@ -8,4 +8,20 @@ fn main() {
     // Without this, lld maps the ELF headers at 0x08000000, inside the bootloader.
     println!("cargo:rustc-link-arg=--nmagic");
     println!("cargo:rerun-if-changed=memory.x");
+    voice_clips(&out);
+}
+
+/// The voice probe's clips: `clips.rs` from the folder `VOICE_CLIPS` names, which
+/// `tools/voiceclips.py` writes, or no clips, so every other build needs no clips.
+fn voice_clips(out: &PathBuf) {
+    println!("cargo:rerun-if-env-changed=VOICE_CLIPS");
+    let clips = match env::var_os("VOICE_CLIPS") {
+        Some(folder) => {
+            let path = PathBuf::from(folder).join("clips.rs");
+            println!("cargo:rerun-if-changed={}", path.display());
+            fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+        }
+        None => "const VOICE: &str = \"NO CLIPS: SEE tools/voiceclips.py\";\nconst CLIPS: &[Clip] = &[];\n".into(),
+    };
+    fs::write(out.join("clips.rs"), clips).unwrap();
 }
