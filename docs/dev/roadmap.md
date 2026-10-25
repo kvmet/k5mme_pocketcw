@@ -81,7 +81,7 @@ Done on 2026-10-25 with `firmware/src/bin/voiceprobe.rs`. See [Voice probe](buil
 ### Erase without blocking
 
 - Only 4 KB sector erase. No block or chip erase.
-- The bus is free while the chip erases. The driver polls the status register with `Mono::delay`, so other `ui` work keeps running and the event queue does not overflow.
+- The bus is free while the chip erases. The driver starts an erase and returns. Every later command but a status read first waits while the chip is busy, so other `ui` work keeps running, and a content pack read during an erase waits for it. Built.
 - The log erases its next sector ahead, when the head sector is half full and the key is idle. A record write is then only page programs of a few ms.
 
 ### Layout
@@ -90,7 +90,7 @@ Only the log is persisted user data, so only its location is fixed now: 0xC00000
 
 The packs grow up from 0x100000 and end below the guard. Installs rewrite them and they ship with matching firmware, so each release can move or resize them. Each pack file is 8,372,224 bytes or less, at a 64 KB aligned offset (`F000400.bin` at 0x100000, `F000C00.bin` at 0x300000, and so on).
 
-The logic crate holds the layout and an `allowed(address, len)` check. The driver refuses any erase or program outside the log range. Host tests cover the check.
+The logic crate holds the layout and an `allowed(address, len)` check (`logic/src/log.rs`). The driver refuses any erase or program outside the log range. Host tests cover the check. Built.
 
 Flash cost: about 3 KB.
 
@@ -174,8 +174,8 @@ What the device loses: a live contact count in the field ("do I have my 10?"). A
 
 ### Turning it on
 
-- LOG on the KEYER tab: ON or OFF, default OFF. An appended field in the settings record.
-- While LOG is ON, the decoder board listener also runs (Pro only). Today it runs only on the RADIO screen or with USB OUT RADIO.
+- LOG on the KEYER tab: ON or OFF, default OFF. Bit 4 of the settings record's hardware flags byte, which older firmware ignores, so the record length stays the same.
+- While LOG is ON with the decoder board on, the decoder board listener also runs (Pro only). Today it runs only on the RADIO screen or with USB OUT RADIO.
 
 ### What goes in the transcript
 
@@ -197,27 +197,40 @@ Persisted, so decided now.
 Ring:
 
 - One ring in the log range, as a run of 4 KB sectors. A record never crosses a sector.
-- Every sector starts with a header record, written right after erase. A sector with no valid header is erased again before use, since a torn erase can read as 0xFF and still be weak.
+- Every sector starts with a header record, written when the sector is first used. A sector with no valid header is erased again before use, since a torn erase can read as 0xFF and still be weak. A sector erased ahead and not yet used has no header, so after a power-off it is erased again; that costs one erase.
+- The sector header stays version 1 forever, and its fields only append. Older firmware erases a sector whose header it cannot read, so a new header version would wipe the log on a downgrade.
 
 Records use the `logic/src/record.rs` frame: magic (2 bytes), version, body length (1 byte), body, CRC16. The magic is `L` and a kind letter, so its first byte is never 0xFF.
 
 | Kind | Magic | Body, version 1 |
 | - | - | - |
 | Sector header | `LH` | sequence u32, session u32 (the session open when the sector started) |
-| Session start | `LS` | session u32, start tick u32, firmware version (3 bytes), callsign length u8, callsign (up to 10) |
-| Transcript run | `LT` | source u8 (YOU, MEMORY, NOTE, THEM), run id u16 (counted per session), part u8 (bit 7 set: more parts follow), start tick u32, end tick u32, text length u8, text (up to 242) |
+| Session start | `LS` | session u32, start tick u32, firmware version (major, minor, patch: 3 bytes), callsign length u8, callsign (up to 10) |
+| Transcript run | `LT` | source u8 (YOU 0, MEMORY 1, NOTE 2, THEM 3), run id u16 (counted per session), part u8 (bit 7 set: more parts follow), start tick u32, end tick u32, text length u8, text (up to 242) |
+
+Numbers are little-endian. Text is ASCII as the screen shows it: a prosign as its letters in angle brackets (`<AR>`), an unknown character as `*`, a word gap as one space.
+
+Runs and parts:
+
+- A run is one over or note of one source. It ends after 4 s with no new text from that source.
+- A run longer than 242 characters goes in parts. A part is written with bit 7 set only once the next character arrives, so the bit never promises a part that does not come. A reader still accepts a last part with bit 7 set, since power loss can cut a run.
+- Parts join by plain concatenation. Each part's start and end ticks give that part's own span. A run ends at part 127, and the next character starts a new run.
+- The session start record is written before the first run of a power-on, so a power-on with nothing logged writes nothing. Its start tick is the time it was written.
 
 Fixed fields come first and text last, behind its own length, so later versions can append fields after the text. The session-start record carries your callsign for ADIF STATION_CALLSIGN, since it can change between sessions. Start and end ticks order YOU and THEM runs that overlap.
 
 Walking a sector:
 
 - First byte 0xFF: end of data.
+- A known kind whose body is too short for its fields or text length: skipped.
 - Length past the sector, or a bad CRC: torn. The sector is closed and writing goes on in the next one.
 - Valid frame of an unknown kind or version: skipped. `record::unframe` cannot be used here, since it rejects every other magic and version as if corrupt.
 
 Startup:
 
 - The head is the sector with the highest sequence. The next session number is one more than the highest session in the head sector.
+- With no valid header anywhere (the first boot), the first write goes to the first sector, with sequence 1 and session 1.
+- A torn record in the head closes it, so the next write goes to the next sector.
 - The session counter lives in the log, not in the EEPROM boot count, which does not advance when its write fails.
 
 Wrap:

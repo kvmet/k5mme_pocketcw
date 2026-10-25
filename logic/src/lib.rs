@@ -17,6 +17,7 @@ pub mod keyboard;
 pub mod keyer;
 pub mod letters;
 pub mod listen;
+pub mod log;
 mod math;
 pub mod memories;
 pub mod morse;

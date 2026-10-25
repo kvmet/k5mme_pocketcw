@@ -25,12 +25,12 @@ use pocketcw_firmware::pins::{BACKLIGHT, F_KEYS, POWER_BUTTON, SPEAKER_AMP};
 use pocketcw_firmware::spi_flash::{Clock, PAGE, SECTOR, SpiFlash};
 use pocketcw_firmware::{eeprom, gpio, power, store};
 use pocketcw_logic::text::Text;
-use pocketcw_logic::{panel, sfdp};
+use pocketcw_logic::{log, panel, sfdp};
 
 const FLASH_BYTES: u32 = 16 << 20;
-/// The free area between the vendor files, rounded in to whole sectors. Every erase and program
-/// stays inside it.
-const WRITABLE: Range<u32> = 0x0C_6000..0xE0_0000;
+/// The free area between the vendor files, rounded in to whole sectors. The scan reports data in
+/// it that no PocketCW file or tag explains.
+const FREE: Range<u32> = 0x0C_6000..0xE0_0000;
 /// Where `F000400.bin` lands, and what a release writes there.
 const POCKETCW_FILE: u32 = 0x10_0000;
 const POCKETCW_HEADER: &[u8; 9] = b"PocketCW\x01";
@@ -38,11 +38,8 @@ const POCKETCW_HEADER: &[u8; 9] = b"PocketCW\x01";
 const TEST_TAG: &[u8; 8] = b"PCWTEST\0";
 const MARK_TAG: &[u8; 8] = b"PCWMARK\0";
 const TAG_LEN: usize = 12;
-/// The end of the test file from `tools/flashtest.py`.
-const TEST_END: u32 = POCKETCW_FILE + 511 * SECTOR;
-/// Markers past the test file's end (in its 64 KB block, then 4 KB, 64 KB and 1 MB on) and in
-/// the planned log range.
-const MARKS: [u32; 6] = [TEST_END, TEST_END + 0x1000, TEST_END + 0x1_0000, TEST_END + 0x10_0000, 0xC0_0000, 0xDF_F000];
+/// Markers at each end of the log range, the only range the driver writes.
+const MARKS: [u32; 2] = [log::LOG.start, log::LOG.end - SECTOR];
 /// The erase and program test uses the first blank sectors from here.
 const TEST_FROM: u32 = 0xD0_0000;
 const MAX_RANGES: usize = 18;
@@ -261,7 +258,7 @@ fn scan_and_show(lcd: &mut Lcd, line: &mut Line) {
         let used = buf.iter().any(|&b| b != 0xFF);
         if used {
             scan.used += 1;
-            if WRITABLE.contains(&address)
+            if FREE.contains(&address)
                 && address != POCKETCW_FILE
                 && !tagged(&buf, MARK_TAG, address)
                 && !tagged(&buf, TEST_TAG, address)
@@ -345,16 +342,15 @@ fn wait_cycles(flash: &mut SpiFlash, start: u32) -> u32 {
 }
 
 fn erase(flash: &mut SpiFlash, address: u32) -> u32 {
-    assert!(WRITABLE.contains(&address) && address.is_multiple_of(SECTOR));
+    assert!(address.is_multiple_of(SECTOR));
     let start = DWT::cycle_count();
-    flash.start_erase(address);
+    assert!(flash.start_erase(address), "outside the log range");
     wait_cycles(flash, start)
 }
 
 fn program(flash: &mut SpiFlash, address: u32, data: &[u8]) -> u32 {
-    assert!(WRITABLE.contains(&address) && WRITABLE.contains(&(address + data.len() as u32 - 1)));
     let start = DWT::cycle_count();
-    flash.start_program(address, data);
+    assert!(flash.start_program(address, data), "outside the log range");
     wait_cycles(flash, start)
 }
 
@@ -367,7 +363,7 @@ fn pattern(address: u32) -> u8 {
 fn erase_test(lcd: &mut Lcd, line: &mut Line) {
     show(lcd, STATUS_ROW, "ERASE TEST...");
     let mut flash = lcd.spi_flash();
-    let mut sectors = (TEST_FROM..WRITABLE.end).step_by(SECTOR as usize).filter(|a| !MARKS.contains(a));
+    let mut sectors = (TEST_FROM..log::LOG.end).step_by(SECTOR as usize).filter(|a| !MARKS.contains(a));
     let (Some(whole), Some(pieces)) = (sectors.find(|&a| is_blank(&mut flash, a)), sectors.find(|&a| is_blank(&mut flash, a))) else {
         show(lcd, TEST_ROW, "NO TWO BLANK SECTORS FROM D00000");
         return;
@@ -411,7 +407,7 @@ fn erase_test(lcd: &mut Lcd, line: &mut Line) {
     show(lcd, STATUS_ROW, "ERASE TEST DONE");
 }
 
-/// Rows 18 and 19: writes a tag at each mark that reads blank.
+/// Row 18: writes a tag at each mark that reads blank.
 fn write_marks(lcd: &mut Lcd, line: &mut Line) {
     let mut flash = lcd.spi_flash();
     let mut results: [&str; MARKS.len()] = [""; MARKS.len()];
@@ -431,7 +427,7 @@ fn write_marks(lcd: &mut Lcd, line: &mut Line) {
     show(lcd, STATUS_ROW, "MARKS WRITTEN: INSTALL THE TEST F FILE, THEN F3");
 }
 
-/// Rows 18 and 19: whether each mark is still there.
+/// Row 18: whether each mark is still there.
 fn check_marks(lcd: &mut Lcd, line: &mut Line) {
     let mut flash = lcd.spi_flash();
     let mut results: [&str; MARKS.len()] = [""; MARKS.len()];
@@ -460,10 +456,11 @@ fn show_marks(lcd: &mut Lcd, line: &mut Line, results: &[&str; MARKS.len()]) {
     }
 }
 
-/// Erases every sector in the writable area that starts with a probe or test file tag.
+/// Erases every sector in the log range that starts with a probe or test file tag. An install
+/// overwrites the test file's sectors outside it.
 fn clean(lcd: &mut Lcd, line: &mut Line) {
     let mut erased = 0;
-    for address in WRITABLE.step_by(SECTOR as usize) {
+    for address in log::LOG.step_by(SECTOR as usize) {
         let mut head = [0u8; TAG_LEN];
         let mut flash = lcd.spi_flash();
         flash.read(address, &mut head);

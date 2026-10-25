@@ -162,14 +162,14 @@ A rate passes at 19 of 20 right. Flash the app again after.
 
 `firmware/src/bin/flashprobe.rs` reads the 16 MB SPI flash beside the screen. At start it only reads: the JEDEC ID, the status registers and write protection, the SFDP table (size, page size, erase types and times), `F000400.bin` at 0x100000 at 18 MHz and at 4.5 MHz, and a scan of every 4 KB sector that lists the used ranges.
 
-It erases and programs only between 0x0C6000 and 0xE00000, the free space between the vendor files, and only sectors that read blank or that carry its own tags.
+It erases and programs only in the log range, 0xC00000 to 0xDFFFFF, since the driver refuses writes anywhere else, and only sectors that read blank or that carry its own tags.
 
 | Control | Action |
 | - | - |
 | F1 | Erase and program test in two blank sectors from 0xD00000: erase times, page program time, a page written in 16 pieces, read back, then erased again. |
-| F2 | Writes a `PCWMARK` tag in each marker sector that reads blank: just past the end of the test file, 4 KB, 64 KB and 1 MB past it, and at each end of the planned log range. |
+| F2 | Writes a `PCWMARK` tag in each marker sector that reads blank: at each end of the log range. |
 | F3 | Shows whether each marker is still there, then scans again. |
-| F4, twice | Erases every sector that starts with a `PCWMARK` or `PCWTEST` tag. |
+| F4, twice | Erases every sector in the log range that starts with a `PCWMARK` or `PCWTEST` tag. |
 | Hold the dial 1.5 s | Turns the device off. |
 
 The bootloader test shows what installing an F file erases past the file's end. `tools/flashtest.py` writes a 2 MB `F000400.bin` with every 4 KB sector tagged `PCWTEST`:

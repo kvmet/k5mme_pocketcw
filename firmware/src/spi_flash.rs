@@ -1,14 +1,19 @@
 //! The 16 MB SPI flash on SPI1, beside the LCD, with standard commands: read 0x03, page program
 //! 0x02, 4 KB sector erase 0x20. Every command sets the divider and PB4 itself, since the LCD
 //! changes both, and leaves the divider at the LCD's.
+//!
+//! Erases and programs stay inside the log range (`log::allowed`). Every command but a status
+//! register 1 read first waits while the chip is busy, so an erase can run on while other work goes on, and
+//! a read during it still returns data.
 
 use at32f4xx_pac::at32f403a as pac;
+
+use pocketcw_logic::log;
 
 use crate::gpio::{self, port_b};
 use crate::pins::{FLASH_CS, LCD_MISO as MISO};
 
-pub const SECTOR: u32 = 4096;
-pub const PAGE: u32 = 256;
+pub use pocketcw_logic::log::{PAGE, SECTOR};
 
 const READ: u8 = 0x03;
 const PROGRAM: u8 = 0x02;
@@ -65,15 +70,26 @@ impl<'a> SpiFlash<'a> {
         self.command(&[READ_SFDP, a2, a1, a0, 0], buf);
     }
 
-    /// Starts erasing the 4 KB sector at `address`. The chip is busy until it ends.
-    pub fn start_erase(&mut self, address: u32) {
+    /// Starts erasing the 4 KB sector at `address`. The chip is busy until it ends. False, with
+    /// nothing sent, outside the log range.
+    #[must_use]
+    pub fn start_erase(&mut self, address: u32) -> bool {
+        if !log::allowed(address, SECTOR) {
+            return false;
+        }
         let [_, a2, a1, a0] = address.to_be_bytes();
         self.command(&[WRITE_ENABLE], &mut []);
         self.command(&[ERASE_4K, a2, a1, a0], &mut []);
+        true
     }
 
     /// Starts programming `data`, which must not cross a page. The chip is busy until it ends.
-    pub fn start_program(&mut self, address: u32, data: &[u8]) {
+    /// False, with nothing sent, outside the log range.
+    #[must_use]
+    pub fn start_program(&mut self, address: u32, data: &[u8]) -> bool {
+        if !log::allowed(address, data.len() as u32) {
+            return false;
+        }
         let [_, a2, a1, a0] = address.to_be_bytes();
         self.command(&[WRITE_ENABLE], &mut []);
         self.begin();
@@ -81,6 +97,7 @@ impl<'a> SpiFlash<'a> {
             self.transfer(byte);
         }
         self.end();
+        true
     }
 
     pub fn wait(&mut self) {
@@ -89,6 +106,9 @@ impl<'a> SpiFlash<'a> {
 
     /// Sends `out`, then reads `into`.
     fn command(&mut self, out: &[u8], into: &mut [u8]) {
+        if out[0] != READ_STATUS[0] {
+            self.wait();
+        }
         self.begin();
         for &byte in out {
             self.transfer(byte);

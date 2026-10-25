@@ -7,7 +7,8 @@
 
 /// Bytes a frame adds to its body: magic, version and length before it, CRC after it.
 pub const OVERHEAD: usize = 6;
-const BODY_START: usize = 4;
+/// Magic, version and body length.
+pub const BODY_START: usize = 4;
 
 /// The body of a frame being built: every byte between the header and the CRC.
 pub fn body_mut(record: &mut [u8]) -> &mut [u8] {
@@ -26,11 +27,21 @@ pub fn frame(record: &mut [u8], magic: [u8; 2], version: u8) {
 /// The body of the frame at the start of `slot`; None for another magic or version, a length
 /// past the slot, or a bad CRC.
 pub fn unframe(slot: &[u8], magic: [u8; 2], version: u8) -> Option<&[u8]> {
-    let &[m0, m1, v, len] = slot.first_chunk::<BODY_START>()?;
+    read_frame(slot).and_then(|(m, v, body)| (m == magic && v == version).then_some(body))
+}
+
+/// The magic, version and body of the frame at the start of `slot`, whatever its magic; None for
+/// a length past the slot or a bad CRC.
+pub fn read_frame(slot: &[u8]) -> Option<([u8; 2], u8, &[u8])> {
+    let &[m0, m1, version, len] = slot.first_chunk::<BODY_START>()?;
     let end = BODY_START + len as usize;
     let crc = slot.get(end..end + 2)?;
-    let valid = [m0, m1] == magic && v == version && crc == crc16(&slot[..end]).to_be_bytes();
-    valid.then(|| &slot[BODY_START..end])
+    (crc == crc16(&slot[..end]).to_be_bytes()).then(|| ([m0, m1], version, &slot[BODY_START..end]))
+}
+
+/// Bytes in the frame that starts with `header`.
+pub fn frame_len(header: [u8; BODY_START]) -> usize {
+    BODY_START + header[3] as usize + 2
 }
 
 fn crc16(bytes: &[u8]) -> u16 {
