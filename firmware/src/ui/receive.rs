@@ -2,11 +2,12 @@
 //! and the group shows under your copy with each character marked.
 
 use core::fmt::Write;
+use core::ops::RangeInclusive;
 
 use pocketcw_logic::{
     decoder::{Decoded, copy_end},
     dial::Target,
-    drill::{Drill, Kind, MAX_COPY, MAX_GROUP, Mark},
+    drill::{Drill, Item, Kind, MAX_COPY, MAX_GROUP, Mark, NINJA_WORDS, RUNGS},
     input::Action,
     letters::{KOCH, Mastery},
     morse,
@@ -33,6 +34,10 @@ const ROWS: usize = 7;
 const ROW_Y: i32 = 70;
 const ROW_STEP: i32 = 18;
 const COPY_X: i32 = 110;
+/// Cells of sent text left of `COPY_X`.
+const SENT_CELLS: usize = 10;
+/// HEAD items shown, each on two rows: sent, then your copy.
+const HEAD_ITEMS: usize = ROWS / 2;
 const NOW_Y: i32 = ROW_Y + ROWS as i32 * ROW_STEP + 4;
 const FOOT_Y: i32 = 226;
 /// Time after a group ends to start keying it back before it counts as missed.
@@ -53,7 +58,7 @@ enum State {
     /// Scored, or for NINJA said; the next group starts at the deadline.
     Between,
     Paused,
-    /// NINJA with no content pack, or none of its words fit.
+    /// NINJA or HEAD with no content pack, or no pack word fits.
     NoPack,
 }
 
@@ -137,12 +142,24 @@ impl Ui {
                 let _ = write!(info, "  {}% OF {}  NEED 90% OF 50", percent, total);
                 &KOCH[..drill.level as usize]
             }
-            Kind::Ninja if rx.state == State::NoPack => {
+            Kind::Ninja | Kind::Head if rx.state == State::NoPack => {
                 let _ = write!(info, "CONTENT PACK MISSING: REINSTALL");
                 &KOCH[..]
             }
             Kind::Ninja => {
                 let _ = write!(info, "NINJA DRILL  LISTEN, OR KEY IT BACK");
+                &KOCH[..]
+            }
+            Kind::Head => {
+                let _ = write!(info, "RUNG {} OF {}  ", drill.rung(), RUNGS.len());
+                let _ = match drill.item() {
+                    Item::Words { count, min, max } => {
+                        let words = if count == 1 { "WORD" } else { "WORDS" };
+                        let _ = write!(info, "{count} {words} OF {min}");
+                        if max > min { write!(info, " TO {max} CHARS") } else { write!(info, " CHARS") }
+                    }
+                    Item::Sentence => write!(info, "A QSO LINE"),
+                };
                 &KOCH[..]
             }
             _ => {
@@ -177,18 +194,26 @@ impl Ui {
     fn draw_receive_rows(&self, lcd: &mut Lcd) {
         let Some(Session::Receive(rx)) = &self.session else { return };
         let t = &self.theme;
+        if rx.drill.kind == Kind::Head {
+            rect(lcd, 0, ROW_Y, MAIN, ROWS as i32 * ROW_STEP, t.bg);
+            let skip = rx.rows.iter().flatten().count().saturating_sub(HEAD_ITEMS);
+            for (k, row) in rx.rows.iter().flatten().skip(skip).enumerate() {
+                let y = ROW_Y + 2 * k as i32 * ROW_STEP;
+                let sent = row.sent.as_str().bytes();
+                draw_sent(lcd, t, y, sent.clone());
+                draw_marks(lcd, t, y + ROW_STEP, 4, sent.filter(|&c| c != b' '), &row.marks, row.right);
+            }
+            return;
+        }
         for (k, row) in rx.rows.iter().enumerate() {
             let y = ROW_Y + k as i32 * ROW_STEP;
             rect(lcd, 0, y, MAIN, ROW_STEP, t.bg);
             let Some(row) = row else { continue };
-            if !row.scored {
-                let mut x = 4;
-                for c in row.sent.as_str().bytes() {
-                    x += draw_char(lcd, &SMALL, x, y, c, t.muted, t.bg);
-                }
-                continue;
+            if row.scored {
+                draw_marked(lcd, t, y, COPY_X, row.sent.as_str().bytes(), &row.marks, row.right);
+            } else {
+                draw_sent(lcd, t, y, row.sent.as_str().bytes());
             }
-            draw_marked(lcd, t, y, COPY_X, row.sent.as_str().bytes(), &row.marks, row.right);
         }
     }
 
@@ -211,7 +236,11 @@ impl Ui {
         };
         rect(lcd, MAIN - 72, NOW_Y + 3, 72, 12, t.bg);
         tiny(lcd, MAIN - 2 - status.len() as i32 * TINY_W, NOW_Y + 3, status, t.echo, t.bg);
-        let hint = if rx.drill.kind == Kind::Ninja { "LISTEN, OR KEY IT BACK  ? REPEATS" } else { "KEY BACK WHAT YOU HEARD  ? REPEATS" };
+        let hint = match rx.drill.kind {
+            Kind::Ninja => "LISTEN, OR KEY IT BACK  ? REPEATS",
+            Kind::Head => "KEY IT BACK AFTER IT ENDS  ? REPEATS",
+            _ => "KEY BACK WHAT YOU HEARD  ? REPEATS",
+        };
         draw_session(lcd, t, rx.session_right, rx.session_total, hint);
     }
 
@@ -219,17 +248,26 @@ impl Ui {
     fn play_group(&mut self, lcd: &mut Lcd, s: &Settings, again: bool) {
         let seed = self.next_seed();
         let Some(Session::Receive(rx)) = &mut self.session else { return };
-        if !again && rx.drill.kind == Kind::Ninja {
-            let Some((word, group)) = ninja_word(&mut rx.drill, self.pack.as_ref().ok(), lcd) else {
+        if !again {
+            let pack = self.pack.as_ref().ok();
+            let group = match (rx.drill.kind, rx.drill.item()) {
+                (Kind::Ninja, _) => pack.and_then(|pack| ninja_word(&mut rx.drill, pack, lcd)).map(|(word, group)| {
+                    rx.word = word;
+                    group
+                }),
+                (Kind::Head, Item::Words { count, min, max }) => {
+                    pack.and_then(|pack| head_words(&mut rx.drill, pack, lcd, count, min as usize..=max as usize))
+                }
+                _ => Some(rx.drill.next(&self.letters)),
+            };
+            let Some(group) = group else {
                 rx.state = State::NoPack;
                 rx.deadline = None;
                 self.draw_receive_info(lcd);
                 self.draw_receive_now(lcd);
                 return;
             };
-            (rx.word, rx.group) = (word, group);
-        } else if !again {
-            rx.group = rx.drill.next(&self.letters);
+            rx.group = group;
         }
         rx.copy.clear();
         rx.state = State::Playing;
@@ -247,6 +285,7 @@ impl Ui {
         if self.koch_window.0 == self.letters.level {
             rx.drill.resume(self.koch_window.1);
         }
+        rx.drill.set_rung(self.head_rung);
         self.session = Some(Session::Receive(rx));
         self.open(lcd, s, Screen::Receive);
         self.play_group(lcd, s, false);
@@ -291,7 +330,9 @@ impl Ui {
 
     pub(super) fn receive_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
-        if !matches!(rx.state, State::Copying | State::Waiting | State::Playing) {
+        // Head copy holds the item in your head until it ends.
+        let head_playing = rx.drill.kind == Kind::Head && rx.state == State::Playing;
+        if !matches!(rx.state, State::Copying | State::Waiting | State::Playing) || head_playing {
             return;
         }
         if decoded.write_to(&mut rx.copy) {
@@ -328,6 +369,7 @@ impl Ui {
         let score = rx.drill.score(rx.group.as_str(), rx.copy.as_str(), &mut self.letters);
         self.letters.level = rx.drill.level;
         self.koch_window = (rx.drill.level, rx.drill.window());
+        self.head_rung = rx.drill.rung();
         self.history.copied(score.right, score.len as u8);
         rx.session_right += score.right as u16;
         rx.session_total += score.len as u16;
@@ -345,7 +387,7 @@ impl Ui {
             }
             self.status(lcd, line.as_str());
         } else if let Some(Session::Receive(rx)) = &self.session
-            && rx.drill.kind == Kind::Koch
+            && matches!(rx.drill.kind, Kind::Koch | Kind::Head)
         {
             self.draw_receive_info(lcd);
         }
@@ -375,7 +417,7 @@ impl Ui {
                 let kind = rx.drill.kind;
                 self.stop_players();
                 match kind {
-                    Kind::Ninja => self.open_ragchew(lcd, s, false),
+                    Kind::Head => self.open_ragchew(lcd, s, false),
                     kind => self.open_receive(lcd, s, kind.next()),
                 }
             }
@@ -403,32 +445,72 @@ impl Ui {
     }
 }
 
-/// A NINJA word from the pack: its pack text, for the voice, and the group to send. None when
-/// there is no pack, or no word tried fits a group and has a clip.
-fn ninja_word(drill: &mut Drill, pack: Option<&Pack>, lcd: &mut Lcd) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
-    let pack = pack?;
-    let (first, count) = pack.words();
-    if count == 0 {
-        return None;
-    }
-    (0..PICK_TRIES).find_map(|_| {
-        let word = pack.word(lcd, drill.pick_word(first, count))?;
-        let mut group = Text::new();
-        let fits = morse::chars(word.text()).all(|c| group.push(c));
-        let text = Text::format(format_args!("{}", core::str::from_utf8(word.text()).ok()?));
-        (fits && word.clip.is_some()).then_some((text, group))
-    })
+/// A NINJA word: one with a clip that fits left of `COPY_X`, as the pack spells it for the voice
+/// and as the group to send.
+fn ninja_word(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
+    let cells = |group: &Text<MAX_GROUP>| group.as_str().bytes().map(char_cells).sum::<usize>();
+    pack_word(drill, pack, lcd, NINJA_WORDS, |group, voiced| voiced && cells(group) <= SENT_CELLS)
 }
 
-/// One scored row at `y`: what was sent, your copy marked against it from `copy_x`, and the
-/// score at the right end. Errors show inverted, so they stand out without color.
+/// `count` pack words of `len` characters each, between spaces.
+fn head_words(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd, count: u8, len: RangeInclusive<usize>) -> Option<Text<MAX_GROUP>> {
+    let mut group = Text::new();
+    for i in 0..count {
+        let (_, word) = pack_word(drill, pack, lcd, u16::MAX, |word, _| len.contains(&word.len()))?;
+        if i > 0 {
+            group.push(b' ');
+        }
+        word.as_str().bytes().for_each(|c| _ = group.push(c));
+    }
+    Some(group)
+}
+
+/// A pack word among the first `limit` that `fits` takes, given the word as a group and whether
+/// it has a clip. Returns it as the pack spells it and as a group. Random picks come first, then
+/// a scan on from the last pick, so a rare length still ends. None only when no word fits.
+fn pack_word(
+    drill: &mut Drill,
+    pack: &Pack,
+    lcd: &mut Lcd,
+    limit: u16,
+    fits: impl Fn(&Text<MAX_GROUP>, bool) -> bool,
+) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
+    let (first, count) = pack.words();
+    let span = count.min(limit);
+    let mut try_word = |index: u16| {
+        let word = pack.word(lcd, index)?;
+        let mut group = Text::new();
+        let whole = morse::chars(word.text()).all(|c| group.push(c));
+        let text = Text::format(format_args!("{}", core::str::from_utf8(word.text()).ok()?));
+        (whole && fits(&group, word.clip.is_some())).then_some((text, group))
+    };
+    let mut last = first;
+    for _ in 0..PICK_TRIES {
+        last = drill.pick_word(first, count, limit);
+        if let Some(found) = try_word(last) {
+            return Some(found);
+        }
+    }
+    (1..span).find_map(|k| try_word(first + (last - first + k) % span))
+}
+
+/// One scored row at `y`: what was sent, then your copy marked against it from `copy_x`.
 pub(super) fn draw_marked(lcd: &mut Lcd, t: &Theme, y: i32, copy_x: i32, sent: impl Iterator<Item = u8> + Clone, marks: &[Mark], right: u8) {
-    let len = sent.clone().count();
+    draw_sent(lcd, t, y, sent.clone());
+    draw_marks(lcd, t, y, copy_x, sent, marks, right);
+}
+
+fn draw_sent(lcd: &mut Lcd, t: &Theme, y: i32, sent: impl Iterator<Item = u8>) {
     let mut x = 4;
-    for c in sent.clone() {
+    for c in sent {
         x += draw_char(lcd, &SMALL, x, y, c, t.muted, t.bg);
     }
-    let mut x = copy_x;
+}
+
+/// Your copy marked against `sent` from `x`, and the score at the right end. Errors show
+/// inverted, so they stand out without color.
+fn draw_marks(lcd: &mut Lcd, t: &Theme, y: i32, mut x: i32, sent: impl Iterator<Item = u8> + Clone, marks: &[Mark], right: u8) {
+    let len = sent.clone().count();
     for (mark, sent_char) in marks.iter().zip(sent) {
         let (c, fg, bg) = match *mark {
             Mark::Right => (sent_char, GOOD, t.bg),

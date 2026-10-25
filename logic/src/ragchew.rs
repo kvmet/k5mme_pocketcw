@@ -4,6 +4,7 @@
 
 use core::fmt::{self, Write};
 
+use crate::drill::MAX_GROUP;
 use crate::player::MAX_TEXT;
 use crate::qso::{CALL_LEN, us_call};
 use crate::rng::Rng;
@@ -18,7 +19,7 @@ const NAMES: [&str; 30] = [
     "ANN", "MARY", "LISA", "KAREN", "PAT", "CHRIS", "SAM", "ALEX", "JEN", "KIM", "ROSE", "MAX", "LEE", "RAY",
 ];
 
-/// Cities and their states by call area digit, at most `MAX_GROUP` letters without spaces.
+/// Cities and their states by call area digit, at most 10 letters without spaces for the quiz.
 const CITIES_BY_AREA: [&[(&str, &str)]; 10] = [
     &[("DENVER", "CO"), ("WICHITA", "KS"), ("OMAHA", "NE"), ("DES MOINES", "IA"), ("ST PAUL", "MN"), ("FARGO", "ND")],
     &[("BOSTON", "MA"), ("PORTLAND", "ME"), ("BURLINGTON", "VT"), ("HARTFORD", "CT"), ("CONCORD", "NH")],
@@ -233,16 +234,29 @@ impl Ragchew {
     }
 }
 
+/// One line of a contact's exchanges or sign-offs, for head copy: no calls and no closing `=`.
+pub fn sentence(rng: &mut Rng) -> Text<MAX_GROUP> {
+    let mut chat = Ragchew::new(rng.below(u32::MAX));
+    chat.over = 2 + rng.below(OVERS as u32 - 2) as usize;
+    let over = chat.over();
+    let lines = || over.lines().iter().filter(|line| !line.as_str().contains(" DE "));
+    let line = lines().nth(rng.below(lines().count() as u32) as usize).map_or("", |line| line.as_str());
+    Text::format(format_args!("{}", line.trim_end_matches(" =")))
+}
+
 #[cfg(test)]
 mod tests {
     extern crate std;
     use super::*;
-    use crate::drill::{MAX_GROUP, score_copy, squash};
+    use crate::drill::{score_copy, squash};
     use crate::letters::Letters;
 
-    /// An answer fits drill scoring once its spaces are gone.
+    /// The quiz marks an answer from `ui/ragchew.rs` `COPY_X`, 130 px, to the score: 10 cells.
+    const QUIZ_CELLS: usize = 10;
+
+    /// An answer fits the quiz once its spaces are gone.
     fn fits_scoring(answer: &str) -> bool {
-        squash::<{ MAX_GROUP + 1 }>(answer).len() <= MAX_GROUP
+        squash::<{ QUIZ_CELLS + 1 }>(answer).len() <= QUIZ_CELLS
     }
 
     #[test]
@@ -292,6 +306,24 @@ mod tests {
     fn every_city_fits_scoring() {
         for &(city, _) in CITIES_BY_AREA.iter().flat_map(|c| c.iter()) {
             assert!(fits_scoring(city), "{city}");
+        }
+    }
+
+    #[test]
+    fn every_sentence_fits_a_group() {
+        for seed in 0..5000 {
+            let mut chat = Ragchew::new(seed);
+            for over in 2..OVERS {
+                chat.over = over;
+                for line in chat.over().lines().iter().filter(|line| !line.as_str().contains(" DE ")) {
+                    assert!(line.as_str().trim_end_matches(" =").len() <= MAX_GROUP, "{}", line.as_str());
+                }
+            }
+        }
+        let mut rng = Rng::new(3);
+        for _ in 0..500 {
+            let line = sentence(&mut rng);
+            assert!(!line.as_str().is_empty() && !line.as_str().ends_with('='), "{}", line.as_str());
         }
     }
 }

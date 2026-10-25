@@ -6,6 +6,7 @@ use core::fmt::Write;
 use crate::letters::{self, FIRST_LEVEL, KOCH, Letters};
 use crate::morse;
 use crate::qso::us_call;
+use crate::ragchew;
 use crate::rng::Rng;
 use crate::text::Text;
 
@@ -17,6 +18,8 @@ pub enum Kind {
     Calls,
     /// A content pack word, then the voice says it; see `Drill::pick_word`.
     Ninja,
+    /// Head copy: one item at the current rung of `RUNGS`, keyed back after it ends.
+    Head,
 }
 
 impl Kind {
@@ -26,6 +29,7 @@ impl Kind {
             Kind::Words => "WORDS",
             Kind::Calls => "CALLS",
             Kind::Ninja => "NINJA",
+            Kind::Head => "HEAD",
         }
     }
 
@@ -34,15 +38,17 @@ impl Kind {
             Kind::Koch => Kind::Words,
             Kind::Words => Kind::Calls,
             Kind::Calls => Kind::Ninja,
-            Kind::Ninja => Kind::Koch,
+            Kind::Ninja => Kind::Head,
+            Kind::Head => Kind::Koch,
         }
     }
 }
 
 pub const GROUP_LEN: usize = 5;
-pub const MAX_GROUP: usize = 10;
-/// Copies longer than this are cut: nobody copies 24 characters of a 10-character group.
-pub const MAX_COPY: usize = 24;
+/// Characters in a group, spaces included. `ragchew::sentence` lines fit, with room to spare.
+pub const MAX_GROUP: usize = 20;
+/// Copies longer than this are cut: 12 past the longest group leaves room for extra keying.
+pub const MAX_COPY: usize = 32;
 pub const MIN_LEVEL: u8 = FIRST_LEVEL;
 pub const MAX_LEVEL: u8 = KOCH.len() as u8;
 /// Koch's rule: add a character once you copy 90% of the current set. Accuracy here is one minus
@@ -54,6 +60,31 @@ const LEVEL_PERCENT: u16 = 90;
 /// NINJA picks among this many pack words from the first: the ham words, then the most common
 /// English words.
 pub const NINJA_WORDS: u16 = 500;
+
+/// What one HEAD item holds.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Item {
+    /// `count` pack words of `min` to `max` characters each, a prosign counting as one.
+    Words { count: u8, min: u8, max: u8 },
+    /// One line of a QSO exchange: `ragchew::sentence`.
+    Sentence,
+}
+
+/// The head-copy ladder: rung 1 is the first.
+pub const RUNGS: [Item; 8] = [
+    Item::Words { count: 1, min: 2, max: 3 },
+    Item::Words { count: 1, min: 4, max: 4 },
+    Item::Words { count: 1, min: 5, max: 5 },
+    Item::Words { count: 1, min: 6, max: 6 },
+    Item::Words { count: 1, min: 7, max: 10 },
+    Item::Words { count: 2, min: 2, max: 4 },
+    Item::Words { count: 2, min: 3, max: 6 },
+    Item::Sentence,
+];
+pub const FIRST_RUNG: u8 = 1;
+/// HEAD copies in a row that move the rung: all right moves it up, under half right moves it
+/// down.
+const RUNG_STREAK: u8 = 3;
 
 /// Common words and abbreviations heard on the air.
 const WORDS: [&str; 64] = [
@@ -91,11 +122,16 @@ pub struct Drill {
     window_total: u16,
     /// The level a hand change left and its window.
     left: Option<(u8, (u16, u16))>,
+    /// The HEAD rung, from `FIRST_RUNG`.
+    rung: u8,
+    /// HEAD copies in a row all right, and under half right.
+    streaks: (u8, u8),
 }
 
 impl Drill {
     pub fn new(kind: Kind, level: u8, seed: u32) -> Drill {
-        Drill { kind, level: level.clamp(MIN_LEVEL, MAX_LEVEL), rng: Rng::new(seed), window_right: 0, window_total: 0, left: None }
+        let level = level.clamp(MIN_LEVEL, MAX_LEVEL);
+        Drill { kind, level, rng: Rng::new(seed), window_right: 0, window_total: 0, left: None, rung: FIRST_RUNG, streaks: (0, 0) }
     }
 
     /// Sets the level by hand. Turning back to the level just left restores its window, so a
@@ -124,13 +160,29 @@ impl Drill {
         (self.window_right, self.window_total) = (right, total);
     }
 
-    /// The index of a NINJA word, from the `count` pack words that start at `first`.
-    pub fn pick_word(&mut self, first: u16, count: u16) -> u16 {
-        first + self.rng.below(count.min(NINJA_WORDS).max(1) as u32) as u16
+    /// The index of a pack word among the first `limit` of the `count` pack words that start at
+    /// `first`.
+    pub fn pick_word(&mut self, first: u16, count: u16, limit: u16) -> u16 {
+        first + self.rng.below(count.min(limit).max(1) as u32) as u16
     }
 
-    /// The next group to send. NINJA groups come from the pack through `pick_word`, so this
-    /// gives an empty one for NINJA.
+    /// Sets the HEAD rung and starts its streaks over.
+    pub fn set_rung(&mut self, rung: u8) {
+        self.rung = rung.clamp(FIRST_RUNG, RUNGS.len() as u8);
+        self.streaks = (0, 0);
+    }
+
+    pub fn rung(&self) -> u8 {
+        self.rung
+    }
+
+    /// The HEAD item at the current rung.
+    pub fn item(&self) -> Item {
+        RUNGS[(self.rung - FIRST_RUNG) as usize]
+    }
+
+    /// The next group to send. NINJA groups, and HEAD groups of words, come from the pack
+    /// through `pick_word`, so this gives an empty one for them.
     pub fn next(&mut self, letters: &Letters) -> Text<MAX_GROUP> {
         let mut group = Text::new();
         match self.kind {
@@ -148,7 +200,8 @@ impl Drill {
                 let digit = self.rng.below(10) as u8;
                 let _ = write!(group, "{}", us_call(digit, &mut self.rng).as_str());
             }
-            Kind::Ninja => {}
+            Kind::Head if self.item() == Item::Sentence => group = ragchew::sentence(&mut self.rng),
+            Kind::Ninja | Kind::Head => {}
         }
         group
     }
@@ -168,7 +221,8 @@ impl Drill {
         KOCH[n - 1]
     }
 
-    /// Scores `copied` against `sent` as `score_copy` does, and moves the Koch level.
+    /// Scores `copied` against `sent` as `score_copy` does, and moves the Koch level or the HEAD
+    /// rung.
     pub fn score(&mut self, sent: &str, copied: &str, letters: &mut Letters) -> Score {
         let mut score = score_copy(sent, copied, letters);
         if self.kind == Kind::Koch {
@@ -185,7 +239,22 @@ impl Drill {
                 self.window_total = 0;
             }
         }
+        if self.kind == Kind::Head {
+            self.climb(&score);
+        }
         score
+    }
+
+    fn climb(&mut self, score: &Score) {
+        let all_right = score.right as usize == score.len && score.extra == 0;
+        let under_half = (score.right as usize) * 2 < score.len;
+        let (right, wrong) = self.streaks;
+        self.streaks = (if all_right { right + 1 } else { 0 }, if under_half { wrong + 1 } else { 0 });
+        if self.streaks.0 == RUNG_STREAK {
+            self.set_rung(self.rung + 1);
+        } else if self.streaks.1 == RUNG_STREAK {
+            self.set_rung(self.rung - 1);
+        }
     }
 }
 
@@ -268,18 +337,68 @@ mod tests {
     }
 
     #[test]
-    fn kind_goes_through_ninja_back_to_koch() {
-        let order: std::vec::Vec<Kind> = core::iter::successors(Some(Kind::Koch), |k| Some(k.next())).take(5).collect();
-        assert_eq!(order, [Kind::Koch, Kind::Words, Kind::Calls, Kind::Ninja, Kind::Koch]);
+    fn kind_goes_through_head_back_to_koch() {
+        let order: std::vec::Vec<Kind> = core::iter::successors(Some(Kind::Koch), |k| Some(k.next())).take(6).collect();
+        assert_eq!(order, [Kind::Koch, Kind::Words, Kind::Calls, Kind::Ninja, Kind::Head, Kind::Koch]);
+    }
+
+    #[test]
+    fn three_right_in_a_row_climbs_a_rung_and_three_under_half_steps_down() {
+        let mut drill = Drill::new(Kind::Head, MIN_LEVEL, 1);
+        let mut letters = Letters::default();
+        drill.score("THE", "THE", &mut letters);
+        drill.score("THE", "THE", &mut letters);
+        drill.score("THE", "THEE", &mut letters);
+        assert_eq!(drill.rung, 1, "an extra character breaks the streak");
+        for _ in 0..3 {
+            drill.score("THE", "THE", &mut letters);
+        }
+        assert_eq!(drill.rung, 2);
+        for _ in 0..2 {
+            drill.score("TIME", "T", &mut letters);
+        }
+        drill.score("TIME", "TI", &mut letters);
+        assert_eq!(drill.rung, 2, "half right is not under half");
+        for _ in 0..3 {
+            drill.score("TIME", "", &mut letters);
+        }
+        assert_eq!(drill.rung, 1);
+        for _ in 0..3 {
+            drill.score("AT", "", &mut letters);
+        }
+        assert_eq!(drill.rung, 1, "rung 1 is the bottom");
+        drill.set_rung(RUNGS.len() as u8);
+        for _ in 0..3 {
+            drill.score("NAME BOB", "NAMEBOB", &mut letters);
+        }
+        assert_eq!(drill.rung, RUNGS.len() as u8, "the last rung is the top");
+        drill.set_rung(FIRST_RUNG);
+        for _ in 0..6 {
+            drill.score("AT", "AT", &mut letters);
+        }
+        assert_eq!(drill.rung, 3, "a climb starts the streak over");
+        assert_eq!(drill.level, MIN_LEVEL, "HEAD leaves the Koch level alone");
+    }
+
+    #[test]
+    fn every_rung_fits_a_group() {
+        for item in RUNGS {
+            if let Item::Words { count, min, max } = item {
+                assert!(min <= max && count * max + count - 1 <= MAX_GROUP as u8, "{item:?}");
+            }
+        }
+        let mut drill = Drill::new(Kind::Head, MIN_LEVEL, 1);
+        drill.set_rung(RUNGS.len() as u8);
+        assert!(!drill.next(&Letters::default()).as_str().is_empty());
     }
 
     #[test]
     fn ninja_words_come_from_the_first_of_the_pack_words() {
         let mut drill = Drill::new(Kind::Ninja, MIN_LEVEL, 9);
-        let picks: std::vec::Vec<u16> = (0..2000).map(|_| drill.pick_word(49, 2979)).collect();
+        let picks: std::vec::Vec<u16> = (0..2000).map(|_| drill.pick_word(49, 2979, NINJA_WORDS)).collect();
         assert!(picks.iter().all(|&i| (49..49 + NINJA_WORDS).contains(&i)));
         assert!(picks.contains(&49) && picks.contains(&(48 + NINJA_WORDS)));
-        assert!((0..50).all(|_| drill.pick_word(1, 3) < 4));
+        assert!((0..50).all(|_| drill.pick_word(1, 3, NINJA_WORDS) < 4));
     }
 
     #[test]

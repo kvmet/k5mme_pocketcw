@@ -26,6 +26,7 @@ use pocketcw_logic::{
     battery::Gauge,
     decoder::Decoded,
     dial::{KeyGuard, Target},
+    drill::FIRST_RUNG,
     input::Action,
     morse,
     letters::{Letters, RECORD_LEN as LETTERS_LEN},
@@ -146,6 +147,8 @@ pub struct Ui {
     letters_saved: Letters,
     /// The Koch drill's window, kept while you leave the drill, and the level it counts toward.
     koch_window: (u8, (u16, u16)),
+    /// The HEAD rung, kept while you leave the drill.
+    head_rung: u8,
     history: History,
     memories: Memories,
     /// `memories` as last saved.
@@ -211,6 +214,7 @@ impl Ui {
             letters,
             letters_saved: letters,
             koch_window: (letters.level, (0, 0)),
+            head_rung: FIRST_RUNG,
             history,
             memories,
             memories_saved: memories,

@@ -112,7 +112,7 @@ Flash cost: about 1 KB.
 ### What it does
 
 - NINJA drill: the device sends a word in Morse, waits, then speaks it. No keying needed. Key the word before the voice, and it is scored like the other drills. Built as a fourth receive drill, with single words from the content pack; phrases are not built.
-- Head-copy ladder: words get longer as you copy them, then two words, then short sentences. You key back at the end.
+- Head-copy ladder: words get longer as you copy them, then two words, then short sentences. You key back at the end. Built as a fifth receive drill, HEAD, with QSO exchange lines as the sentences.
 
 ### Voice clips
 

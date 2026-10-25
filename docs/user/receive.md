@@ -4,7 +4,7 @@ In a receive drill, the device sends a group of characters, and you key back wha
 
 To start, open 03 RECEIVE in the [menu](menu.md). The Koch drill starts. F2 (KIND) moves to the next drill:
 
-KOCH, WORDS, CALLS, NINJA, then the [ragchew](ragchew.md) CHEW and QUIZ, then KOCH again.
+KOCH, WORDS, CALLS, NINJA, HEAD, then the [ragchew](ragchew.md) CHEW and QUIZ, then KOCH again.
 
 | Drill | What the device sends |
 | - | - |
@@ -12,13 +12,14 @@ KOCH, WORDS, CALLS, NINJA, then the [ragchew](ragchew.md) CHEW and QUIZ, then KO
 | WORDS | One common word or abbreviation heard on the air, such as `QTH`, `5NN` or `<BK>`. |
 | CALLS | One US callsign. |
 | NINJA | One word from the content pack, then the voice says it. See [NINJA](#ninja). |
+| HEAD | Words that get longer as you copy them, then two words, then a QSO line. See [HEAD](#head). |
 
 The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECV tab in [Settings](settings.md). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
 
 ## How a drill runs
 
 1. The device sends a group. The status shows `LISTEN`.
-2. The status shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays.
+2. The status shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
 3. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your copy ends.
 4. The device scores your copy and shows it in the list. The next group starts after about 1 second.
 
@@ -29,8 +30,10 @@ To hear the group again, key `?` alone as your copy.
 ## What the screen shows
 
 - The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  80% OF 30  NEED 90% OF 50`.
-- The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. WORDS, CALLS and NINJA show all 44 characters.
+- The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. The other drills show all 44 characters.
+- In HEAD, the top line shows your rung and what it sends, such as `RUNG 3 OF 8  1 WORD OF 5 CHARS`.
 - The list of recent groups. Each row shows the group that was sent, then your copy with each character marked: green for right, red and inverted for wrong, `_` for missed. The score shows at the right, such as `4/5`.
+- In HEAD, each item takes two rows: what was sent, then your marked copy under it. The list shows the last 3 items.
 - Your copy as you key it, with the status at the right.
 - The footer: your score for this session, such as `SESSION 85%  120 CHARS`.
 
@@ -47,6 +50,25 @@ NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a
 The words are the ham words and abbreviations of the content pack, then the most common English words: 500 in all. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
 
 NINJA needs the content pack, which every install writes. Without it, the drill shows `CONTENT PACK MISSING: REINSTALL` and sends nothing. [Install](install.md) again.
+
+## HEAD
+
+HEAD is a head-copy ladder. You copy each item in your head while it plays, and key it back after it ends. Keying while it plays does not count.
+
+| Rung | What the device sends |
+| - | - |
+| 1 | One word of 2 or 3 characters |
+| 2 | One word of 4 |
+| 3 | One word of 5 |
+| 4 | One word of 6 |
+| 5 | One word of 7 to 10 |
+| 6 | Two words of 2 to 4 each |
+| 7 | Two words of 3 to 6 each |
+| 8 | A line of a QSO, such as `NAME BOB BOB` or `RIG IC7300 100W` |
+
+Three copies in a row all right move you up one rung. Three copies in a row under half right move you down one. An extra character makes a copy not all right. A `?` repeat does not count.
+
+The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung while you use other screens, but not after you turn it off.
 
 ## The Koch method
 
