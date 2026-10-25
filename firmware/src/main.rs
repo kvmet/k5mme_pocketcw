@@ -129,6 +129,7 @@ mod app {
         match USB_OUT.load(Ordering::Relaxed) {
             x if x == UsbOut::Text as u8 => UsbOut::Text,
             x if x == UsbOut::Vband as u8 => UsbOut::Vband,
+            x if x == UsbOut::Radio as u8 => UsbOut::Radio,
             _ => UsbOut::Off,
         }
     }
@@ -359,12 +360,12 @@ mod app {
         }
         let out = usb_out();
         let report = match out {
-            UsbOut::Text => cx.shared.typist.lock(|typist| typist.report()),
+            UsbOut::Text | UsbOut::Radio => cx.shared.typist.lock(|typist| typist.report()),
             UsbOut::Vband => (VBAND_KEYS.load(Ordering::Relaxed), 0),
             UsbOut::Off => NO_KEYS,
         };
         match cx.local.keyboard.send(report) {
-            Ok(true) if out == UsbOut::Text => cx.shared.typist.lock(Typist::sent),
+            Ok(true) if matches!(out, UsbOut::Text | UsbOut::Radio) => cx.shared.typist.lock(Typist::sent),
             Ok(_) => {}
             Err(_) => {
                 USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
@@ -453,29 +454,37 @@ mod app {
             }
             audio.wake();
         });
-        let typing = usb_out() == UsbOut::Text && USB_READY.load(Ordering::Relaxed);
+        let out = usb_out();
+        let mut type_out = |decoded| {
+            if !cx.shared.typist.lock(|typist| typist.push(decoded)) {
+                USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
+            }
+            rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+        };
+        let usb_ready = USB_READY.load(Ordering::Relaxed);
         if let Some(decoded) = cx.local.decoder.tick(down, dit_ms, mode == Mode::Straight) {
             send(Message::Decoded(decoded));
-            if typing {
-                if !cx.shared.typist.lock(|typist| typist.push(decoded)) {
-                    USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
-                }
-                rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+            if out == UsbOut::Text && usb_ready {
+                type_out(decoded);
             }
         }
-        if usb_out() == UsbOut::Vband {
+        if out == UsbOut::Vband {
             let keys = keyboard::vband(mode, dit, dah, down);
             if VBAND_KEYS.swap(keys, Ordering::Relaxed) != keys {
                 rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
             }
         }
-        let listening = LISTENING.load(Ordering::Relaxed);
+        // RADIO is offered only with the board on, so it types on every screen.
+        let listening = LISTENING.load(Ordering::Relaxed) || out == UsbOut::Radio;
         if listening && !core::mem::replace(cx.local.listening, listening) {
             *cx.local.listener = Listener::default();
         }
         *cx.local.listening = listening;
         if listening && let Some(decoded) = cx.local.listener.tick(high(b, DECODER_TONE)) {
             send(Message::Heard { decoded, wpm: cx.local.listener.wpm() });
+            if out == UsbOut::Radio && usb_ready {
+                type_out(decoded);
+            }
         }
 
         let mut raw = [false; buttons::COUNT];

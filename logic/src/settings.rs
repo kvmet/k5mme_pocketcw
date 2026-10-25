@@ -27,10 +27,13 @@ pub enum UsbOut {
     Text,
     /// Your keying as VBand's Ctrl keys.
     Vband,
+    /// Each character the decoder board hears, typed. Offered only with the board on.
+    Radio,
 }
 
-/// In the order the setting steps through, which is also the stored value.
-const USB_OUTS: [UsbOut; 3] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband];
+/// In the order the setting steps through, which is also the stored value. RADIO is last, so
+/// the steps without the board are all but the last.
+const USB_OUTS: [UsbOut; 4] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband, UsbOut::Radio];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Settings {
@@ -374,10 +377,16 @@ impl Settings {
             Field::Fist => self.human_fist ^= d % 2 != 0,
             Field::Spread => self.spread ^= d % 2 != 0,
             Field::Reveal => self.reveal_lines ^= d % 2 != 0,
-            Field::DecoderBoard => self.decoder_board ^= d % 2 != 0,
+            Field::DecoderBoard => {
+                self.decoder_board ^= d % 2 != 0;
+                if !self.decoder_board && self.usb_out == UsbOut::Radio {
+                    self.usb_out = UsbOut::Off;
+                }
+            }
             Field::UsbOut => {
+                let offered = if self.decoder_board { USB_OUTS.len() } else { USB_OUTS.len() - 1 };
                 let i = USB_OUTS.iter().position(|&u| u == self.usb_out).unwrap_or(0);
-                self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(USB_OUTS.len() as i32) as usize];
+                self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(offered as i32) as usize];
             }
             Field::Brightness => {
                 self.brightness = (self.brightness as i32 + d).clamp(MIN_BRIGHTNESS as i32, MAX_BRIGHTNESS as i32) as u8
@@ -640,7 +649,8 @@ mod tests {
     #[test]
     fn usb_out_steps_round_trips_and_keeps_the_decoder_board() {
         let mut s = Settings { decoder_board: true, ..Settings::default() };
-        for (delta, expected) in [(1, UsbOut::Text), (1, UsbOut::Vband), (1, UsbOut::Off), (-1, UsbOut::Vband)] {
+        let steps = [(1, UsbOut::Text), (1, UsbOut::Vband), (1, UsbOut::Radio), (1, UsbOut::Off), (-1, UsbOut::Radio)];
+        for (delta, expected) in steps {
             s.adjust(Field::UsbOut, delta);
             assert_eq!(s.usb_out, expected);
             assert_eq!(Settings::decode(&s.encode(0)), Some(s));
@@ -650,11 +660,17 @@ mod tests {
     }
 
     #[test]
-    fn an_unknown_usb_out_is_rejected() {
-        let mut record = Settings::default().encode(0);
-        body_mut(&mut record)[V6_BODY] = USB_OUT_MASK << USB_OUT_SHIFT;
-        frame(&mut record, MAGIC, VERSION);
-        assert_eq!(Settings::decode(&record), None);
+    fn usb_out_offers_radio_only_with_the_decoder_board() {
+        let mut s = Settings { usb_out: UsbOut::Vband, ..Settings::default() };
+        s.adjust(Field::UsbOut, 1);
+        assert_eq!(s.usb_out, UsbOut::Off);
+        s.adjust(Field::UsbOut, -1);
+        assert_eq!(s.usb_out, UsbOut::Vband);
+        s.adjust(Field::DecoderBoard, 1);
+        s.adjust(Field::UsbOut, 1);
+        assert_eq!(s.usb_out, UsbOut::Radio);
+        s.adjust(Field::DecoderBoard, 1);
+        assert_eq!(s.usb_out, UsbOut::Off);
     }
 
     #[test]

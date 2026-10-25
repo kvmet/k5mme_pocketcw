@@ -28,7 +28,7 @@ The top line shows the state of the board:
 
 Under the top line, nine lines show the text the device decodes.
 
-The device decodes only while the RADIO screen is open. Each time you open the screen, the decoder starts at 20 WPM and then follows the speed it hears, from 5 to 60 WPM. The text stays when you leave the screen.
+The device decodes only while the RADIO screen is open, or on every screen while USB OUT is RADIO. See [USB keyboard](usb.md#radio). Each time decoding starts, the decoder starts at 20 WPM and then follows the speed it hears, from 5 to 60 WPM. The text stays when you leave the screen.
 
 ## Controls
 

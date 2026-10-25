@@ -7,6 +7,7 @@ The device can show up on a computer, phone or tablet as a USB keyboard. Set USB
 | OFF | Nothing. The USB port only charges the battery. This is the default. |
 | TEXT | Each character you key, typed as text. |
 | VBAND | Your keying as the Ctrl keys, for [VBand](https://hamradio.solutions/vband/). |
+| RADIO | Each character the decoder board of the Pro model hears, typed as text. |
 
 ## Connect
 
@@ -39,6 +40,13 @@ For exact text, set the computer's keyboard layout to US.
 ### Phones and tablets
 
 While a USB keyboard is connected, an iPhone or iPad hides its on-screen keyboard. To charge the device from a phone or tablet, set USB OUT to OFF.
+
+## RADIO
+
+The device types each character that it decodes from the [decoder board](radio.md). The text types the same way as TEXT, and your keying types nothing.
+
+- USB OUT offers RADIO only while DECODER BOARD is ON. If you set DECODER BOARD to OFF, USB OUT changes to OFF.
+- The device decodes the board on every screen, not only on the RADIO screen.
 
 ## VBAND
 

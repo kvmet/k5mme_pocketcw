@@ -80,7 +80,7 @@ All of this is confirmed in code and not on a board.
 - Frames are parsed in the USART1 interrupt and get the vendor replies at once.
 - The RADIO screen shows the board state, the filter and noise reduction (F2 and F3 send `AT+FL` and `AT+NR`), the heard speed, and the decoded text.
 - A volume change sends `AT+VL` once the board has announced itself. The value is the WM8978 speaker register for the same volume, 0 to 63.
-- PB14 is polled every 1 ms, only while the RADIO screen is open.
+- PB14 is polled every 1 ms while the RADIO screen is open, and on every screen while USB OUT is RADIO.
 - The baud rate comes from the crystal. The divider error is 0.16 %.
 - Frames with framing, noise or overrun errors count as `ERR n` on the RADIO screen.
 

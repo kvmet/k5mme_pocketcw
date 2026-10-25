@@ -41,7 +41,7 @@ Numbers stop at their lowest and highest values. A choice of words goes around: 
 | KEY OUT | ON, OFF | ON | Whether the func jack keys. |
 | OUT TYPE | STRAIGHT, PADDLE | STRAIGHT | STRAIGHT: one line keys, for a radio's straight key input. PADDLE: two lines follow your contacts, for the radio's own keyer. |
 | OUT LINES | TIP KEYS, RING KEYS (STRAIGHT); DIT ON TIP, DIT ON RING (PADDLE) | TIP KEYS or DIT ON TIP | Which lines of the func jack key. |
-| USB OUT | OFF, TEXT, VBAND | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. See [USB keyboard](usb.md). |
+| USB OUT | OFF, TEXT, VBAND, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
 
 ## SOUND tab
 
@@ -62,7 +62,7 @@ The tab says `NOISE AND FADING: DRILLS, QSO, HUNT`: noise and fading play in the
 | CHAR SPEED | MATCH, 5 to 40 WPM | MATCH | The speed of each character the device sends you. MATCH uses your keyer SPEED. |
 | FARNSWORTH | OFF, 5 to 40 WPM | OFF | Longer gaps between characters and words, so the text comes at this slower overall speed. It never goes above CHAR SPEED. |
 | CHEW SHOWS | WHOLE OVER, EACH LINE | WHOLE OVER | When the [ragchew](ragchew.md) CHEW shows its text. |
-| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the menu shows row 11 RADIO. See [Radio](radio.md). |
+| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the menu shows row 11 RADIO. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
 
 The tab says `SPEED OF WHAT YOU HEAR: BOTS, DRILLS`: CHAR SPEED and FARNSWORTH set the speed of every station the device sends you.
 
