@@ -8,7 +8,7 @@ PocketCW was tested on a Mini with board version 2.64. Other board versions and 
 
 - A computer with Windows, Linux, or macOS 10.15 or later on an Intel or Apple chip.
 - A USB cable that carries data. Some cables only charge. If the computer never finds the device, try a different cable.
-- About 10 minutes. The content pack is about 8 MB and takes a few minutes to install.
+- About 10 minutes. The content pack is about 8 MB and takes several minutes to install.
 
 ## The content pack
 
@@ -48,7 +48,7 @@ Nobody has tested a Linux install yet. The bootloader needs the file's name to r
 1. Download `A000014.bin` from the newest [release](https://github.com/kvmet/k5mme_pocketcw/releases/latest). If you install the [content pack](#the-content-pack), download `F000400.bin` too.
 2. Put the device in [update mode](#update-mode).
 3. Plug the USB cable into the device and the computer. The drive opens.
-4. To install the content pack, copy `F000400.bin` to the drive. Wait until the drive closes and opens again with only `READY.TXT`. This can take a few minutes. Then hold F4 to reset the drive. Without the content pack, go to step 5.
+4. To install the content pack, copy `F000400.bin` to the drive. Wait until the drive closes and opens again with only `READY.TXT`. This can take several minutes. Then hold F4 to reset the drive. Without the content pack, go to step 5.
 5. Copy `A000014.bin` to the drive.
 6. Wait about 10 seconds. The drive closes, then opens again with only `READY.TXT`.
 7. Unplug the device, then click the dial to turn it on.
@@ -87,7 +87,7 @@ The script then says "Waiting for the device".
 
 ### Finish
 
-The content pack takes a few minutes, and the firmware about 10 seconds. The script shows this when the install works:
+The content pack takes several minutes, and the firmware about 10 seconds. The script shows this when the install works:
 
 ```
 Finished. Unplug the device.

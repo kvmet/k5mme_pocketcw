@@ -45,7 +45,7 @@ install_pocketcw() {
     echo "  - when the content pack changed since you last installed it. The release notes"
     echo "    name the release that last changed it."
     echo "  - when NINJA or HEAD shows CONTENT PACK MISSING."
-    echo "Otherwise the firmware alone is enough. The pack is about 8 MB and takes a few"
+    echo "Otherwise the firmware alone is enough. The pack is about 8 MB and takes several"
     echo "minutes to install."
     echo
     echo "If you might go back to the stock firmware: the content pack can write over the"
