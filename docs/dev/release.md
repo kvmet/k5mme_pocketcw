@@ -5,7 +5,7 @@ A release is a git tag `vX.Y.Z` and a GitHub release with these files:
 | File | Contents |
 | - | - |
 | `A000014.bin` | The firmware image. |
-| `F000400.bin` | The content pack: words and voice clips for the SPI flash, installed before the firmware on every install. See [Content pack](building.md#content-pack). |
+| `F000400.bin` | The content pack: words and voice clips for the SPI flash, installed before the firmware on a first install or when the pack changed. See [Content pack](building.md#content-pack). |
 | `pocketcw-flash` | The macOS install tool, for Apple and Intel Macs. |
 | `LICENSE` | The PocketCW license. |
 | `B612-OFL.txt` | The license of the B612 Mono font. |
@@ -40,7 +40,7 @@ Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and wh
    git push origin vX.Y.Z
    ```
 
-5. Make a GitHub release for the tag, and upload every file in `dist/`. With the GitHub CLI:
+5. Make a GitHub release for the tag, and upload every file in `dist/`. The release notes name the release that last changed the content pack, such as "Content pack: changed in v0.4.0". Users who skip releases need this: the install script and the install page tell users to install the pack when it changed since their last install. With the GitHub CLI:
 
    ```bash
    gh release create vX.Y.Z dist/*

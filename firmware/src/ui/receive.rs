@@ -143,7 +143,7 @@ impl Ui {
                 &KOCH[..drill.level as usize]
             }
             Kind::Ninja | Kind::Head if rx.state == State::NoPack => {
-                let _ = write!(info, "CONTENT PACK MISSING: REINSTALL");
+                let _ = write!(info, "CONTENT PACK MISSING: INSTALL IT");
                 &KOCH[..]
             }
             Kind::Ninja => {

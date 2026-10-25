@@ -49,7 +49,7 @@ NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a
 
 The words are the ham words and abbreviations of the content pack, then the most common English words: 500 in all. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
 
-NINJA needs the content pack, which every install writes. Without it, the drill shows `CONTENT PACK MISSING: REINSTALL` and sends nothing. [Install](install.md) again.
+NINJA needs the content pack. Without it, the drill shows `CONTENT PACK MISSING: INSTALL IT` and sends nothing. [Install](install.md) again, with the [content pack](install.md#the-content-pack).
 
 ## HEAD
 
