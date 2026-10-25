@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """Builds the content pack F000400.bin (format in `logic/src/pack.rs`): the characters in
 tools/pack/words/chars.txt and the words in tools/pack/words/ham.txt and tools/pack/words/common.txt, each with
-a clip of the Kokoro voice af_heart at 8789 Hz. A ham word with a meaning gets a second clip
+a clip of a voice in tools/pack/voices at 8789 Hz. A ham word with a meaning gets a second clip
 that says the word, then its meaning. The least common words are left out until the pack fits
 in one update file.
 
-The cache folder keeps what Kokoro says for each text, and each finished clip under a key of how
-it is made. A rebuild speaks only new or changed words, and a change to how clips are made redoes
-the clips in minutes without speaking again.
+A voice's folder holds voice.toml (the engine, its settings and model files), fixes.txt (what
+the voice says for a word, over the word lists) and review.txt (the marks tools/pack/audition.py
+writes). The cache folder keeps what the voice says for each phoneme string, and each finished
+clip under a key of how it is made. A rebuild speaks only new or changed words, and a change to
+how clips are made redoes the clips in minutes without speaking again.
 
-Needs what tools/pack/voiceclips.py needs for Kokoro: Python 3.12, numpy, soundfile, ffmpeg,
-espeak-ng, kokoro-onnx, kokoro-v1.0.onnx and voices-v1.0.bin.
+Needs the venv and models tools/pack/setup.py makes.
 
-    python tools/pack/pack.py --models MODELS --out firmware/target/pack
-    python tools/pack/pack.py --no-voice --out firmware/target/pack
-    python tools/pack/pack.py --fixture logic/fixtures/pack.bin
+    tools/pack/.venv/bin/python tools/pack/pack.py --out firmware/target/pack
+    python3 tools/pack/pack.py --no-voice --out firmware/target/pack
+    python3 tools/pack/pack.py --fixture logic/fixtures/pack.bin
 """
 
 import argparse
@@ -25,17 +26,15 @@ import re
 import struct
 import subprocess
 import sys
+import tomllib
 import zlib
 from pathlib import Path
-
-import numpy as np
 
 MAGIC = b"PocketCW"
 FORMAT = 2
 WORD_TEXT = 18
 NO_CLIP = 0xFFFFFFFF
 FLAGS = {"char": 2, "ham": 1, "common": 0}
-VOICE = "af_heart"
 FACTOR = 2
 # The speech buffer in firmware/src/speech.rs.
 CLIP_MAX = 16384
@@ -43,12 +42,27 @@ CLIP_MAX = 16384
 FILE_MAX = 8_372_224
 WORD_ENTRY = 28
 CLIP_START = 2
-# Change when what Kokoro is given changes, such as the phonemes, so every text is spoken again.
-SPEECH_RECIPE = 1
+# Change when how a voice speaks a phoneme string changes, so every text is spoken again.
+SPEECH_RECIPE = 2
 # Change when this file's making of clips from speech changes. A change to tools/pack/voiceclips.py
 # makes clips again by itself.
 CLIP_RECIPE = 3
-WORDS = Path(__file__).parent / "words"
+HERE = Path(__file__).parent
+WORDS = HERE / "words"
+VOICES = HERE / "voices"
+CACHE = HERE.parent.parent / "firmware" / "target" / "clip-cache"
+VOICE = "kokoro-af_heart"
+# A said of /phonemes/ in fixes.txt goes to the voice as it is.
+PHONEMES = re.compile(r"/(.+)/")
+# What a cell of fixes.txt or review.txt may not hold: what ends a cell or a line.
+BREAKS = re.compile("[\t\n\r\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
+CLIPS = ("char", "word", "meaning")
+REVIEW_HEADER = """# Clip marks from tools/pack/audition.py: text, clip (char, word or meaning), mark (good or
+# bad), the speech key the mark was given for, and a note. A mark whose key differs from the clip's is stale.
+"""
+FIXES_HEADER = """# What this voice says for an entry, over the said column of tools/pack/words: text, entry
+# (char or word), then a respelling, or misaki phonemes between slashes such as /bˈYzi/.
+"""
 # What Morse can send: letters, digits, and prosigns of two letters in angle brackets.
 SENDABLE = re.compile(r"(?:[A-Z0-9]|<[A-Z]{2}>)+")
 CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/?.,=:'-()\"@+")
@@ -65,9 +79,14 @@ def read_list(name: str, kind: str) -> list[tuple[str, str, str | None, str]]:
     return entries
 
 
-def read_words() -> list[tuple[str, str, str | None, str]]:
+def entry(kind: str) -> str:
+    """Which entry a fix or a mark is for: A, I, K, R and W are both characters and words."""
+    return "char" if kind == "char" else "word"
+
+
+def read_words(fixes: dict[tuple[str, str], str] | None = None) -> list[tuple[str, str, str | None, str]]:
     """(text, said, meaning, kind) for each entry: characters, ham words, then common words
-    that are not also ham words."""
+    that are not also ham words, with the said of `fixes` over the lists'."""
     chars = read_list("chars.txt", "char")
     ham = read_list("ham.txt", "ham")
     ham_texts = {e[0] for e in ham}
@@ -80,7 +99,71 @@ def read_words() -> list[tuple[str, str, str | None, str]]:
             sys.exit(f"cannot send {text!r} in a word entry")
     if len(texts(ham + common)) != len(ham + common):
         sys.exit("a word is listed twice")
-    return chars + ham + common
+    entries = chars + ham + common
+    fixes = fixes or {}
+    unknown = set(fixes) - {(text, entry(kind)) for text, _, _, kind in entries}
+    if unknown:
+        sys.exit(f"fixes.txt has entries in no list: {' '.join(f'{text} {which}' for text, which in sorted(unknown))}")
+    return [(text, fixes.get((text, entry(kind)), said), meaning, kind) for text, said, meaning, kind in entries]
+
+
+def phrases(meaning: str | None, kind: str) -> list[tuple[str, str]]:
+    """(clip, then) for each clip of an entry: what follows its said. Kokoro rushes a lone
+    letter; a period makes it the end of a sentence."""
+    first = [("char", ".")] if kind == "char" else [("word", "")]
+    return first + [("meaning", f". {meaning}")] if meaning else first
+
+
+def read_table(path: Path, columns: int) -> list[list[str]]:
+    """The tab-separated rows of `path`, each padded to `columns`; none when it is missing."""
+    if not path.exists():
+        return []
+    rows = []
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        if line and not line.startswith("#"):
+            row = line.split("\t")
+            if len(row) > columns:
+                sys.exit(f"{path}:{number}: more than {columns} columns")
+            rows.append(row + [""] * (columns - len(row)))
+    return rows
+
+
+def write_table(path: Path, header: str, rows: list[list[str]]):
+    for row in rows:
+        for cell in row:
+            if BREAKS.search(cell):
+                raise ValueError(f"{path.name}: a tab or line break in {cell!r}")
+    part = path.with_suffix(".part")
+    part.write_text(header + "".join("\t".join(row).rstrip("\t") + "\n" for row in rows))
+    os.replace(part, path)
+
+
+def read_fixes(folder: Path) -> dict[tuple[str, str], str]:
+    """The said for each (text, entry)."""
+    fixes = {}
+    for text, which, said in read_table(folder / "fixes.txt", 3):
+        if which not in ("char", "word") or not said or (text, which) in fixes:
+            sys.exit(f"{folder / 'fixes.txt'}: {text} needs char or word, and one said")
+        fixes[text, which] = said
+    return fixes
+
+
+def write_fixes(folder: Path, fixes: dict[tuple[str, str], str]):
+    write_table(folder / "fixes.txt", FIXES_HEADER, [[*fix, said] for fix, said in fixes.items()])
+
+
+def read_review(folder: Path) -> dict[tuple[str, str], tuple[str, str, str]]:
+    """(mark, speech key, note) for each (text, clip)."""
+    review = {}
+    for text, clip, mark, speech_key, note in read_table(folder / "review.txt", 5):
+        if clip not in CLIPS or mark not in ("good", "bad") or not speech_key:
+            sys.exit(f"{folder / 'review.txt'}: bad row for {text}")
+        review[text, clip] = (mark, speech_key, note)
+    return review
+
+
+def write_review(folder: Path, review: dict[tuple[str, str], tuple[str, str, str]]):
+    write_table(folder / "review.txt", REVIEW_HEADER, [[*clip, *row] for clip, row in review.items()])
 
 
 def build(words: list[tuple[str, str, bytes | None, bytes | None]], factor: int = FACTOR) -> bytes:
@@ -113,36 +196,57 @@ def build(words: list[tuple[str, str, bytes | None, bytes | None]], factor: int 
 
 
 class Voice:
-    """Speaks clips through Kokoro. `cache` keeps the speech in `speech/` under a key of the
-    text and what speaks it, and each clip under a key of the speech and what makes the clip."""
+    """A voice in tools/pack/voices, speaking through Kokoro. `cache` keeps the speech in
+    `speech/` under a key of the phonemes and what speaks them, and each clip under a key of the
+    speech and what makes the clip."""
 
-    def __init__(self, models: Path, cache: Path):
-        self.models = models
+    def __init__(self, name: str, models: Path, cache: Path):
+        from voiceclips import Speaker
+
+        self.folder = VOICES / name
+        settings = tomllib.loads((self.folder / "voice.toml").read_text())
+        if settings["engine"] != "kokoro":
+            sys.exit(f"{name}: pack.py speaks with kokoro only, not {settings['engine']}")
+        for file, model in settings["models"].items():
+            path = models / file
+            if not path.exists() or sha256(path) != model["sha256"]:
+                sys.exit(f"{path} is missing or not the file {name}/voice.toml names: run tools/pack/setup.py")
+        self.speed = settings["speed"]
+        self.speaker = Speaker(settings["engine"], models, settings["voice"])
         self.cache = cache
-        self.speaker = None
-        version = lambda tool: subprocess.run([tool, "-version" if tool == "ffmpeg" else "--version"], capture_output=True, text=True, check=True).stdout.splitlines()[0]
-        sizes = [(models / name).stat().st_size for name in ("kokoro-v1.0.onnx", "voices-v1.0.bin")]
-        self.speech_recipe = f"{SPEECH_RECIPE}|{importlib.metadata.version('kokoro-onnx')}|{sizes}|{VOICE}|{version('espeak-ng')}"
-        clips_source = hashlib.sha256((Path(__file__).parent / "voiceclips.py").read_bytes()).hexdigest()
-        self.clip_recipe = f"{CLIP_RECIPE}|{self.speech_recipe}|{FACTOR}|{clips_source}|{version('ffmpeg')}"
+        version = lambda tool: subprocess.run([tool, "-version"], capture_output=True, text=True, check=True).stdout.splitlines()[0]
+        models_sha = ",".join(model["sha256"] for model in settings["models"].values())
+        self.speech_recipe = f"{SPEECH_RECIPE}|{importlib.metadata.version('kokoro-onnx')}|{importlib.metadata.version('onnxruntime')}|{settings['engine']}|{settings['voice']}|{self.speed}|{models_sha}"
+        self.clip_recipe = f"{CLIP_RECIPE}|{FACTOR}|{sha256(HERE / 'voiceclips.py')}|{version('ffmpeg')}"
         (cache / "speech").mkdir(parents=True, exist_ok=True)
 
-    def clip(self, spoken: str) -> tuple[bytes, str]:
-        """The clip, and how it came: "cached", "made" from kept speech, or "spoken" now."""
-        path = self.cache / (key(f"{self.clip_recipe}|{spoken}") + ".adpcm")
+    def phonemes(self, said: str, then: str) -> str:
+        """What the voice is given for `said`, then `then`."""
+        fixed = PHONEMES.fullmatch(said)
+        if fixed:
+            return fixed[1] + (self.speaker.phonemes(then) if then else "")
+        return self.speaker.phonemes(said + then)
+
+    def speech_key(self, phonemes: str) -> str:
+        return key(f"{self.speech_recipe}|{phonemes}")
+
+    def clip(self, phonemes: str) -> tuple[bytes, str]:
+        """The clip, and how it came: "cached", "made" from kept speech, or "spoken" now.
+        Raises ValueError for phonemes the voice does not have."""
+        speech_key = self.speech_key(phonemes)
+        path = self.cache / (key(f"{self.clip_recipe}|{speech_key}") + ".adpcm")
         if path.exists():
             return path.read_bytes(), "cached"
         import audioop
 
+        import numpy as np
         import soundfile
-        from voiceclips import OUTPUT_HZ, Speaker, level, resample, shape, undo_upsampling
+        from voiceclips import OUTPUT_HZ, level, resample, shape, undo_upsampling
 
-        speech = self.cache / "speech" / (key(f"{self.speech_recipe}|{spoken}") + ".flac")
+        speech = self.cache / "speech" / (speech_key + ".flac")
         how = "made" if speech.exists() else "spoken"
         if how == "spoken":
-            if self.speaker is None:
-                self.speaker = Speaker("kokoro", self.models)
-            samples, hz = self.speaker.speak(spoken)
+            samples, hz = self.speaker.speak_phonemes(phonemes, self.speed)
             # FLAC holds integers up to full scale; `shape` sets the level again anyway.
             part = speech.with_suffix(".part.flac")
             soundfile.write(part, samples * (0.9 / max(np.abs(samples).max(), 1e-9)), hz, subtype="PCM_24")
@@ -162,6 +266,7 @@ def report_levels(clips: list[bytes]):
     import audioop
     import statistics
 
+    import numpy as np
     from voiceclips import OUTPUT_HZ, SIDETONE_DB, active_level
 
     levels = [active_level(np.frombuffer(audioop.adpcm2lin(c, 2, None)[0], "<i2") / 32768, OUTPUT_HZ // FACTOR) - SIDETONE_DB for c in clips]
@@ -169,15 +274,37 @@ def report_levels(clips: list[bytes]):
     print(f"speech level against the sidetone: median {statistics.median(levels):+.1f} dB, 5% {low:+.1f}, 95% {high:+.1f}")
 
 
+def report_review(voice: Voice, speech_keys: dict[tuple[str, str], str]):
+    """Prints how many of the clips have a mark for the speech they have now."""
+    review = read_review(voice.folder)
+    current = [review[clip] for clip, speech_key in speech_keys.items() if clip in review and review[clip][1] == speech_key]
+    good = sum(1 for mark, _, _ in current if mark == "good")
+    stale = sum(1 for clip in speech_keys if clip in review) - len(current)
+    gone = len(set(review) - set(speech_keys))
+    print(
+        f"review: {good} good, {len(current) - good} bad, {stale} stale and {len(speech_keys) - len(current) - stale} unmarked of {len(speech_keys)} clips"
+        + (f"; {gone} marks for words in no list" if gone else "")
+    )
+
+
 def key(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:24]
 
 
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        while chunk := f.read(1 << 20):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--models", type=Path, default=Path("."), help="folder with the Kokoro model files")
+    parser.add_argument("--voice", default=VOICE, help=f"folder in tools/pack/voices (default {VOICE})")
+    parser.add_argument("--models", type=Path, default=HERE / "models", help="folder with the model files")
     parser.add_argument("--out", type=Path, help="folder for F000400.bin")
-    parser.add_argument("--cache", type=Path, default=Path("firmware/target/clip-cache"), help="folder that keeps spoken clips")
+    parser.add_argument("--cache", type=Path, default=CACHE, help="folder that keeps spoken clips")
     parser.add_argument("--no-voice", action="store_true", help="words only, with no clips")
     parser.add_argument("--fixture", type=Path, help="write the logic crate's test pack here instead")
     args = parser.parse_args()
@@ -194,23 +321,31 @@ def main():
         return
     if not args.out:
         parser.error("--out is required")
-    words = read_words()
-    clips = [(None, None)] * len(words)
-    if not args.no_voice:
-        voice = Voice(args.models, args.cache)
+    if args.no_voice:
+        words = read_words()
+        clips = [(None, None)] * len(words)
+    else:
+        voice = Voice(args.voice, args.models, args.cache)
+        words = read_words(read_fixes(voice.folder))
+        clips = []
+        speech_keys = {}
         came = {"spoken": 0, "made": 0, "cached": 0}
         for i, (text, said, meaning, kind) in enumerate(words):
-            # Kokoro rushes a lone letter; a period makes it the end of a sentence.
-            phrases = [f"{said}." if kind == "char" else said, f"{said}. {meaning}" if meaning else None]
             pair = []
-            for phrase in filter(None, phrases):
-                clip, how = voice.clip(phrase)
+            for clip_name, then in phrases(meaning, kind):
+                phonemes = voice.phonemes(said, then)
+                speech_keys[text, clip_name] = voice.speech_key(phonemes)
+                try:
+                    clip, how = voice.clip(phonemes)
+                except ValueError as error:
+                    sys.exit(f"{text}: {error}")
                 pair.append(clip)
                 came[how] += 1
                 if how != "cached" and came[how] % 100 == 0:
                     print(f"{how} {came[how]}, at {i}/{len(words)} {text}", flush=True)
-            clips[i] = tuple(pair + [None] * (2 - len(pair)))
+            clips.append(tuple(pair + [None] * (2 - len(pair))))
         print(f"spoke {came['spoken']} clips, made {came['made']} from kept speech, took {came['cached']} from the cache")
+        report_review(voice, speech_keys)
     entries = [(text, kind, clip, with_meaning) for (text, _, _, kind), (clip, with_meaning) in zip(words, clips)]
     common = sum(1 for e in entries if e[1] == "common")
     pack = build(entries)

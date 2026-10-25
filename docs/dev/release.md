@@ -21,17 +21,15 @@ Both crates have the same version. `firmware/Cargo.toml` also names the version 
 
 ## Steps
 
-Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and what `tools/pack/pack.py` needs to build the content pack: a Python 3.12 with the voice tools, and the Kokoro model files. See [Content pack](building.md#content-pack). With a full clip cache in `firmware/target/clip-cache`, the pack builds in about a minute; with only the saved speech, in about 5 minutes; with none, in about 25 minutes. `cargo clean` deletes the cache.
+Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and the voice tools `tools/pack/setup.py` sets up, to build the content pack. See [Content pack](building.md#content-pack). With a full clip cache in `firmware/target/clip-cache`, the pack builds in about a minute; with only the saved speech, in about 4 minutes; with none, in about 15 minutes. `cargo clean` deletes the cache.
 
 1. Set the new version in three places: `version` in `firmware/Cargo.toml`, `version` in `logic/Cargo.toml`, and the `pocketcw-logic` dependency in `firmware/Cargo.toml`.
 2. Build once, so the `Cargo.lock` files take the new version. Commit everything.
 3. Build the release:
 
    ```bash
-   VOICE_PYTHON=PYTHON VOICE_MODELS=MODELS sh tools/release.sh vX.Y.Z
+   sh tools/release.sh vX.Y.Z
    ```
-
-   `PYTHON` is the Python with the voice tools, and `MODELS` the folder with `kokoro-v1.0.onnx` and `voices-v1.0.bin`.
 
 4. Tag the commit and push the tag:
 
@@ -50,7 +48,7 @@ Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and wh
 
 ## What release.sh does
 
-1. Stops with an error when `VOICE_PYTHON` or `VOICE_MODELS` is not set, when `firmware/Cargo.toml` does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.
+1. Stops with an error when the voice tools are not set up, when `firmware/Cargo.toml` does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.
 2. Runs `tools/mkimage.sh` and copies the image to `dist/A000014.bin`.
 3. Copies `LICENSE` and `firmware/src/B612-OFL.txt` to `dist/`.
 4. Builds the content pack into `dist/F000400.bin` with `tools/pack/pack.py`. It prints how many common words fit.

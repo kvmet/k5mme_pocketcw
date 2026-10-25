@@ -130,7 +130,7 @@ Flash cost: about 1 KB.
 - `tools/release.sh` appends the content pack's credits, `tools/pack/pack-notice.txt`, to `THIRD-PARTY.txt`.
 - Format: 4-bit IMA ADPCM at 8789 Hz (17578 / 2), about 4.4 KB a second. Playback draws two output samples per input on straight lines (`logic/src/adpcm.rs`), so no fractional resampler is needed. The pack header gives the rate, so a pack at another rate needs no firmware change.
 - Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack/pack.py` leaves out the least common words until the pack fits. An 8.37 MB pack installed and played its first and last clips.
-- Planned: a computer tool that plays every clip of a built pack, so a listener can mark the bad ones without the device. The marks feed `tools/pack/words/blocklist.txt` or a new spelling for the voice.
+- Built: `tools/pack/audition.py` plays every clip as the device plays it, so a listener can mark the bad ones without the device and fix them with a respelling or phonemes. Marks and fixes are kept per voice, in `tools/pack/voices`. See [Reviewing the clips](building.md#reviewing-the-clips).
 
 ### Playback
 

@@ -31,3 +31,7 @@ tools/pocketcw-flash
 
 __pycache__/
 .DS_Store
+
+# Made by tools/pack/setup.py
+tools/pack/.venv/
+tools/pack/models/

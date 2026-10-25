@@ -12,7 +12,7 @@ at that rate: IMA ADPCM, then straight lines between samples up to 17,578 Hz.
 
 Needs what tools/pack/pack.py needs for Kokoro.
 
-    python tools/pack/listenpack.py --models MODELS --out firmware/target/listen
+    tools/pack/.venv/bin/python tools/pack/listenpack.py --out firmware/target/listen
 """
 
 import argparse
@@ -22,8 +22,8 @@ from typing import NamedTuple
 
 import numpy as np
 
-from pack import build, read_list
-from voiceclips import OUTPUT_HZ, Speaker, resample, shape, undo_upsampling
+from pack import HERE, build, read_list
+from voiceclips import OUTPUT_HZ, Speaker, resample, shape, undo_upsampling, upsample
 
 GAP_S = 0.12
 # What each test speaks, a clip for each part. A part that is a character in chars.txt is
@@ -39,15 +39,6 @@ class Way(NamedTuple):
 
 
 WAYS = {"N": Way(), "P": Way(period=True), "S": Way(period=True, speed=0.85)}
-
-
-def upsample(samples: np.ndarray, factor: int) -> np.ndarray:
-    """What `Upsample` in logic/src/adpcm.rs gives: a line from each sample to the next, one
-    sample late."""
-    to = samples.astype(np.int64)
-    start = np.concatenate([[0], to[:-1]])
-    phase = np.arange(factor)
-    return (start[:, None] + np.trunc((to - start)[:, None] * phase / factor)).astype(np.int16).ravel()
 
 
 def through_device(parts: list[tuple[np.ndarray, int]], factor: int, boost: bool) -> bytes:
@@ -71,7 +62,7 @@ def through_device(parts: list[tuple[np.ndarray, int]], factor: int, boost: bool
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--models", type=Path, default=Path("."), help="folder with the Kokoro model files")
+    parser.add_argument("--models", type=Path, default=HERE / "models", help="folder with the Kokoro model files")
     parser.add_argument("--out", type=Path, required=True, help="folder for F000400.bin")
     args = parser.parse_args()
 

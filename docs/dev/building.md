@@ -96,16 +96,32 @@ The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flas
 
 ## Content pack
 
-The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart` at 8789 Hz. `logic/src/pack.rs` gives the format. The entries come from three lists:
+The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart` at 8789 Hz (`tools/pack/voices/kokoro-af_heart`). `logic/src/pack.rs` gives the format. The entries come from three lists:
 
 - `tools/pack/words/chars.txt`: every character Morse sends, so the device can spell a word the pack lacks.
 - `tools/pack/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says and, for an abbreviation, its meaning. An abbreviation gets two clips: the spelled form, "Q T H", for running text, and the spelled form then the meaning, "Q T H. location", for a word on its own and for drills.
 - `tools/pack/words/common.txt`: English words from the top 3177 of wordfreq. `tools/pack/wordlist.py` writes it, leaving out the words in `tools/pack/words/blocklist.txt`: offensive words, fragments, and words seldom sent in a CW contact. The blocklist is reviewed down to that rank, so raising the rank means reviewing the new words first. It needs the `wordfreq` package, and runs only when the list changes. The pack takes the most frequent of them that fit in one update file, 8,372,224 bytes.
 
-`tools/pack/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below). It keeps what Kokoro says for each text in `firmware/target/clip-cache/speech`, about 150 MB, and each finished clip beside it under a key of what makes it: `tools/pack/voiceclips.py`, the ffmpeg version and `CLIP_RECIPE` in `tools/pack/pack.py`. `cargo clean` deletes both. A rebuild speaks only new or changed text. A change to how clips are made, such as their level, makes every clip again from the saved speech in about 4 minutes. The first build speaks every clip, in about 25 minutes:
+### Voice tools
+
+The voice tools need Python 3.12, since they encode with `audioop`, which Python 3.13 removed, and espeak-ng 1.52 or later and ffmpeg on the path (`brew install python@3.12 espeak-ng ffmpeg` on macOS). `tools/pack/setup.py` makes a venv in `tools/pack/.venv` with the packages in `tools/pack/requirements.txt`, and downloads the model files each voice names into `tools/pack/models`, about 350 MB. It checks each file's sha256. Run it again after a change to either:
 
 ```bash
-python tools/pack/pack.py --models MODELS --out firmware/target/pack
+python3.12 tools/pack/setup.py
+```
+
+Each folder in `tools/pack/voices` is one voice, with three files:
+
+- `voice.toml`: the engine, the voice, its speed, and the model files with their URLs and sha256.
+- `fixes.txt`: what the voice says for an entry, over the said column of the word lists, as a respelling or as phonemes between slashes. A fix belongs to one voice: a respelling that fixes one voice can break another.
+- `review.txt`: the marks `tools/pack/audition.py` gives each clip.
+
+### Building the pack
+
+`tools/pack/pack.py` builds the pack. It keeps what the voice says for each phoneme string in `firmware/target/clip-cache/speech`, about 115 MB, and each finished clip beside it under a key of what makes it: `tools/pack/voiceclips.py`, the ffmpeg version and `CLIP_RECIPE` in `tools/pack/pack.py`. `cargo clean` deletes both. A rebuild speaks only text whose phonemes are new: a change to `voice.toml` or to kokoro-onnx speaks every clip again, and an espeak-ng upgrade only the words it changes. A change to how clips are made, such as their level, makes every clip again from the saved speech in about 4 minutes. The first build speaks every clip, in about 15 minutes. It prints how many clips have a mark for the speech they have now:
+
+```bash
+tools/pack/.venv/bin/python tools/pack/pack.py --out firmware/target/pack
 ```
 
 How each clip is made, in `tools/pack/voiceclips.py` and `tools/pack/pack.py`:
@@ -114,6 +130,22 @@ How each clip is made, in `tools/pack/voiceclips.py` and `tools/pack/pack.py`:
 - A character ends in a period. Kokoro rushes a lone letter; as the end of a sentence it says it in full.
 - Before encoding, a treble boost undoes the loss of the device's straight-line upsampling, 6 dB at the top of the band.
 - Then the speech level is set to 7 dB under the sidetone's, from the power of its 20 ms frames without the pauses. A limiter keeps the peaks under 0.8 of full scale: ADPCM overshot dense peaks by up to 16% in a test. The synth plays 0.8 at the sidetone's peak (`CLIP_CEILING` in `logic/src/synth.rs`). A clip scaled by its peak alone sounds about 11 dB under the sidetone, since speech has short peaks far above its level. The build prints the level of the clips against the sidetone's.
+
+### Reviewing the clips
+
+`tools/pack/audition.py` plays each clip as the device plays it: the clip from the cache, decoded and upsampled the way `logic/src/adpcm.rs` does it. Build the pack first, so every clip is in the cache. Then:
+
+```bash
+tools/pack/.venv/bin/python tools/pack/audition.py
+```
+
+1. Mark. The list shows the clips to review, and each plays when it comes up. With the list focused, `G` marks a clip good and `B` bad, and the next clip plays. `N` goes to the note: type what is wrong, and Enter marks the clip bad. Space plays it again, and Up and Down move. Each mark goes to `review.txt` at once, so you can stop at any clip.
+2. Fix. Pick Bad in the filter. For each clip, type a respelling the voice reads more clearly, such as `boy see` for BOISE, and press Enter to hear it. When no respelling does it, edit the phonemes instead. They are misaki phonemes, the form Kokoro is given, and a character Kokoro does not know is an error. Play kept plays the clip the pack has now. Keep fix writes the fix to `fixes.txt` and marks the clip good; Reset puts back the word list's said, and Keep fix then drops the fix.
+3. Check. A fix changes both clips of an abbreviation, so the other clip comes back as stale under To review. Build the pack again: a kept fix is already in the cache. Install it and spot check on the device speaker with `say`.
+
+A mark is for the speech it was given on. When the speech changes, because of a fix, a new model or an espeak-ng upgrade that changes the phonemes, the mark shows as stale until you mark the clip again.
+
+### Listening packs
 
 `tools/pack/listenpack.py` builds a small pack that compares ways of making clips, to judge them on the device speaker. Each test word is made each way, as words such as `QTHA` and `QTHB`. The ways at lower rates go through what the device does to them, so the pack plays at 17,578 Hz with any firmware.
 
@@ -135,10 +167,10 @@ python3 -I tools/pocketcw.py info say QTH say "hello K5MME 73"
 
 `firmware/src/bin/voiceprobe.rs` plays spoken words through PA8, so you can score by ear whether a voice is clear enough. Each image holds one voice: 20 words at 8789 Hz and 20 at 5859 Hz, the 17,578 Hz sample rate divided by 2 and 3. It also times the synth's heaviest load against the sample period, and shows it as `SYNTH worst/4096 MEAN n` in CPU cycles.
 
-`tools/pack/voiceclips.py` builds the clips. It needs Python 3.12, since it encodes with `audioop`, which Python 3.13 removed. It also needs numpy, soundfile, ffmpeg and espeak-ng, and for the neural voices kokoro-onnx or piper-tts and their model files. Then build the image with the clip folder in `VOICE_CLIPS`:
+`tools/pack/voiceclips.py` builds the clips, with the [voice tools](#voice-tools). Piper also needs piper-tts and `en_US-ljspeech-high.onnx`, which `setup.py` does not install. Then build the image with the clip folder in `VOICE_CLIPS`:
 
 ```bash
-python tools/pack/voiceclips.py kokoro --models MODELS --out firmware/target/voice-kokoro
+tools/pack/.venv/bin/python tools/pack/voiceclips.py kokoro --models tools/pack/models --out firmware/target/voice-kokoro
 ```
 
 ```bash

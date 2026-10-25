@@ -3,11 +3,10 @@
 resamples it to 8789 Hz and 5859 Hz (the 17,578 Hz sample rate divided by 2 and 3), and
 encodes it as IMA ADPCM. Writes the clips and `clips.rs` for `firmware/build.rs`.
 
-Needs Python 3.12 (for `audioop`), numpy, soundfile, ffmpeg, espeak-ng on the path, and for
-the neural voices piper-tts with en_US-ljspeech-high, or kokoro-onnx with kokoro-v1.0.onnx
-and voices-v1.0.bin.
+Needs the voice tools tools/pack/setup.py sets up. Piper also needs piper-tts and
+en_US-ljspeech-high.onnx, which setup.py does not install.
 
-    python tools/pack/voiceclips.py kokoro --models DIR --out firmware/target/voice
+    tools/pack/.venv/bin/python tools/pack/voiceclips.py kokoro --models tools/pack/models --out firmware/target/voice
     VOICE_CLIPS=firmware/target/voice sh tools/mkimage.sh voiceprobe
 """
 
@@ -86,9 +85,11 @@ def espeak_data() -> Path:
 
 
 class Speaker:
-    def __init__(self, voice: str, models: Path):
+    def __init__(self, engine: str, models: Path, voice: str = "af_heart"):
+        """`engine` is one of VOICES; `voice` picks among Kokoro's voices."""
+        self.kind = engine
         self.voice = voice
-        if voice == "kokoro":
+        if engine == "kokoro":
             from kokoro_onnx import EspeakConfig, Kokoro
 
             data = espeak_data()
@@ -98,8 +99,8 @@ class Speaker:
             from phonemizer.backend import EspeakBackend
 
             self.espeak = EspeakBackend("en-us", preserve_punctuation=True, with_stress=True, tie="^")
-            self.name = "KOKORO AF_HEART"
-        elif voice == "piper":
+            self.name = f"KOKORO {voice.upper()}"
+        elif engine == "piper":
             from piper import PiperVoice
 
             self.engine = PiperVoice.load(str(models / "en_US-ljspeech-high.onnx"), espeak_data_dir=espeak_data())
@@ -107,13 +108,24 @@ class Speaker:
         else:
             self.name = "ESPEAK-NG EN-US"
 
+    def phonemes(self, text: str) -> str:
+        """What Kokoro is given for `text`."""
+        return misaki_form(self.espeak.phonemize([text])[0].strip())
+
+    def speak_phonemes(self, phonemes: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
+        """Kokoro's mono float samples and their rate. Kokoro drops what is not in its
+        vocabulary without a word, so that is an error here."""
+        unknown = sorted(set(phonemes) - set(self.engine.tokenizer.vocab))
+        if unknown:
+            raise ValueError(f"not Kokoro phonemes: {' '.join(unknown)}")
+        samples, hz = self.engine.create(phonemes, voice=self.voice, speed=speed, lang="en-us", is_phonemes=True)
+        return np.asarray(samples, dtype=np.float32), hz
+
     def speak(self, word: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
         """Mono float samples and their rate. Only Kokoro takes `speed`."""
-        if self.voice == "kokoro":
-            phonemes = misaki_form(self.espeak.phonemize([word])[0].strip())
-            samples, hz = self.engine.create(phonemes, voice="af_heart", speed=speed, lang="en-us", is_phonemes=True)
-            return np.asarray(samples, dtype=np.float32), hz
-        if self.voice == "piper":
+        if self.kind == "kokoro":
+            return self.speak_phonemes(self.phonemes(word), speed)
+        if self.kind == "piper":
             chunks = list(self.engine.synthesize(word))
             return np.concatenate([c.audio_float_array for c in chunks]).astype(np.float32), chunks[0].sample_rate
         with tempfile.NamedTemporaryFile(suffix=".wav") as wav:
@@ -152,6 +164,15 @@ def undo_upsampling(samples: np.ndarray, factor: int) -> np.ndarray:
     gain[nonzero] = (np.sin(np.pi * f[nonzero]) / (factor * np.sin(np.pi * f[nonzero] / factor))) ** 2
     boosted = np.fft.irfft(np.fft.rfft(samples) / gain, len(samples))
     return boosted * (np.abs(samples).max() / np.abs(boosted).max())
+
+
+def upsample(samples: np.ndarray, factor: int) -> np.ndarray:
+    """What `Upsample` in logic/src/adpcm.rs gives: a line from each sample to the next, one
+    sample late."""
+    to = samples.astype(np.int64)
+    start = np.concatenate([[0], to[:-1]])
+    phase = np.arange(factor)
+    return (start[:, None] + np.trunc((to - start)[:, None] * phase / factor)).astype(np.int16).ravel()
 
 
 FRAME_S = 0.02

@@ -1,0 +1,2 @@
+# What this voice says for an entry, over the said column of tools/pack/words: text, entry
+# (char or word), then a respelling, or misaki phonemes between slashes such as /bˈYzi/.
