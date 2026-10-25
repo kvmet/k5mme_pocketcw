@@ -231,6 +231,9 @@ static int write_update(int fd, const char *base, const uint8_t *payload, size_t
     *root = (off_t)(reserved + fat_count * fat_sectors) * SECTOR;
     off_t data = *root + root_entries * 32;
     size_t cluster_bytes = sectors_per_cluster * SECTOR;
+    unsigned total_sectors = le16(boot + 19) ? le16(boot + 19) : le16(boot + 32) | (unsigned)le16(boot + 34) << 16;
+    printf("Drive: %zu B clusters, %u sectors, files up to %zu B\n", cluster_bytes, total_sectors,
+           (SECTOR / 2 - 2) * cluster_bytes);
 
     uint8_t root_sector[SECTOR];
     if (!read_sector(fd, *root, root_sector)) return 0;
