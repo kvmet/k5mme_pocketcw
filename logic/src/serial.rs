@@ -21,6 +21,8 @@ pub enum Command {
     Set(Name, Text<MAX_TEXT>),
     /// Sound this text, upper case, as the device sends to you.
     Play(Text<MAX_TEXT>),
+    /// Speak this word from the content pack, upper case.
+    Say(Text<MAX_TEXT>),
     /// Stop what `Send` and `Play` started.
     Stop,
     /// Send a line for each change on the key lines, or stop.
@@ -112,6 +114,8 @@ fn parse(line: &[u8]) -> Command {
         upper(text).map_or(Command::TooLong, Command::Send)
     } else if let Some(text) = line.strip_prefix(b"PLAY ") {
         upper(text).map_or(Command::TooLong, Command::Play)
+    } else if let Some(text) = line.strip_prefix(b"SAY ") {
+        upper(text).map_or(Command::TooLong, Command::Say)
     } else if let Some(button) = line.strip_prefix(b"PRESS ") {
         BUTTON_NAMES.iter().find(|(n, _)| *n == button).map_or(Command::Unknown, |&(_, b)| Command::Press(b))
     } else if let Some(n) = line.strip_prefix(b"GET ") {
@@ -207,6 +211,7 @@ mod tests {
         assert_eq!(one("SEND cq de K5MME <ar>\n"), Command::Send(text("CQ DE K5MME <AR>")));
         assert_eq!(one("SEND \n"), Command::Send(text("")));
         assert_eq!(one("PLAY cq\n"), Command::Play(text("CQ")));
+        assert_eq!(one("SAY qth\n"), Command::Say(text("QTH")));
     }
 
     #[test]

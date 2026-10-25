@@ -12,10 +12,11 @@ Steps run in order:
   expect REGEX                   wait up to 60 s for an event line that matches
   listen MS                      show event lines for MS
   shots DIR                      save every screen into DIR; start on KEYER
-  info                           show the firmware version, screen and panel
+  info                           show the firmware version, screen, panel and pack
   get NAME                       show a setting or memory; get all shows every one
   set NAME VALUE                 change a setting or memory, as the screen writes it
   play TEXT                      sound TEXT as a receive drill does and wait until it ends
+  say WORD                       speak WORD from the content pack
   stop                           stop what send and play started
   stats letters FILE.csv         save each letter's tries, accuracy and mastery
   stats progress FILE.csv        save each practice session
@@ -136,6 +137,10 @@ class Device:
         self.drain()
         self._write(f'PLAY {text}\n')
         self.expect('PLAYED$', timeout)
+
+    def say(self, word):
+        """Speaks `word` from the content pack."""
+        self._ask(f'SAY {word}', 'OK ')
 
     def stop(self):
         self._write('STOP\n')
@@ -405,7 +410,7 @@ class Screens:
 # How many values each step takes.
 STEP_VALUES = {
     'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
-    'info': 0, 'get': 1, 'set': 2, 'play': 1, 'stop': 0, 'stats': 2, 'edges': 2,
+    'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2,
 }
 
 
@@ -460,6 +465,8 @@ def run(d, plan):
             print(f'{value} {d.set(value, values[1])}')
         elif step == 'play':
             d.play(value)
+        elif step == 'say':
+            d.say(value)
         elif step == 'stop':
             d.stop()
         elif step == 'stats':

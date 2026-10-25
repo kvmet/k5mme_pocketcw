@@ -1,6 +1,7 @@
 //! The sound the device makes, one sample at a time: your sidetone, the stations the players
-//! send, band noise and fading, mixed into one signal for PA8's PWM.
+//! send, band noise and fading, and a spoken word, mixed into one signal for PA8's PWM.
 
+use crate::adpcm::{Clip, Upsample};
 use crate::math::sqrt;
 
 /// The voice your own keying sounds on; voices after it carry the players.
@@ -13,6 +14,8 @@ pub const MAX_LEVEL: u8 = 10;
 /// One voice's peak, and the most all voices together reach: when stations overlap, the band's
 /// gain drops so their sum stays here.
 const VOICE_PEAK: f32 = 0.7;
+/// A clip's full scale. Clips peak at 0.9 of full scale, so speech peaks near a voice's peak.
+const SPEECH_PEAK: f32 = VOICE_PEAK;
 /// How long the band's gain takes to recover after an overlap ends, like a receiver's AGC. Much
 /// longer than a Morse element, so the gain holds through an over instead of pumping per element.
 const AGC_RELEASE_S: f32 = 0.5;
@@ -196,8 +199,12 @@ pub struct Sound {
     pub tone_hz: u16,
 }
 
+/// A voice clip as the synth plays it: decoded and raised to the output rate.
+pub type Speech = Upsample<Clip<'static>>;
+
 pub struct Synth {
     sample_hz: f32,
+    speech: Option<Speech>,
     voices: [Voice; VOICES],
     noise: BandNoise,
     square: bool,
@@ -225,6 +232,7 @@ impl Synth {
         };
         let mut synth = Synth {
             sample_hz,
+            speech: None,
             voices: core::array::from_fn(voice),
             noise: BandNoise::new(sound.tone_hz as f32, sample_hz),
             square: false,
@@ -268,9 +276,14 @@ impl Synth {
         v.down = down;
     }
 
-    /// Nothing sounds and nothing will until a key goes down or the band opens.
+    /// Starts speaking `speech`, or stops speaking. The synth lets go of the clip when it ends.
+    pub fn say(&mut self, speech: Option<Speech>) {
+        self.speech = speech;
+    }
+
+    /// Nothing sounds and nothing will until a key goes down, the band opens or a clip starts.
     pub fn is_silent(&self) -> bool {
-        self.voices.iter().all(Voice::silent) && !self.noise_on()
+        self.voices.iter().all(Voice::silent) && !self.noise_on() && self.speech.is_none()
     }
 
     fn noise_on(&self) -> bool {
@@ -313,6 +326,12 @@ impl Synth {
         if self.noise_on() {
             mix += self.duck * self.noise_rms * self.noise.next();
         }
+        if let Some(speech) = &mut self.speech {
+            match speech.next() {
+                Some(s) => mix += SPEECH_PEAK * s as f32 / -(i16::MIN as f32),
+                None => self.speech = None,
+            }
+        }
         limit(mix)
     }
 }
@@ -346,6 +365,19 @@ mod tests {
     fn rms(samples: impl Iterator<Item = f32>) -> f32 {
         let (sum, n) = samples.fold((0.0f64, 0), |(s, n), x| (s + (x as f64) * (x as f64), n + 1));
         (sum / n as f64).sqrt() as f32
+    }
+
+    #[test]
+    fn speech_plays_its_clip_then_lets_go() {
+        static CLIP: [u8; 64] = [0x77; 64];
+        let mut synth = Synth::new(RATE, SOUND);
+        synth.say(Some(Upsample::new(Clip::new(&CLIP), 3)));
+        assert!(!synth.is_silent());
+        let samples: std::vec::Vec<f32> = (0..3 * 2 * CLIP.len()).map(|_| synth.sample()).collect();
+        assert!(samples.iter().any(|&s| s > 0.1), "speech never got loud");
+        assert!(!synth.is_silent());
+        synth.sample();
+        assert!(synth.is_silent());
     }
 
     #[test]

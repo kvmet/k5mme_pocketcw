@@ -1,10 +1,13 @@
 //! Serial port commands the UI answers: settings and memories by name, PLAY, INFO and the stats.
 //! Each reply line ends with `\n`.
 
+use core::fmt::Write;
+
 use pocketcw_logic::{
     config::{self, Name},
     letters::{KOCH, Mastery},
     morse,
+    pack::Error as PackError,
     panel::Panel,
     player::{Keying, MAX_TEXT},
     serial::Stats,
@@ -41,7 +44,14 @@ impl Ui {
             Panel::Ips => "IPS",
             Panel::Ili9341 => "ILI9341",
         };
-        Text::format(format_args!("INFO VERSION={} SCREEN={screen} PANEL={panel}\n", env!("CARGO_PKG_VERSION")))
+        let mut pack = Text::<8>::new();
+        let _ = match self.pack() {
+            Ok(p) => write!(pack, "{}", p.count()),
+            Err(PackError::Missing) => write!(pack, "NONE"),
+            Err(PackError::Format(_)) => write!(pack, "OLD"),
+            Err(PackError::Corrupt) => write!(pack, "BAD"),
+        };
+        Text::format(format_args!("INFO VERSION={} SCREEN={screen} PANEL={panel} PACK={}\n", env!("CARGO_PKG_VERSION"), pack.as_str()))
     }
 
     /// `VALUE SPEED 25`

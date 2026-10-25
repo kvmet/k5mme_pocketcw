@@ -47,8 +47,9 @@ mod app {
         i2c::I2c,
         lcd::{self, Lcd},
         link::{self, Link},
+        pack::Pack,
         pins::*,
-        power,
+        power, speech,
         store::{self, Saved},
         theme::{Theme, palette_stripes},
         text::Text,
@@ -861,7 +862,8 @@ mod app {
 
         let readable = system.panel == Panel::Ips;
         let gauge = Gauge::new(battery_full, TICKS.load(Ordering::Relaxed));
-        let mut ui = Ui::new(&settings, system, letters, history, memories, gauge);
+        let pack = Pack::open(&mut lcd);
+        let mut ui = Ui::new(&settings, system, letters, history, memories, gauge, pack);
         ui.poll(&mut lcd, read_battery(&mut devices.adc), TICKS.load(Ordering::Relaxed));
         let mut poll_at = Mono::now() + POLL_MS.millis();
         ui.draw(&mut lcd, &settings);
@@ -921,6 +923,21 @@ mod app {
                 Ok(Ok(Message::Serial(SerialCommand::Hotline(on)))) => {
                     hotline = on;
                     show_hotline(&ui, &mut lcd, hotline);
+                }
+                Ok(Ok(Message::Serial(SerialCommand::Say(text)))) => {
+                    let said = match ui.pack() {
+                        Err(_) => Err("NO PACK"),
+                        Ok(pack) => match pack.find(&mut lcd, text.as_str().as_bytes()) {
+                            None => Err("NOT IN PACK"),
+                            Some(word) if speech::say(&mut lcd, pack, &word, &mut cx.shared.audio) => Ok(()),
+                            Some(_) => Err("NO CLIP"),
+                        },
+                    };
+                    let line: Reply = match said {
+                        Ok(()) => Text::format(format_args!("OK SAY {}\n", text.as_str())),
+                        Err(why) => Text::format(format_args!("ERROR SAY: {why}\n")),
+                    };
+                    emit(&mut chunks, line.as_str());
                 }
                 Ok(Ok(Message::Serial(command))) => answer(&mut ui, &mut lcd, &mut settings, &mut chunks, command).await,
                 Ok(Ok(message)) => {
@@ -1108,7 +1125,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }

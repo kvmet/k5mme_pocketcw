@@ -42,6 +42,7 @@ use pocketcw_logic::{
 use crate::font::Font;
 use crate::gfx::{rect, text_cols};
 use crate::lcd::Lcd;
+use crate::pack::Pack;
 use crate::text::Text;
 use crate::theme::{Battery, MAIN, Theme};
 
@@ -174,10 +175,19 @@ pub struct Ui {
     board: radio::Board,
     /// A command for the decoder board, not sent yet.
     board_command: Option<pocketcw_logic::board::Command>,
+    pack: Result<Pack, pocketcw_logic::pack::Error>,
 }
 
 impl Ui {
-    pub fn new(settings: &Settings, system: SystemInfo, letters: Letters, history: History, memories: Memories, gauge: Gauge) -> Ui {
+    pub fn new(
+        settings: &Settings,
+        system: SystemInfo,
+        letters: Letters,
+        history: History,
+        memories: Memories,
+        gauge: Gauge,
+        pack: Result<Pack, pocketcw_logic::pack::Error>,
+    ) -> Ui {
         Ui {
             theme: Theme::new(settings.style, settings.palette, settings.boot_count),
             boot_count: settings.boot_count,
@@ -217,7 +227,12 @@ impl Ui {
             heard: radio::Heard::new(),
             board: radio::Board::default(),
             board_command: None,
+            pack,
         }
+    }
+
+    pub fn pack(&self) -> Result<&Pack, pocketcw_logic::pack::Error> {
+        self.pack.as_ref().map_err(|&e| e)
     }
 
     /// Redraws the whole current screen.
