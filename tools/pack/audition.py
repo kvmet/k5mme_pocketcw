@@ -52,20 +52,12 @@ class Row:
     text: str
     kind: str
     clip: str
-    meaning: str | None
+    # The word list's said, or its meaning for a meaning clip.
     base: str
     said: str = ""
-    parts: tuple[str, ...] = ()
-    phonemes: tuple[str, ...] = ()
+    spoken: str = ""
+    phonemes: str = ""
     speech_key: str = ""
-
-    @property
-    def entry(self) -> str:
-        return pack.entry(self.kind)
-
-    def parts_of(self, said: str) -> tuple[str, ...]:
-        """What the voice says for this clip with `said`, part by part."""
-        return next(parts for clip, parts in pack.phrases(said, self.meaning, self.kind) if clip == self.clip)
 
 
 class Review:
@@ -78,21 +70,18 @@ class Review:
         # Stops on a fix for a word in no list.
         pack.read_words(self.fixes)
         self.rows = [
-            Row(text, kind, clip, meaning, said)
+            Row(text, kind, clip, base)
             for text, said, meaning, kind in pack.read_words()
-            for clip, _ in pack.phrases(said, meaning, kind)
+            for clip, base in pack.clips_of(said, meaning, kind)
         ]
         for row in self.rows:
             self.update(row)
 
     def update(self, row: Row):
-        row.said = self.fixes.get((row.text, row.entry), row.base)
-        row.parts = row.parts_of(row.said)
-        row.phonemes = self.phonemes(row.parts)
+        row.said = self.fixes.get((row.text, row.clip), row.base)
+        row.spoken = pack.spoken(row.clip, row.said)
+        row.phonemes = self.voice.phonemes(row.spoken)
         row.speech_key = self.voice.speech_key(row.phonemes)
-
-    def phonemes(self, parts: tuple[str, ...]) -> tuple[str, ...]:
-        return tuple(self.voice.phonemes(part) for part in parts)
 
     def state(self, row: Row) -> str:
         """good, bad, stale or unmarked."""
@@ -112,16 +101,15 @@ class Review:
         pack.write_review(self.voice.folder, ordered)
 
     def fix(self, fixed: Row, said: str):
-        """Says `said` for the row's entry from now on. A said with the phonemes of the word
+        """Says `said` for the row's clip from now on. A said with the phonemes of the word
         list's drops the fix."""
-        if self.phonemes(fixed.parts_of(said)) == self.phonemes(fixed.parts_of(fixed.base)):
-            self.fixes.pop((fixed.text, fixed.entry), None)
+        phonemes = lambda said: self.voice.phonemes(pack.spoken(fixed.clip, said))
+        if phonemes(said) == phonemes(fixed.base):
+            self.fixes.pop((fixed.text, fixed.clip), None)
         else:
-            self.fixes[fixed.text, fixed.entry] = said
+            self.fixes[fixed.text, fixed.clip] = said
         pack.write_fixes(self.voice.folder, self.fixes)
-        for row in self.rows:
-            if (row.text, row.entry) == (fixed.text, fixed.entry):
-                self.update(row)
+        self.update(fixed)
 
     def counts(self) -> str:
         states = [self.state(row) for row in self.rows]
@@ -143,9 +131,6 @@ class Model(QAbstractTableModel):
     def shows(self, row: Row) -> bool:
         state = self.review.state(row)
         return self.filter == "All" or state == "bad" or (self.filter == "To review" and state in ("unmarked", "stale"))
-
-    def refilter(self):
-        self.set_filter(self.filter)
 
     def set_filter(self, name: str):
         self.beginResetModel()
@@ -348,7 +333,7 @@ class Window(QMainWindow):
             self.says.clear()
             return
         self.word.setText(row.text)
-        self.says.setText(f"Says: {' + '.join(row.parts)}\nPhonemes: {' + '.join(row.phonemes)}\nMark: {self.review.state(row)}")
+        self.says.setText(f"Says: {row.spoken}\nPhonemes: {row.phonemes}\nMark: {self.review.state(row)}")
         self.note.setText(self.review.note(row))
         fixed = pack.PHONEMES.fullmatch(row.said)
         self.respelling.setText(row.base if fixed else row.said)
@@ -357,14 +342,14 @@ class Window(QMainWindow):
         self.play_timer.start()
 
     def said_phonemes(self, said: str) -> str:
-        """The phonemes of `said` as the entry's first clip says it: a period after a character
-        and after each letter of a spelled word, so that phonemes edited from them keep these."""
+        """The phonemes of `said` as the row's clip says it, with its periods, so that phonemes
+        edited from them keep these."""
         row = self.current()
         if row is None:
             return ""
-        return self.review.voice.phonemes(pack.phrases(said, None, row.kind)[0][1][0])
+        return self.review.voice.phonemes(pack.spoken(row.clip, said))
 
-    def clip(self, phonemes: tuple[str, ...]) -> bytes | None:
+    def clip(self, phonemes: str) -> bytes | None:
         """The clip for `phonemes`, spoken now when it is not in the cache."""
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -411,11 +396,11 @@ class Window(QMainWindow):
         if said in ("", "//"):
             self.status.setText("Nothing to speak")
             return
-        parts = row.parts_of(said)
-        clip = self.clip(self.review.phonemes(parts))
+        spoken = pack.spoken(row.clip, said)
+        clip = self.clip(self.review.voice.phonemes(spoken))
         if clip is not None:
             self.trial = (said, clip)
-            self.status.setText(f"Trying: {' + '.join(parts)}")
+            self.status.setText(f"Trying: {spoken}")
             self.player.play(clip)
 
     def keep(self):
@@ -424,12 +409,7 @@ class Window(QMainWindow):
             self.status.setText("Speak a fix first")
             return
         self.review.fix(row, self.trial[0])
-        self.review.mark(row, "good", "")
-        # The fix changed the entry's other clip too, so the filter may now show or hide it.
-        at = self.review.rows.index(row)
-        self.model.refilter()
-        self.select(next((i for i, shown in enumerate(self.model.shown) if shown > at), self.model.rowCount() - 1))
-        self.table.setFocus()
+        self.mark("good", "")
 
     def reset(self):
         """Puts the word list's said in the fields and speaks it; Keep then drops the fix."""

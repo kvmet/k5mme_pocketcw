@@ -1,5 +1,5 @@
 //! Speaking text from the content pack: each word the pack holds, and every other word spelled
-//! a character at a time. A word on its own gets its meaning too. `ui` reads the clips into one
+//! a character at a time. A word on its own gets its meaning after it. `ui` reads the clips into one
 //! buffer while the synth holds none, then lends the buffer to the synth until the last clip
 //! ends. The clips are read outside the audio lock, so the sample interrupt never waits on the
 //! SPI flash.
@@ -13,9 +13,12 @@ use crate::audio::{Audio, SAMPLE_HZ};
 use crate::lcd::Lcd;
 use crate::pack::Pack;
 
-/// About 3.7 s at 8789 Hz: the longest clip `tools/pack/pack.py` makes, and all of one `say`.
+/// About 3.7 s at 8789 Hz: the longest word and meaning `tools/pack/pack.py` makes, and all of
+/// one `say`.
 const BUFFER_LEN: usize = 16 * 1024;
 const GAP_MS: f32 = 120.0;
+/// With the 50 ms of silence the clips' ends hold, about the pause Kokoro makes after a sentence.
+const MEANING_GAP_MS: f32 = 200.0;
 
 struct Buffer(UnsafeCell<[u8; BUFFER_LEN]>);
 
@@ -57,11 +60,15 @@ pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = A
     let mut ends = Ends { ends: [0; MAX_CLIPS], count: 0, used: 0 };
     let tokens = || text.split(|&b| b == b' ').filter(|t| !t.is_empty());
     let alone = tokens().count() == 1;
+    let mut gap_ms = GAP_MS;
     'words: for token in tokens() {
         if let Some(word) = pack.find(lcd, token) {
-            let clip = if alone { word.with_meaning.or(word.clip) } else { word.clip };
-            if !ends.add(lcd, pack, clip, buffer) {
+            if !ends.add(lcd, pack, word.clip, buffer) {
                 break;
+            }
+            if alone && word.meaning.is_some() {
+                gap_ms = MEANING_GAP_MS;
+                ends.add(lcd, pack, word.meaning, buffer);
             }
             continue;
         }
@@ -78,7 +85,7 @@ pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = A
     }
     // SAFETY: the mutable borrow above has ended; the synth only reads the clips.
     let clips: &'static [u8] = unsafe { &(&*BUFFER.0.get())[..ends.used] };
-    let gap = (SAMPLE_HZ / pack.factor.max(1) as f32 * GAP_MS / 1000.0) as u16;
+    let gap = (SAMPLE_HZ / pack.factor.max(1) as f32 * gap_ms / 1000.0) as u16;
     audio.lock(|audio| {
         audio.synth.say(Some(Upsample::new(Clips::new(clips, &ends.ends[..ends.count], gap), pack.factor)));
         audio.wake();

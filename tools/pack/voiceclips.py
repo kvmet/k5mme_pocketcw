@@ -135,17 +135,12 @@ class Speaker:
         return samples, hz
 
 
-def trim(samples: np.ndarray) -> np.ndarray:
-    """`samples` without the silence at both ends."""
-    loud = np.flatnonzero(np.abs(samples) >= TRIM * np.abs(samples).max())
-    return samples[loud[0]:loud[-1] + 1]
-
-
 def shape(samples: np.ndarray, hz: int) -> np.ndarray:
     """Trims silence at both ends, scales to PEAK, and pads a short lead and tail."""
     if samples.ndim > 1:
         samples = samples.mean(axis=1)
-    samples = trim(samples)
+    loud = np.flatnonzero(np.abs(samples) >= TRIM * np.abs(samples).max())
+    samples = samples[loud[0]:loud[-1] + 1]
     samples = samples * (PEAK / np.abs(samples).max())
     return np.concatenate([np.zeros(int(LEAD_S * hz)), samples, np.zeros(int(TAIL_S * hz))]).astype(np.float32)
 

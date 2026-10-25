@@ -99,7 +99,7 @@ The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flas
 The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart` at 8789 Hz (`tools/pack/voices/kokoro-af_heart`). `logic/src/pack.rs` gives the format. The entries come from three lists:
 
 - `tools/pack/words/chars.txt`: every character Morse sends, so the device can spell a word the pack lacks.
-- `tools/pack/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says and, for an abbreviation, its meaning. An abbreviation gets two clips: the spelled form, "Q T H", for running text, and the spelled form then the meaning, "Q T H. location", for a word on its own and for drills.
+- `tools/pack/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says and, for an abbreviation, its meaning. An abbreviation gets two clips: the spelled form, "Q T H", and the meaning, "location". The device says the meaning after the word when the word is on its own, as in drills.
 - `tools/pack/words/common.txt`: English words from the top 3177 of wordfreq. `tools/pack/wordlist.py` writes it, leaving out the words in `tools/pack/words/blocklist.txt`: offensive words, fragments, and words seldom sent in a CW contact. The blocklist is reviewed down to that rank, so raising the rank means reviewing the new words first. It needs the `wordfreq` package, and runs only when the list changes. The pack takes the most frequent of them that fit in one update file, 8,372,224 bytes.
 
 ### Voice tools
@@ -113,7 +113,7 @@ python3.12 tools/pack/setup.py
 Each folder in `tools/pack/voices` is one voice, with three files:
 
 - `voice.toml`: the engine, the voice, its speed, and the model files with their URLs and sha256.
-- `fixes.txt`: what the voice says for an entry, over the said column of the word lists, as a respelling or as phonemes between slashes. A fix belongs to one voice: a respelling that fixes one voice can break another.
+- `fixes.txt`: what the voice says for a clip, over the said or meaning column of the word lists, as a respelling or as phonemes between slashes. A fix belongs to one voice: a respelling that fixes one voice can break another.
 - `review.txt`: the marks `tools/pack/audition.py` gives each clip.
 
 ### Building the pack
@@ -127,8 +127,8 @@ tools/pack/.venv/bin/python tools/pack/pack.py --out firmware/target/pack
 How each clip is made, in `tools/pack/voiceclips.py` and `tools/pack/pack.py`:
 
 - Kokoro gets phonemes in the form of misaki, the tool its training data went through. espeak-ng makes the phonemes, and a table from misaki's espeak fallback converts them. Without the table, vowels sound foreign: "bee" comes out like "beay".
-- A character ends in a period, and so does each part of a spelled word: a said with a lone capital letter, such as "Q T H", goes to the voice as "Q. T. H.". Kokoro rushes a lone letter and runs spelled letters together; as the end of a sentence it says each in full. Kokoro pauses up to about 225 ms after each period, so in a part whose phonemes end a sentence and go on, every pause longer than 50 ms is cut to 50 ms, a comma's too. A part that already ends in a mark, such as "Q. T H", gets no second one.
-- A meaning clip is the word and its meaning, each spoken on its own and joined with 250 ms of silence, so the pause between them stays when the letters' pauses are cut.
+- A character ends in a period, and so does each part of a spelled word: a said with a lone capital letter, such as "Q T H", goes to the voice as "Q. T. H.". Kokoro rushes a lone letter and runs spelled letters together; as the end of a sentence it says each in full. Kokoro pauses up to about 225 ms after each period, so in a clip whose phonemes end a sentence and go on, every pause longer than 50 ms is cut to 50 ms, a comma's too. A part that already ends in a mark, such as "Q. T H", gets no second one.
+- A meaning ends in a period too. The device plays it 200 ms after the word; with the silence at the clips' ends, that is about the pause Kokoro makes after a sentence.
 - Before encoding, a treble boost undoes the loss of the device's straight-line upsampling, 6 dB at the top of the band.
 - Then the speech level is set to 7 dB under the sidetone's, from the power of its 20 ms frames without the pauses. A limiter keeps the peaks under 0.8 of full scale: ADPCM overshot dense peaks by up to 16% in a test. The synth plays 0.8 at the sidetone's peak (`CLIP_CEILING` in `logic/src/synth.rs`). A clip scaled by its peak alone sounds about 11 dB under the sidetone, since speech has short peaks far above its level. The build prints the level of the clips against the sidetone's.
 
@@ -141,8 +141,8 @@ tools/pack/.venv/bin/python tools/pack/audition.py
 ```
 
 1. Mark. The list shows the clips to review, and each plays when it comes up. With the list focused, `G` marks a clip good and `B` bad, and the next clip plays. `N` goes to the note: type what is wrong, and Enter marks the clip bad. Space plays it again, and Up and Down move. Each mark goes to `review.txt` at once, so you can stop at any clip.
-2. Fix. Pick Bad in the filter. For each clip, type a respelling the voice reads more clearly, such as `boy see` for BOISE, and press Enter to hear it. A respelling with a lone capital letter is spelled, and gets its periods as the word lists' spellings do. The phonemes field shows these periods, so phonemes edited from it keep them. When no respelling does it, edit the phonemes instead. They are misaki phonemes, the form Kokoro is given, and a character Kokoro does not know is an error. Play kept plays the clip the pack has now. Keep fix writes the fix to `fixes.txt` and marks the clip good; Reset puts back the word list's said, and Keep fix then drops the fix.
-3. Check. A fix changes both clips of an abbreviation, so the other clip comes back as stale under To review. Build the pack again: a kept fix is already in the cache. Install it and spot check on the device speaker with `say`.
+2. Fix. Pick Bad in the filter. For each clip, type a respelling the voice reads more clearly, such as `boy see` for BOISE, and press Enter to hear it. A word's respelling with a lone capital letter is spelled, and gets its periods as the word lists' spellings do. The phonemes field shows these periods, so phonemes edited from it keep them. When no respelling does it, edit the phonemes instead. They are misaki phonemes, the form Kokoro is given, and a character Kokoro does not know is an error. Play kept plays the clip the pack has now. Keep fix writes the fix to `fixes.txt` and marks the clip good; Reset puts back the word list's said, and Keep fix then drops the fix.
+3. Check. A fix is for one clip: a word's fix leaves its meaning as it is. Build the pack again: a kept fix is already in the cache. Install it and spot check on the device speaker with `say`.
 
 A mark is for the speech it was given on. When the speech changes, because of a fix, a new model or an espeak-ng upgrade that changes the phonemes, the mark shows as stale until you mark the clip again.
 
