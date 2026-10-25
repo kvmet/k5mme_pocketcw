@@ -10,9 +10,9 @@ K	K	over
 <BK>	B K	prosign, back to you
 BK	B K	back to you
 <SK>	S K	prosign, end of contact
-<AR>	ay R	prosign, end of message
+<AR>	eh R	prosign, end of message
 <BT>	B T	prosign, break
-<AS>	ay S	prosign, wait
+<AS>	eh S	prosign, wait
 R	R	received
 RR	R R	all received
 QRZ	Q R Z	who is calling me
@@ -55,7 +55,7 @@ RST	R S T	readability, strength, tone
 
 # Greetings and thanks
 GM	G M	good morning
-GA	G ay	good afternoon, or go ahead
+GA	G eh	good afternoon, or go ahead
 GE	G E	good evening
 GN	G N	good night
 GD	G D	good day
@@ -68,7 +68,7 @@ VY	V Y	very
 GUD	G U D	good
 GL	G L	good luck
 CUL	C U L	see you later
-CUAGN	C U ay G N	see you again
+CUAGN	C U eh G N	see you again
 HPE	H P E	hope
 CONGRATS	congrats
 73	seventy three	best regards
@@ -84,8 +84,8 @@ UR	U R	your
 HR	H R	here
 ES	E S	and
 FER	F E R	for
-ABT	ay B T	about
-AGN	ay G N	again
+ABT	eh B T	about
+AGN	eh G N	again
 PSE	P S E	please
 HW	H W	how copy
 CPY	C P Y	copy
@@ -104,7 +104,7 @@ WINDY	windy
 FOG	fog
 TEMP	temp
 RIG	rig
-ANT	ay N T	antenna
+ANT	eh N T	antenna
 PWR	P W R	power
 WATTS	watts
 W	W	watts
@@ -163,7 +163,7 @@ PORTABLE	portable
 # Operating activities
 POTA	pota	parks on the air
 SOTA	sota	summits on the air
-IOTA	I O T ay	islands on the air
+IOTA	I O T eh	islands on the air
 PARK	park
 SUMMIT	summit
 REF	R E F	reference
@@ -174,7 +174,7 @@ SKCC	S K C C	straight key century club
 CWOPS	C W ops
 CWT	C W T	C W ops test
 SST	S S T	slow speed test
-ARRL	ay R R L
+ARRL	eh R R L
 FD	F D	field day
 CONTEST	contest
 CW	C W	Morse code
