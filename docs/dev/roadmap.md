@@ -46,6 +46,8 @@ All four go in probe images. None needs the flash driver in the main image. Each
 - Erase and program one 4 KB sector in the free area and read it back, timing the erase. Pass: the data matches, and the worst erase time is recorded.
 - Program 16 partial writes into one 256 byte page, then read it back. The log appends small records into pages, and some parts limit partial programs per page. Pass: all 16 match.
 
+Passed on 2026-10-25. Erase takes 15 ms on a blank sector and 45 ms on a programmed one; a page programs in at most 917 µs. See [Storage](hardware/storage.md#spi-flash).
+
 ### Bootloader erase
 
 Done on 2026-10-25 with `firmware/src/bin/flashprobe.rs` and `tools/flashtest.py`. See [SPI flash probe](building.md#spi-flash-probe).

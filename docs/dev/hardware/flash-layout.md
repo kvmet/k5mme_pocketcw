@@ -6,14 +6,16 @@
 | - | - |
 | MCU 0x08000000 to 0x08004FFF | The vendor bootloader. Never write here. |
 | MCU 0x08005000 up | The app. The app must set VTOR to 0x08005000. |
-| SPI flash 0x000000 | Vendor boot screen, file `F000000.bin`. |
-| SPI flash 0x030000 | Vendor UI images, file `F0000C0.bin`. |
-| SPI flash 0x100000 | PocketCW file `F000400.bin`, 4 KB. |
-| SPI flash 0xE00000 | Vendor fonts, file `F003800.bin`. |
+| SPI flash 0x000000 to 0x025FFF | Vendor boot screen, file `F000000.bin`. |
+| SPI flash 0x030000 to 0x0C5FFF | Vendor UI images, file `F0000C0.bin`. |
+| SPI flash 0x100000 to 0x100FFF | PocketCW file `F000400.bin`, 4 KB. |
+| SPI flash 0xE00000 to 0xFECFFF | Vendor fonts, file `F003800.bin`. |
+
+The SPI flash ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every other sector reads blank: 0x026000 to 0x02FFFF, 0x0C6000 to 0xDFFFFF apart from `F000400.bin`, and 0xFED000 to 0xFFFFFF.
 
 PocketCW runs from the MCU app area. It never reads the SPI flash.
 
-`F000400.bin` is `PocketCW`, a format version byte (1), then 0xFF to 4 KB. `tools/release.sh` writes it. The vendor files leave 0x0C5080 to 0xDFFFFF empty, and the bootloader takes a file at this offset.
+`F000400.bin` is `PocketCW`, a format version byte (1), then 0xFF to 4 KB. `tools/release.sh` writes it.
 
 `firmware/memory.x` gives the app 236 KB from 0x08005000, and `cortex-m-rt` sets VTOR from its `set-vtor` feature.
 
@@ -30,6 +32,12 @@ To start it: hold F1 and F4, then hold the dial until the update screen shows. P
 The bootloader routes file data by the name in the root directory entry. So the directory entry must reach the device before the data, as Windows writes it. macOS and mtools write the data first, and the data goes to the wrong place.
 
 On macOS, PocketCW installs with `tools/pocketcw-flash.c`. The tool blocks the mount of the update drive, so macOS writes nothing to it. Then it writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.
+
+The update drive is FAT16 with 2 KB sectors, 8 KB clusters and 51,200 sectors (100 MB). Confirmed on 2.64; `pocketcw-flash` prints the cluster size. `pocketcw-flash` writes the whole FAT in one sector, so a file holds at most 1022 clusters: 8,372,224 bytes.
+
+An SPI flash install erases and programs the 4 KB sectors its file covers. Confirmed on 2.64 with a 2,093,056 byte file at 0x100000, the largest tested: every sector of it read back. Tags written beforehand in the sector just past its end, 4 KB, 64 KB and 1 MB past it, and at 0xC00000 and 0xDFF000 all survived.
+
+Drive writes that are not part of an update file can also land in the SPI flash. On 2.64, after a session with several installs, 0x101000 to 0x103FFF held a FAT directory cluster (first entry `.`, attribute 0x12) in place of the test file data. The sectors were erased before the write. Likely: macOS wrote to the drive while it was mounted, and the bootloader routed the write to the SPI flash beside the last F file. So data that PocketCW keeps in the SPI flash checks its own frames, and the install path never lets macOS mount the drive.
 
 After a finished write, the status file reads `Success` for about 1 second. Then the drive drops off USB and comes back as `Ready`.
 

@@ -45,7 +45,16 @@ When a read fails at startup, PocketCW starts with defaults for that record and 
 
 ## SPI flash
 
-The SPI flash holds 16 MB. The vendor resources end just under 0x1000000. See [Flash layout and bootloader](flash-layout.md) for what lives where. PocketCW never reads the SPI flash.
+A GigaDevice GD25Q128 (JEDEC ID `C8 40 18`), 16 MB, on SPI1 with the screen: `FLASH_CS` PB9, `LCD_CS` PB6, MISO PB4. Confirmed on 2.64 with `firmware/src/bin/flashprobe.rs`. See [Flash layout and bootloader](flash-layout.md) for what lives where.
+
+- Status registers 1 to 3 read `00 00 40`. No block protection: BP 0, CMP 0, WPS 0.
+- SFDP 1.0, with a 9 dword basic table. It lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, and no erase times or page size. Pages are 256 bytes.
+- Reads match at 18 MHz and at 4.5 MHz.
+- Erasing a 4 KB sector takes 15 ms when it is blank and 45 ms after it was programmed.
+- Programming a 256 byte page takes at most 917 µs, with the transfer at 18 MHz.
+- One page programmed in 16 pieces of 16 bytes reads back whole. So small records can go into a page one at a time.
+
+`firmware/src/spi_flash.rs` is the driver: read 0x03, page program 0x02, 4 KB erase 0x20, JEDEC ID 0x9F, SFDP 0x5A, status 0x05, 0x35 and 0x15. The LCD changes the SPI1 divider and PB4, so every flash command sets both. The app does not use the SPI flash yet.
 
 ## No clock
 

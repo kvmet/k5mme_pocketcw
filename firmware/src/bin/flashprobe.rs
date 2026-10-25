@@ -54,6 +54,7 @@ const RANGES_ROW: i32 = 8;
 const TAGS_ROW: i32 = 14;
 const TEST_ROW: i32 = 16;
 const MARKS_ROW: i32 = 18;
+const OTHER_ROW: i32 = 20;
 const STATUS_ROW: i32 = 21;
 
 type Line = Text<64>;
@@ -69,6 +70,9 @@ struct Scan {
     marks: u32,
     tests: u32,
     test_span: Option<(u32, u32)>,
+    /// Used sectors in the writable area that are not the PocketCW file and carry no tag.
+    others: u32,
+    first_other: Option<(u32, [u8; TAG_LEN])>,
 }
 
 #[entry]
@@ -244,7 +248,7 @@ fn compare_pocketcw_file(lcd: &mut Lcd, line: &mut Line) {
 
 /// Rows 7 to 14: reads every sector and shows the runs of used ones and the tags found.
 fn scan_and_show(lcd: &mut Lcd, line: &mut Line) {
-    let mut scan = Scan { ranges: [(0, 0); MAX_RANGES], shown: 0, more: 0, used: 0, marks: 0, tests: 0, test_span: None };
+    let mut scan = Scan { ranges: [(0, 0); MAX_RANGES], shown: 0, more: 0, used: 0, marks: 0, tests: 0, test_span: None, others: 0, first_other: None };
     let mut buf = [0u8; SECTOR as usize];
     let mut run: Option<u32> = None;
     for address in (0..FLASH_BYTES).step_by(SECTOR as usize) {
@@ -257,6 +261,14 @@ fn scan_and_show(lcd: &mut Lcd, line: &mut Line) {
         let used = buf.iter().any(|&b| b != 0xFF);
         if used {
             scan.used += 1;
+            if WRITABLE.contains(&address)
+                && address != POCKETCW_FILE
+                && !tagged(&buf, MARK_TAG, address)
+                && !tagged(&buf, TEST_TAG, address)
+            {
+                scan.others += 1;
+                scan.first_other.get_or_insert((address, buf[..TAG_LEN].try_into().unwrap()));
+            }
             run.get_or_insert(address);
             if tagged(&buf, MARK_TAG, address) {
                 scan.marks += 1;
@@ -299,6 +311,14 @@ fn scan_and_show(lcd: &mut Lcd, line: &mut Line) {
         let _ = write!(line, " {first:06X}-{:06X}", last + SECTOR - 1);
     }
     show(lcd, TAGS_ROW, line.as_str());
+    line.clear();
+    if let Some((address, head)) = scan.first_other {
+        let _ = write!(line, "OTHER {} {address:06X}:", scan.others);
+        for byte in head {
+            let _ = write!(line, " {byte:02X}");
+        }
+    }
+    show(lcd, OTHER_ROW, line.as_str());
 }
 
 fn tagged(sector: &[u8], tag: &[u8; 8], address: u32) -> bool {
