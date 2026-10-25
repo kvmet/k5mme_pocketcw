@@ -1,12 +1,12 @@
 //! Speaking text from the content pack: each word the pack holds, and every other word spelled
-//! a character at a time. `ui` reads the clips into one buffer while the synth holds none, then
-//! lends the buffer to the synth until the last clip ends. The clips are read outside the audio
-//! lock, so the sample interrupt never waits on the SPI flash.
+//! a character at a time. A word on its own gets its meaning too. `ui` reads the clips into one
+//! buffer while the synth holds none, then lends the buffer to the synth until the last clip
+//! ends. The clips are read outside the audio lock, so the sample interrupt never waits on the
+//! SPI flash.
 
 use core::cell::UnsafeCell;
 
 use pocketcw_logic::adpcm::{Clips, MAX_CLIPS, Upsample};
-use pocketcw_logic::pack::Word;
 use rtic::Mutex;
 
 use crate::audio::{Audio, SAMPLE_HZ};
@@ -32,15 +32,14 @@ struct Ends {
 }
 
 impl Ends {
-    /// Reads `word`'s clip after the others. False once the buffer or the clip count is full.
-    fn add(&mut self, lcd: &mut Lcd, pack: &Pack, word: &Word, buffer: &mut [u8]) -> bool {
-        if word.clip.is_none() {
-            return true;
-        }
+    /// Reads the clip at `clip` after the others. False once the buffer or the clip count is
+    /// full.
+    fn add(&mut self, lcd: &mut Lcd, pack: &Pack, clip: Option<u32>, buffer: &mut [u8]) -> bool {
+        let Some(at) = clip else { return true };
         if self.count == MAX_CLIPS {
             return false;
         }
-        let Some(len) = pack.load_clip(lcd, word, &mut buffer[self.used..]) else { return false };
+        let Some(len) = pack.load_clip(lcd, at, &mut buffer[self.used..]) else { return false };
         self.used += len;
         self.ends[self.count] = self.used as u16;
         self.count += 1;
@@ -56,16 +55,19 @@ pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = A
     // else reads the buffer while it fills.
     let buffer = unsafe { &mut *BUFFER.0.get() };
     let mut ends = Ends { ends: [0; MAX_CLIPS], count: 0, used: 0 };
-    'words: for token in text.split(|&b| b == b' ').filter(|t| !t.is_empty()) {
+    let tokens = || text.split(|&b| b == b' ').filter(|t| !t.is_empty());
+    let alone = tokens().count() == 1;
+    'words: for token in tokens() {
         if let Some(word) = pack.find(lcd, token) {
-            if !ends.add(lcd, pack, &word, buffer) {
+            let clip = if alone { word.with_meaning.or(word.clip) } else { word.clip };
+            if !ends.add(lcd, pack, clip, buffer) {
                 break;
             }
             continue;
         }
         for &c in token {
             if let Some(word) = pack.char(lcd, c)
-                && !ends.add(lcd, pack, &word, buffer)
+                && !ends.add(lcd, pack, word.clip, buffer)
             {
                 break 'words;
             }

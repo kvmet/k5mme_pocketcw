@@ -91,10 +91,9 @@ impl Pack {
         self.word(lcd, index)
     }
 
-    /// Reads the word's clip into `buffer` and returns its length. None when the word has no
-    /// clip, or the clip runs past its section or the buffer.
-    pub fn load_clip(&self, lcd: &mut Lcd, word: &Word, buffer: &mut [u8]) -> Option<usize> {
-        let at = word.clip?;
+    /// Reads the clip at `at` in the `CLIP` section into `buffer` and returns its length. None
+    /// when the clip runs past its section or the buffer.
+    pub fn load_clip(&self, lcd: &mut Lcd, at: u32, buffer: &mut [u8]) -> Option<usize> {
         let mut flash = lcd.spi_flash();
         let mut start = [0u8; CLIP_START as usize];
         flash.read(ADDRESS + self.clips.offset + at, &mut start);

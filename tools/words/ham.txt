@@ -1,47 +1,47 @@
 # Words, abbreviations and Q codes heard in CW contacts. Each line is the text sent in Morse, a
-# tab, and what the voice says. Abbreviations are spelled, then given their meaning. <XX> is a
-# prosign. Written for PocketCW; GPL-3.0 like the rest of the project.
+# tab, what the voice says, and for an abbreviation, a tab and its meaning. Abbreviations are
+# spelled. <XX> is a prosign. Written for PocketCW; GPL-3.0 like the rest of the project.
 
 # Calls and procedure
-CQ	C Q. calling any station
-DE	D E. from
-K	K. over
-<KN>	K N prosign. over, to you only
-<BK>	B K prosign. back to you
-<SK>	S K prosign. end of contact
-<AR>	ay R prosign. end of message
-<BT>	B T prosign. break
-<AS>	ay S prosign. wait
-R	R. received
-QRZ	Q R Z. who is calling me
+CQ	C Q	calling any station
+DE	D E	from
+K	K	over
+<KN>	K N	prosign, over, to you only
+<BK>	B K	prosign, back to you
+<SK>	S K	prosign, end of contact
+<AR>	ay R	prosign, end of message
+<BT>	B T	prosign, break
+<AS>	ay S	prosign, wait
+R	R	received
+QRZ	Q R Z	who is calling me
 TEST	test
 CALL	call
 NAME	name
-OP	O P. operator
-STN	S T N. station
+OP	O P	operator
+STN	S T N	station
 
 # Q codes
-QTH	Q T H. location
-QSL	Q S L. I confirm
-QSO	Q S O. a contact
-QRS	Q R S. send slower
-QRQ	Q R Q. send faster
-QRM	Q R M. interference
-QRN	Q R N. static
-QSB	Q S B. fading
-QRP	Q R P. low power
-QRO	Q R O. high power
-QRT	Q R T. stopping
-QRV	Q R V. ready
-QRL	Q R L. is this frequency in use
-QRX	Q R X. stand by
-QSY	Q S Y. change frequency
-QSK	Q S K. full break in
-QRU	Q R U. nothing more for you
-QSX	Q S X. listening on
+QTH	Q T H	location
+QSL	Q S L	I confirm
+QSO	Q S O	a contact
+QRS	Q R S	send slower
+QRQ	Q R Q	send faster
+QRM	Q R M	interference
+QRN	Q R N	static
+QSB	Q S B	fading
+QRP	Q R P	low power
+QRO	Q R O	high power
+QRT	Q R T	stopping
+QRV	Q R V	ready
+QRL	Q R L	is this frequency in use
+QRX	Q R X	stand by
+QSY	Q S Y	change frequency
+QSK	Q S K	full break in
+QRU	Q R U	nothing more for you
+QSX	Q S X	listening on
 
 # Signal reports
-RST	R S T. readability, strength, tone
+RST	R S T	readability, strength, tone
 5NN	five N N
 599	five nine nine
 579	five seven nine
@@ -52,66 +52,66 @@ RST	R S T. readability, strength, tone
 339	three three nine
 
 # Greetings and thanks
-GM	G M. good morning
-GA	G ay. good afternoon
-GE	G E. good evening
-GN	G N. good night
-HI	H I. laughter
-TU	T U. thank you
-TNX	T N X. thanks
-TKS	T K S. thanks
-FB	F B. fine business
-VY	V Y. very
-GUD	G U D. good
-GL	G L. good luck
-CUL	C U L. see you later
-CUAGN	C U ay G N. see you again
-73	seventy three. best regards
-72	seventy two. best regards, low power
-88	eighty eight. love and kisses
-OM	O M. old man, a fellow ham
-YL	Y L. young lady, any woman
-XYL	X Y L. wife
-DR	D R. dear
+GM	G M	good morning
+GA	G ay	good afternoon
+GE	G E	good evening
+GN	G N	good night
+HI	H I	laughter
+TU	T U	thank you
+TNX	T N X	thanks
+TKS	T K S	thanks
+FB	F B	fine business
+VY	V Y	very
+GUD	G U D	good
+GL	G L	good luck
+CUL	C U L	see you later
+CUAGN	C U ay G N	see you again
+73	seventy three	best regards
+72	seventy two	best regards, low power
+88	eighty eight	love and kisses
+OM	O M	old man, a fellow ham
+YL	Y L	young lady, any woman
+XYL	X Y L	wife
+DR	D R	dear
 
 # Contact words
-UR	U R. your
-HR	H R. here
-ES	E S. and
-FER	F E R. for
-ABT	ay B T. about
-AGN	ay G N. again
-PSE	P S E. please
-HW	H W. how copy
-CPY	C P Y. copy
-SRI	S R I. sorry
-NW	N W. now
-WX	W X. weather
+UR	U R	your
+HR	H R	here
+ES	E S	and
+FER	F E R	for
+ABT	ay B T	about
+AGN	ay G N	again
+PSE	P S E	please
+HW	H W	how copy
+CPY	C P Y	copy
+SRI	S R I	sorry
+NW	N W	now
+WX	W X	weather
 TEMP	temp
 RIG	rig
-ANT	ay N T. antenna
-PWR	P W R. power
+ANT	ay N T	antenna
+PWR	P W R	power
 WATTS	watts
-W	W. watts
-SIG	S I G. signal
-RPT	R P T. repeat
-NR	N R. number
+W	W	watts
+SIG	S I G	signal
+RPT	R P T	repeat
+NR	N R	number
 BURO	buro
-CFM	C F M. confirm
-CK	C K. check
-CL	C L. closing
-OB	O B. old boy
-OT	O T. old timer
-HV	H V. have
-WKD	W K D. worked
-WKG	W K G. working
-FREQ	F R E Q. frequency
+CFM	C F M	confirm
+CK	C K	check
+CL	C L	closing
+OB	O B	old boy
+OT	O T	old timer
+HV	H V	have
+WKD	W K D	worked
+WKG	W K G	working
+FREQ	F R E Q	frequency
 INFO	info
 AGE	age
-YRS	Y R S. years
-LIC	L I C. license
-BCNU	B C N U. be seeing you
-DX	D X. distance
+YRS	Y R S	years
+LIC	L I C	license
+BCNU	B C N U	be seeing you
+DX	D X	distance
 
 # Gear and keys
 KEY	key
@@ -121,39 +121,39 @@ PADDLES	paddles
 STRAIGHT	straight
 SIDESWIPER	sideswiper
 KEYER	keyer
-XCVR	X C V R. transceiver
-TX	T X. transmitter
-RX	R X. receiver
+XCVR	X C V R	transceiver
+TX	T X	transmitter
+RX	R X	receiver
 DIPOLE	dipole
-VERT	vert. vertical
+VERT	vert	vertical
 YAGI	yagi
 BEAM	beam
 LOOP	loop
 WIRE	wire
 COAX	coax
 TUNER	tuner
-EFHW	E F H W. end fed half wave
+EFHW	E F H W	end fed half wave
 TOWER	tower
-FT	F T. feet
-MTRS	M T R S. meters
+FT	F T	feet
+MTRS	M T R S	meters
 BAND	band
 BANDS	bands
 
 # Operating activities
-POTA	pota. parks on the air
-SOTA	sota. summits on the air
-IOTA	I O T ay. islands on the air
-WWFF	W W F F. world wide flora and fauna
+POTA	pota	parks on the air
+SOTA	sota	summits on the air
+IOTA	I O T ay	islands on the air
+WWFF	W W F F	world wide flora and fauna
 PARK	park
 SUMMIT	summit
-REF	R E F. reference
-SKCC	S K C C. straight key century club
+REF	R E F	reference
+SKCC	S K C C	straight key century club
 FISTS	fists
 CWOPS	C W ops
-CWT	C W T. C W ops test
-SST	S S T. slow speed test
+CWT	C W T	C W ops test
+SST	S S T	slow speed test
 ARRL	ay R R L
-FD	F D. field day
+FD	F D	field day
 CONTEST	contest
-CW	C W. Morse code
-WPM	W P M. words per minute
+CW	C W	Morse code
+WPM	W P M	words per minute

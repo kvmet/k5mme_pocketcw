@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Builds the content pack F000400.bin (format in `logic/src/pack.rs`): the characters in
 tools/words/chars.txt and the words in tools/words/ham.txt and tools/words/common.txt, each with
-a clip of the Kokoro voice af_heart at 5859 Hz.
+a clip of the Kokoro voice af_heart at 5859 Hz. A ham word with a meaning gets a second clip
+that says the word, then its meaning.
 
 Clips are kept in a cache folder by what they say and how they are made, so a rebuild only
 speaks new or changed words.
@@ -39,52 +40,53 @@ SENDABLE = re.compile(r"(?:[A-Z0-9]|<[A-Z]{2}>)+")
 CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/?.,=:'-()\"@+")
 
 
-def read_list(name: str) -> list[tuple[str, str]]:
-    """(text, spoken) for each line of a tab-separated list; spoken is the text in lower case
-    when the line has no tab."""
-    pairs = []
+def read_list(name: str, kind: str) -> list[tuple[str, str, str | None, str]]:
+    """(text, said, meaning, kind) for each line of a tab-separated list. Said is the text in
+    lower case when the line has no tab; meaning is None when it has no second tab."""
+    entries = []
     for line in (WORDS / name).read_text().splitlines():
         if line and not line.startswith("#"):
-            text, _, spoken = line.partition("\t")
-            pairs.append((text, spoken or text.lower()))
-    return pairs
+            text, said, meaning = (line.split("\t") + [None, None])[:3]
+            entries.append((text, said or text.lower(), meaning, kind))
+    return entries
 
 
-def read_words() -> list[tuple[str, str, str]]:
-    """(text, spoken, kind) for each entry: characters, ham words, then common words that are
-    not also ham words."""
-    chars = [(text, spoken, "char") for text, spoken in read_list("chars.txt")]
-    ham = [(text, spoken, "ham") for text, spoken in read_list("ham.txt")]
-    ham_texts = {text for text, _, _ in ham}
-    common = [(text, spoken, "common") for text, spoken in read_list("common.txt") if text not in ham_texts]
-    for text, _, _ in chars:
-        if text not in CHARS:
-            sys.exit(f"cannot send the character {text!r}")
-    if {text for text, _, _ in chars} != CHARS:
-        sys.exit(f"chars.txt misses {''.join(sorted(CHARS - {t for t, _, _ in chars}))}")
-    for text, _, _ in ham + common:
+def read_words() -> list[tuple[str, str, str | None, str]]:
+    """(text, said, meaning, kind) for each entry: characters, ham words, then common words
+    that are not also ham words."""
+    chars = read_list("chars.txt", "char")
+    ham = read_list("ham.txt", "ham")
+    ham_texts = {e[0] for e in ham}
+    common = [e for e in read_list("common.txt", "common") if e[0] not in ham_texts]
+    texts = lambda entries: {e[0] for e in entries}
+    if texts(chars) != CHARS or len(chars) != len(CHARS):
+        sys.exit(f"chars.txt must hold each of {''.join(sorted(CHARS))} once")
+    for text, _, _, _ in ham + common:
         if not SENDABLE.fullmatch(text) or len(text) > WORD_TEXT:
             sys.exit(f"cannot send {text!r} in a word entry")
-    for group in (chars, ham + common):
-        if len({text for text, _, _ in group}) != len(group):
-            sys.exit("an entry is listed twice")
+    if len(texts(ham + common)) != len(ham + common):
+        sys.exit("a word is listed twice")
     return chars + ham + common
 
 
-def build(words: list[tuple[str, str, bytes | None]]) -> bytes:
-    """The pack for (text, kind, clip) entries."""
+def build(words: list[tuple[str, str, bytes | None, bytes | None]]) -> bytes:
+    """The pack for (text, kind, clip, clip with meaning) entries."""
     entries = bytearray(struct.pack("<HH", len(words), 0))
     clips = bytearray(struct.pack("<B3x", FACTOR))
-    for text, kind, clip in words:
-        offset = NO_CLIP
-        if clip is not None:
-            if len(clip) > CLIP_MAX:
-                sys.exit(f"the clip for {text} is {len(clip)} bytes, more than {CLIP_MAX}")
-            offset = len(clips)
-            clips += struct.pack("<H", len(clip)) + clip
+
+    def add(text: str, clip: bytes | None) -> int:
+        if clip is None:
+            return NO_CLIP
+        if len(clip) > CLIP_MAX:
+            sys.exit(f"a clip for {text} is {len(clip)} bytes, more than {CLIP_MAX}")
+        offset = len(clips)
+        clips.extend(struct.pack("<H", len(clip)) + clip)
+        return offset
+
+    for text, kind, clip, with_meaning in words:
         encoded = text.encode()
         entries += struct.pack("<BB", len(encoded), FLAGS[kind]) + encoded.ljust(WORD_TEXT, b"\0")
-        entries += struct.pack("<I", offset)
+        entries += struct.pack("<II", add(text, clip), add(text, with_meaning))
     sections = [(b"WORD", bytes(entries)), (b"CLIP", bytes(clips))]
     header_len = 12 + 16 * len(sections) + 4
     table = bytearray(MAGIC + struct.pack("<BBH", FORMAT, len(sections), 0))
@@ -135,27 +137,38 @@ def main():
 
     if args.fixture:
         args.fixture.parent.mkdir(parents=True, exist_ok=True)
-        fixture = [("K", "char", bytes([5])), ("CQ", "ham", bytes([1, 2, 3])), ("<BK>", "ham", None), ("THE", "common", bytes([9, 8]))]
+        fixture = [
+            ("K", "char", bytes([5]), None),
+            ("CQ", "ham", bytes([1, 2, 3]), bytes([4, 4])),
+            ("<BK>", "ham", None, None),
+            ("THE", "common", bytes([9, 8]), None),
+        ]
         args.fixture.write_bytes(build(fixture))
         return
     if not args.out:
         parser.error("--out is required")
     words = read_words()
-    clips = [None] * len(words)
+    clips = [(None, None)] * len(words)
     if not args.no_voice:
         voice = Voice(args.models, args.cache)
-        spoken_now = 0
-        for i, (text, spoken, _) in enumerate(words):
-            clips[i], new = voice.clip(spoken)
-            spoken_now += new
-            if new and spoken_now % 100 == 0:
-                print(f"spoken {spoken_now}, at {i}/{len(words)} {text}", flush=True)
-        print(f"spoke {spoken_now} clips, took {len(words) - spoken_now} from the cache")
-    pack = build([(text, kind, clip) for (text, _, kind), clip in zip(words, clips)])
+        spoken_now = taken = 0
+        for i, (text, said, meaning, _) in enumerate(words):
+            phrases = [said, f"{said}. {meaning}" if meaning else None]
+            pair = []
+            for phrase in phrases:
+                clip, new = voice.clip(phrase) if phrase else (None, False)
+                pair.append(clip)
+                spoken_now += new
+                taken += bool(phrase) and not new
+                if new and spoken_now % 100 == 0:
+                    print(f"spoken {spoken_now}, at {i}/{len(words)} {text}", flush=True)
+            clips[i] = tuple(pair)
+        print(f"spoke {spoken_now} clips, took {taken} from the cache")
+    pack = build([(text, kind, clip, with_meaning) for (text, _, _, kind), (clip, with_meaning) in zip(words, clips)])
     args.out.mkdir(parents=True, exist_ok=True)
     path = args.out / "F000400.bin"
     path.write_bytes(pack)
-    counts = {kind: sum(1 for _, _, k in words if k == kind) for kind in FLAGS}
+    counts = {kind: sum(1 for *_, k in words if k == kind) for kind in FLAGS}
     print(f"{path}: {len(pack)} bytes, {counts['char']} characters, {counts['ham']} ham and {counts['common']} common words")
 
 

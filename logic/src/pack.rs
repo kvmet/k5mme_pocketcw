@@ -6,8 +6,8 @@
 //! CRC-32 of everything before it.
 //!
 //! `WORD`: entry count u16, two zero bytes, then one `WORD_ENTRY` byte entry each: text length
-//! u8, flags u8, text padded with zeros to `WORD_TEXT` bytes, clip offset u32 in `CLIP` or
-//! `NO_CLIP`. The characters come first, for spelling, then ham words, then common words, each
+//! u8, flags u8, text padded with zeros to `WORD_TEXT` bytes, then two clip offsets u32 in
+//! `CLIP` or `NO_CLIP`: the word, and the word followed by its meaning. The characters come first, for spelling, then ham words, then common words, each
 //! group of words most frequent first. A character's text can also be a word's: `K` is a letter
 //! and "over".
 //!
@@ -27,7 +27,7 @@ pub const CLIPS: [u8; 4] = *b"CLIP";
 /// Bytes before the first entry or clip of a section.
 pub const SECTION_START: u32 = 4;
 pub const WORD_TEXT: usize = 18;
-pub const WORD_ENTRY: usize = 2 + WORD_TEXT + 4;
+pub const WORD_ENTRY: usize = 2 + WORD_TEXT + 2 * 4;
 pub const NO_CLIP: u32 = u32::MAX;
 const FLAG_HAM: u8 = 1;
 const FLAG_CHAR: u8 = 2;
@@ -107,6 +107,9 @@ pub struct Word {
     pub char: bool,
     /// Where the clip sits in the `CLIP` section.
     pub clip: Option<u32>,
+    /// Where the clip of the word and then its meaning sits, for an abbreviation: "Q T H.
+    /// location".
+    pub with_meaning: Option<u32>,
 }
 
 impl Word {
@@ -114,10 +117,10 @@ impl Word {
     pub fn parse(entry: &[u8; WORD_ENTRY]) -> Option<Word> {
         let len = entry[0];
         let text = entry[2..2 + WORD_TEXT].try_into().unwrap();
-        let clip = u32_at(entry, 2 + WORD_TEXT);
+        let offset = |at: usize| Some(u32_at(entry, at)).filter(|&o| o != NO_CLIP);
         let flags = entry[1];
-        let clip = (clip != NO_CLIP).then_some(clip);
-        ((len as usize) <= WORD_TEXT).then_some(Word { text, len, ham: flags & FLAG_HAM != 0, char: flags & FLAG_CHAR != 0, clip })
+        let (clip, with_meaning) = (offset(2 + WORD_TEXT), offset(2 + WORD_TEXT + 4));
+        ((len as usize) <= WORD_TEXT).then_some(Word { text, len, ham: flags & FLAG_HAM != 0, char: flags & FLAG_CHAR != 0, clip, with_meaning })
     }
 
     /// The text as sent in Morse: capitals, digits, and prosigns in angle brackets.
@@ -168,8 +171,8 @@ mod tests {
     use super::*;
 
     /// Built by `python tools/pack.py --fixture logic/fixtures/pack.bin`: the character `K` (clip
-    /// byte 5), the words `CQ` (ham, clip bytes 1 2 3), `<BK>` (ham, no clip) and `THE` (clip
-    /// bytes 9 8).
+    /// byte 5), the words `CQ` (ham, clip bytes 1 2 3, with its meaning 4 4), `<BK>` (ham, no
+    /// clip) and `THE` (clip bytes 9 8).
     const FIXTURE: &[u8] = include_bytes!("../fixtures/pack.bin");
 
     fn section(header: &Header, kind: [u8; 4]) -> &'static [u8] {
@@ -209,6 +212,8 @@ mod tests {
         let cq = word(words, 1);
         assert_eq!((cq.text(), cq.char, cq.ham), (&b"CQ"[..], false, true));
         assert_eq!(clip(clips, cq.clip.unwrap()), [1, 2, 3]);
+        assert_eq!(clip(clips, cq.with_meaning.unwrap()), [4, 4]);
+        assert_eq!(k.with_meaning, None);
         let bk = word(words, 2);
         assert_eq!((bk.text(), bk.ham, bk.clip), (&b"<BK>"[..], true, None));
         let the = word(words, 3);

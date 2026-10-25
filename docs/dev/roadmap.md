@@ -132,7 +132,7 @@ Flash cost: about 1 KB.
 - The `ui` task reads a whole clip into a `ui`-owned 16 KB buffer, outside every lock. 16 KB holds about 5.6 s at 5859 Hz. The clip builder fails any clip longer than the buffer, so the limit is checked at build time.
 - It hands the buffer to the `sample` task through a single-producer, single-consumer index: no copy under the `audio` lock.
 - The `sample` task decodes ADPCM and plays it as one more voice in `synth`. The cost is tens of cycles a sample against 4096 available.
-- Built: `SAY` on the serial port speaks text. Words in the pack play their clip; other words are spelled from character clips (`tools/words/chars.txt`), up to 32 clips in the 16 KB buffer. Clips play in turn with 120 ms between them.
+- Built: `SAY` on the serial port speaks text. Words in the pack play their clip; one abbreviation on its own also gets its meaning. Other words are spelled from character clips (`tools/words/chars.txt`), up to 32 clips in the 16 KB buffer. Clips play in turn with 120 ms between them.
 
 Flash cost: about 4 KB.
 
