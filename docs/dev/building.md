@@ -122,7 +122,7 @@ python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
 | `stop` | Stops what `send` and `play` started. |
 | `stats letters FILE.csv` | Saves each Koch character's tries, percent right, mastery, and whether it is in play. Shows the mixups. |
 | `stats progress FILE.csv` | Saves each practice session. |
-| `edges MS FILE.csv` | Saves each change on the key and paddle lines in that time, with its time in ms. |
+| `edges MS FILE.csv` | Saves each change on the key and paddle lines in that time, with its time in ms and its sequence number, and the MODE, PADDLES and SPEED settings as the device sends them. Shows how many changes were lost. |
 
 Event lines show as they arrive, after `< `. The script finds the serial port by itself when there is only one; else give it with `--port PORT` before the steps.
 

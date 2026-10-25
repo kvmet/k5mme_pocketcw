@@ -19,7 +19,8 @@ Steps run in order:
   stop                           stop what send and play started
   stats letters FILE.csv         save each letter's tries, accuracy and mastery
   stats progress FILE.csv        save each practice session
-  edges MS FILE.csv              save each key and paddle line change for MS
+  edges MS FILE.csv              save each key and paddle line change for MS, with the keyer
+                                 settings, and report lost lines
 
 Event lines from the device show as they arrive, after "< ".
 
@@ -49,8 +50,8 @@ import zlib
 
 BUTTONS = ('F1', 'F2', 'F3', 'F4', 'LEFT', 'RIGHT', 'CLICK')
 # Lines the device sends unasked; anything else before a screenshot header is left over from an
-# unfinished screenshot.
-EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY', 'EDGE')
+# unfinished screenshot. EDGE ON also sends VALUE lines unasked.
+EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY', 'EDGE', 'VALUE')
 # Lines that answer a command.
 REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'END')
 # The longest SEND or PLAY text, from MAX_TEXT in logic/src/player.rs.
@@ -159,12 +160,21 @@ class Device:
         return self._ask(f'STATS {kind.upper()}', 'END$')[:-1]
 
     def edges(self, ms):
-        """(line, down, ms) for each key and paddle line change within `ms`."""
+        """The rows within `ms`: (line, down, ms, seq) for each key and paddle line change, and
+        (name, value, None, None) for each keyer setting the device sent, in the order they came."""
         self.drain()
-        self._write('EDGES ON\n')
+        self._write('EDGE ON\n')
         events = self.listen(ms)
-        self._write('EDGES OFF\n')
-        return [(e.text.split()[0], int(e.text.split()[1]), int(e.text.split()[2])) for e in events if e.name == 'EDGE']
+        self._write('EDGE OFF\n')
+        rows = []
+        for e in events:
+            if e.name == 'EDGE':
+                line, down, at_ms, seq = e.text.split()
+                rows.append((line, int(down), int(at_ms), int(seq)))
+            elif e.name == 'VALUE':
+                name, _, new = e.text.partition(' ')
+                rows.append((name, new, None, None))
+        return rows
 
     def expect(self, pattern, timeout=EXPECT_TIMEOUT_S):
         """The first event line that matches `pattern` from its start. The lines before it are
@@ -457,12 +467,14 @@ def run(d, plan):
             (save_letters if value == 'letters' else save_progress)(lines, values[1])
             print(values[1])
         else:
-            changes = d.edges(int(value))
+            rows = d.edges(int(value))
             with open(values[1], 'w', newline='') as f:
                 out = csv.writer(f)
-                out.writerow(['line', 'down', 'ms'])
-                out.writerows(changes)
-            print(f'{values[1]}: {len(changes)} changes')
+                out.writerow(['line', 'value', 'ms', 'seq'])
+                out.writerows(rows)
+            seqs = [row[3] for row in rows if row[3] is not None]
+            lost = sum((b - a - 1) % 2**32 for a, b in zip(seqs, seqs[1:]))
+            print(f'{values[1]}: {len(seqs)} changes, {lost} lost')
 
 
 def main():

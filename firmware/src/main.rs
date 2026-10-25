@@ -70,7 +70,7 @@ mod app {
         player::Player,
         sender,
         serial::{Command as SerialCommand, CommandLine},
-        settings::{Settings, UsbOut},
+        settings::{Field, Settings, UsbOut},
         synth::{PLAYERS, SIDETONE},
         volume::wm8978_speaker,
         ticks,
@@ -90,8 +90,8 @@ mod app {
         Button(Event),
         Decoded(Decoded),
         /// The keyer output or a paddle contact changed, at `at_ms` on the tick count. `dit_ms` is
-        /// the dot length decoding uses then.
-        Edge { line: Line, down: bool, at_ms: u32, dit_ms: u16 },
+        /// the dot length decoding uses then. `seq` counts every edge the tick made, sent or not.
+        Edge { line: Line, down: bool, at_ms: u32, dit_ms: u16, seq: u32 },
         /// Every player has finished its text; `play` is the newest play started by then.
         Played { play: u32 },
         /// A frame from the Pro decoder board.
@@ -610,6 +610,7 @@ mod app {
             wk_status: u8 = 0,
             listening: bool = false,
             key_down: bool = false, keyed: bool = false, key_out: (bool, bool) = (false, false), contacts: Contacts = Contacts { tip: false, ring: false },
+            edge_seq: u32 = 0,
             playing: bool = false,
         ],
     )]
@@ -684,15 +685,20 @@ mod app {
         }
 
         let old = *cx.local.contacts;
+        let edge_seq = cx.local.edge_seq;
+        let mut edge = |line, down| {
+            send(Message::Edge { line, down, at_ms: now, dit_ms: copy_dit_ms, seq: *edge_seq });
+            *edge_seq = edge_seq.wrapping_add(1);
+        };
         for (line, was, is) in [(Line::Tip, old.tip, contacts.tip), (Line::Ring, old.ring, contacts.ring)] {
             if was != is {
-                send(Message::Edge { line, down: is, at_ms: now, dit_ms: copy_dit_ms });
+                edge(line, is);
             }
         }
         *cx.local.contacts = contacts;
         if down != *cx.local.key_down {
             *cx.local.key_down = down;
-            send(Message::Edge { line: Line::Key, down, at_ms: now, dit_ms: copy_dit_ms });
+            edge(Line::Key, down);
         }
 
         let mut played = [None; PLAYERS];
@@ -852,7 +858,7 @@ mod app {
         let mut wk_bytes_lost_shown = 0;
         // From a SEND until its SENT, so a second SEND gets BUSY.
         let mut sending = false;
-        // EDGES ON, until EDGES OFF or the port closes.
+        // EDGE ON, until EDGE OFF or the port closes.
         let mut edges = false;
         loop {
             let ui_at = ui.deadline().map(|at| Mono::now() + ticks::ms_until(TICKS.load(Ordering::Relaxed), at).millis());
@@ -884,7 +890,12 @@ mod app {
                     cx.shared.serial_key.lock(sender::Sender::clear);
                     ui.stop_serial();
                 }
-                Ok(Ok(Message::Serial(SerialCommand::Edges(on)))) => edges = on,
+                Ok(Ok(Message::Serial(SerialCommand::Edge(on)))) => {
+                    edges = on;
+                    if edges {
+                        emit_keyer(&ui, &settings, &mut chunks);
+                    }
+                }
                 Ok(Ok(Message::Serial(command))) => answer(&mut ui, &mut lcd, &mut settings, &mut chunks, command).await,
                 Ok(Ok(message)) => {
                     sending &= !matches!(message, Message::Sent);
@@ -911,6 +922,9 @@ mod app {
                     }
                     ui.timeout(&mut lcd, &settings, TICKS.load(Ordering::Relaxed));
                 }
+            }
+            if edges && (settings.mode, settings.swap, settings.wpm) != (before.mode, before.swap, before.wpm) {
+                emit_keyer(&ui, &settings, &mut chunks);
             }
             if settings != before {
                 save_at = Some(Mono::now() + SAVE_DELAY_MS.millis());
@@ -1000,7 +1014,7 @@ mod app {
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
             },
             Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),
-            Message::Edge { line, down, at_ms, dit_ms } => ui.edge(lcd, settings, line, down, at_ms, dit_ms),
+            Message::Edge { line, down, at_ms, dit_ms, .. } => ui.edge(lcd, settings, line, down, at_ms, dit_ms),
             // A play started after the tick sent this is still sounding.
             Message::Played { play } if play == PLAYS_STARTED.load(Ordering::Relaxed) => {
                 ui.played(lcd, settings, TICKS.load(Ordering::Relaxed))
@@ -1025,13 +1039,13 @@ mod app {
     /// PLAYED for the Played message `handle` acts on, or with `edges` an EDGE line.
     fn event_line(message: &Message, edges: bool) -> Option<Text<CHUNK_LEN>> {
         let (name, decoded) = match message {
-            Message::Edge { line, down, at_ms, .. } if edges => {
+            Message::Edge { line, down, at_ms, seq, .. } if edges => {
                 let line = match line {
                     Line::Key => "KEY",
                     Line::Tip => "TIP",
                     Line::Ring => "RING",
                 };
-                return Some(Text::format(format_args!("EDGE {line} {} {at_ms}\n", *down as u8)));
+                return Some(Text::format(format_args!("EDGE {line} {} {at_ms} {seq}\n", *down as u8)));
             }
             Message::Decoded(decoded) => ("KEY", *decoded),
             Message::Heard { decoded, .. } => ("HEARD", *decoded),
@@ -1065,7 +1079,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edges(_) | SerialCommand::Press(_) => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Press(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }
@@ -1082,6 +1096,13 @@ mod app {
                 SERIAL_LINES_LOST.fetch_add(1, Ordering::Relaxed);
                 return;
             }
+        }
+    }
+
+    /// The VALUE lines of the settings an EDGE replay needs: MODE, PADDLES and SPEED.
+    fn emit_keyer(ui: &Ui, settings: &Settings, chunks: &mut Sender<'static, Chunk, CHUNKS>) {
+        for field in [Field::Mode, Field::Swap, Field::Speed] {
+            emit(chunks, ui.get(settings, Name::Setting(field)).as_str());
         }
     }
 

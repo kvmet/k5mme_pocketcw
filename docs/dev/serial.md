@@ -26,7 +26,7 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `INFO` | Answers `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS`: the firmware version, the screen, and the panel, `IPS` or `ILI9341`. |
 | `GET NAME`, `GET` | Sends a setting or memory, or all of them. See [Settings](#settings). |
 | `SET NAME VALUE` | Changes a setting or memory. See [Settings](#settings). |
-| `EDGES ON`, `EDGES OFF` | Starts or stops the key timing lines. See [Edges](#edges). No reply. |
+| `EDGE ON`, `EDGE OFF` | Starts or stops the key timing lines. See [Edges](#edges). |
 | `STATS LETTERS`, `STATS PROGRESS` | Sends the letter stats or the practice sessions. See [Stats](#stats). |
 
 Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 commands sent at once can fill the queue; the device then shows `n INPUTS LOST`.
@@ -70,13 +70,23 @@ The memories have their own names:
 
 ## Edges
 
-After `EDGES ON`, the device sends a line for each change on the key and paddle lines, until `EDGES OFF` or the computer closes the port:
+After `EDGE ON`, the device sends a line for each change on the key and paddle lines, until `EDGE OFF` or the computer closes the port:
 
 ```
-EDGE KEY 1 123456
+EDGE KEY 1 123456 4021
 ```
 
-The line is `KEY` for the keyed signal, from the paddles or a `SEND`, and `TIP` and `RING` for the paddle contacts. `1` is closed or down and `0` open or up. The last field is the time on the device's millisecond count. An edge line that finds the serial queue full is lost, and counts in `n SERIAL LINES LOST`.
+The line is `KEY` for the keyed signal, from the paddles or a `SEND`, and `TIP` and `RING` for the paddle contacts. `1` is closed or down and `0` open or up. The third field is the time on the device's millisecond count.
+
+The last field is the sequence number. The device counts every change on these lines, sent or not, and the count wraps after 2^32 - 1 to 0. A jump of more than one between two lines means lines were lost between them: in a full queue to the screen, or in a full serial queue, which counts in `n SERIAL LINES LOST`.
+
+`EDGE ON` answers with the settings a replay of the lines needs, and the device sends them again whenever one changes while edge lines are on:
+
+```
+VALUE MODE IAMBIC B
+VALUE PADDLES NORMAL
+VALUE SPEED 25
+```
 
 ## Stats
 
@@ -109,7 +119,8 @@ While the computer has the port open (holds DTR), the device sends a line for ea
 | `PLAYED` | Everything the device was sounding has finished. |
 | `SENT` | The text of a `SEND` has finished. |
 | `BUSY` | A `SEND` came before the last one finished. |
-| `EDGE LINE 1 MS` | A key or paddle line changed, after `EDGES ON`. See [Edges](#edges). |
+| `EDGE LINE 1 MS SEQ` | A key or paddle line changed, after `EDGE ON`. See [Edges](#edges). |
+| `VALUE NAME VALUE` | After `EDGE ON`, a keyer setting at the start and when it changes. See [Edges](#edges). |
 
 `PLAY` gives a drill group before you hear it, so a script can answer it. Event lines never break into a screenshot: the screen sends them in turn with its other work. An event line that finds the serial queue full is lost, and the screen shows `n SERIAL LINES LOST`.
 

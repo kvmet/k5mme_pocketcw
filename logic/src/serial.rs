@@ -24,7 +24,7 @@ pub enum Command {
     /// Stop what `Send` and `Play` started.
     Stop,
     /// Send a line for each change on the key lines, or stop.
-    Edges(bool),
+    Edge(bool),
     Stats(Stats),
     /// A line or text longer than a command takes.
     TooLong,
@@ -95,8 +95,8 @@ fn parse(line: &[u8]) -> Command {
         b"INFO" => Some(Command::Info),
         b"GET" => Some(Command::Get(None)),
         b"STOP" => Some(Command::Stop),
-        b"EDGES ON" => Some(Command::Edges(true)),
-        b"EDGES OFF" => Some(Command::Edges(false)),
+        b"EDGE ON" => Some(Command::Edge(true)),
+        b"EDGE OFF" => Some(Command::Edge(false)),
         b"STATS LETTERS" => Some(Command::Stats(Stats::Letters)),
         b"STATS PROGRESS" => Some(Command::Stats(Stats::Progress)),
         _ => None,
@@ -170,15 +170,15 @@ mod tests {
         assert_eq!(one("INFO\n"), Command::Info);
         assert_eq!(one("GET\n"), Command::Get(None));
         assert_eq!(one("STOP\n"), Command::Stop);
-        assert_eq!(one("EDGES ON\n"), Command::Edges(true));
-        assert_eq!(one("EDGES OFF\n"), Command::Edges(false));
+        assert_eq!(one("EDGE ON\n"), Command::Edge(true));
+        assert_eq!(one("EDGE OFF\n"), Command::Edge(false));
         assert_eq!(one("STATS LETTERS\n"), Command::Stats(Stats::Letters));
         assert_eq!(one("STATS PROGRESS\n"), Command::Stats(Stats::Progress));
     }
 
     #[test]
     fn other_lines_are_unknown() {
-        for line in ["shot\n", "SHOTS\n", " SHOT\n", "EDGES\n", "STATS\n", "PRESS\n", "PRESS F5\n", "PRESS f1\n"] {
+        for line in ["shot\n", "SHOTS\n", " SHOT\n", "EDGE\n", "EDGES ON\n", "STATS\n", "PRESS\n", "PRESS F5\n", "PRESS f1\n"] {
             assert_eq!(one(line), Command::Unknown, "{line:?}");
         }
         for line in ["PRESS  F1\n", "SEND\n", "GET SPEEDY\n", "GET speed\n", "SET SPEED\n", "SET SPEEDY 20\n"] {
