@@ -18,22 +18,25 @@ pub enum Pileup {
 
 const PILEUPS: [Pileup; 3] = [Pileup::Off, Pileup::TakeTurns, Pileup::Overlap];
 
-/// What the USB port sends a computer, which sees the device as a keyboard unless this is Off.
+/// What the USB port sends a computer, which sees the device as a keyboard and a serial port
+/// unless this is Off. The value is the one stored.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum UsbOut {
     /// No USB device: the port only charges.
-    Off,
+    Off = 0,
     /// Each character you key, typed.
-    Text,
+    Text = 1,
     /// Your keying as VBand's Ctrl keys.
-    Vband,
+    Vband = 2,
     /// Each character the decoder board hears, typed. Offered only with the board on.
-    Radio,
+    Radio = 3,
+    /// The serial port only: nothing typed.
+    Serial = 4,
 }
 
-/// In the order the setting steps through, which is also the stored value. RADIO is last, so
-/// the steps without the board are all but the last.
-const USB_OUTS: [UsbOut; 4] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband, UsbOut::Radio];
+/// In the order the setting steps through. RADIO is last, so the steps without the board are
+/// all but the last.
+const USB_OUTS: [UsbOut; 5] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband, UsbOut::Serial, UsbOut::Radio];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Settings {
@@ -164,9 +167,10 @@ pub const COPIES: usize = 2;
 /// QSO flags: bit 0 a pileup, then human fist, speed spread, ragchew line reveal, and bit 4 a
 /// pileup that overlaps.
 const OVERLAP_BIT: u8 = 1 << 4;
-/// Hardware flags: bit 0 the decoder board, bits 1 and 2 the index of USB OUT in `USB_OUTS`.
+/// Hardware flags: bit 0 the decoder board, bits 1 to 3 the USB OUT value. Bit 3 was always
+/// saved as 0 before SERIAL, so older saves read the same.
 const USB_OUT_SHIFT: u8 = 1;
-const USB_OUT_MASK: u8 = 0b11;
+const USB_OUT_MASK: u8 = 0b111;
 
 impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
@@ -280,7 +284,8 @@ impl Settings {
             (defaults.square as u8, defaults.noise, defaults.fading)
         };
         let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
-        let usb_out = *USB_OUTS.get((hardware >> USB_OUT_SHIFT & USB_OUT_MASK) as usize)?;
+        let stored = hardware >> USB_OUT_SHIFT & USB_OUT_MASK;
+        let usb_out = *USB_OUTS.iter().find(|&&u| u as u8 == stored)?;
         let pileup = match (qso & 1 != 0, qso & OVERLAP_BIT != 0) {
             (false, _) => Pileup::Off,
             (true, false) => Pileup::TakeTurns,
@@ -649,7 +654,7 @@ mod tests {
     #[test]
     fn usb_out_steps_round_trips_and_keeps_the_decoder_board() {
         let mut s = Settings { decoder_board: true, ..Settings::default() };
-        let steps = [(1, UsbOut::Text), (1, UsbOut::Vband), (1, UsbOut::Radio), (1, UsbOut::Off), (-1, UsbOut::Radio)];
+        let steps = [(1, UsbOut::Text), (1, UsbOut::Vband), (1, UsbOut::Serial), (1, UsbOut::Radio), (1, UsbOut::Off), (-1, UsbOut::Radio)];
         for (delta, expected) in steps {
             s.adjust(Field::UsbOut, delta);
             assert_eq!(s.usb_out, expected);
@@ -660,12 +665,21 @@ mod tests {
     }
 
     #[test]
+    fn usb_out_keeps_its_stored_values() {
+        for (usb_out, stored) in [(UsbOut::Off, 0), (UsbOut::Text, 1), (UsbOut::Vband, 2), (UsbOut::Radio, 3), (UsbOut::Serial, 4)] {
+            let s = Settings { usb_out, decoder_board: true, ..Settings::default() };
+            let mut record = s.encode(0);
+            assert_eq!(crate::record::body_mut(&mut record)[V6_BODY], 1 | stored << USB_OUT_SHIFT);
+        }
+    }
+
+    #[test]
     fn usb_out_offers_radio_only_with_the_decoder_board() {
-        let mut s = Settings { usb_out: UsbOut::Vband, ..Settings::default() };
+        let mut s = Settings { usb_out: UsbOut::Serial, ..Settings::default() };
         s.adjust(Field::UsbOut, 1);
         assert_eq!(s.usb_out, UsbOut::Off);
         s.adjust(Field::UsbOut, -1);
-        assert_eq!(s.usb_out, UsbOut::Vband);
+        assert_eq!(s.usb_out, UsbOut::Serial);
         s.adjust(Field::DecoderBoard, 1);
         s.adjust(Field::UsbOut, 1);
         assert_eq!(s.usb_out, UsbOut::Radio);

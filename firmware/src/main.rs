@@ -170,6 +170,7 @@ mod app {
             x if x == UsbOut::Text as u8 => UsbOut::Text,
             x if x == UsbOut::Vband as u8 => UsbOut::Vband,
             x if x == UsbOut::Radio as u8 => UsbOut::Radio,
+            x if x == UsbOut::Serial as u8 => UsbOut::Serial,
             _ => UsbOut::Off,
         }
     }
@@ -462,7 +463,7 @@ mod app {
         let report = match out {
             UsbOut::Text | UsbOut::Radio => cx.shared.typist.lock(|typist| typist.report()),
             UsbOut::Vband => (VBAND_KEYS.load(Ordering::Relaxed), 0),
-            UsbOut::Off => NO_KEYS,
+            UsbOut::Off | UsbOut::Serial => NO_KEYS,
         };
         match port.send(report) {
             Ok(true) if matches!(out, UsbOut::Text | UsbOut::Radio) => cx.shared.typist.lock(Typist::sent),

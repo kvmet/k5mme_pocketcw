@@ -329,6 +329,7 @@ fn value(s: &Settings, field: Field) -> Text<12> {
                 UsbOut::Text => "TEXT",
                 UsbOut::Vband => "VBAND",
                 UsbOut::Radio => "RADIO",
+                UsbOut::Serial => "SERIAL",
             }
         ),
         Field::Noise | Field::Fading => {
