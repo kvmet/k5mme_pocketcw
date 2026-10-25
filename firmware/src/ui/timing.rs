@@ -25,8 +25,7 @@ const LINE_STEP: i32 = 18;
 impl Ui {
     pub(super) fn draw_timing(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        let speed = Text::<6>::format(format_args!("{}WPM", s.wpm));
-        t.header(lcd, "TIMING", &[mode_name(s.mode), speed.as_str()]);
+        self.header(lcd, s, "TIMING", &[mode_name(s.mode)]);
         t.softkeys(lcd, ["SET", "CLR", "", "BACK"]);
         self.tape.clear(lcd, &self.theme, lanes(s));
         rect(lcd, 0, 108, MAIN, 1, self.theme.rule());

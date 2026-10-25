@@ -47,11 +47,11 @@ impl Totals {
 }
 
 impl Ui {
-    pub(super) fn draw_progress(&mut self, lcd: &mut Lcd) {
+    pub(super) fn draw_progress(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         let (sessions, n) = self.history.sessions();
         let count = Text::<12>::format(format_args!("{n} SESSIONS"));
-        t.header(lcd, "PROGRESS", &[count.as_str()]);
+        self.header(lcd, s, "PROGRESS", &[count.as_str()]);
         t.softkeys(lcd, ["", "LTRS", "", "BACK"]);
         let bar_color = gfx::mix(t.fg, t.bg, 45);
 

@@ -11,7 +11,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::receive::{draw_marked, draw_session, speed_label};
+use super::receive::{draw_marked, draw_session};
 use super::transcript::{self, Entry};
 use super::{COLS, Play, Screen, Session, Ui, push_scrolling, settings::RECEIVE_TAB};
 use crate::gfx::{CHAR_W, TINY_W, rect, text_cols, tiny};
@@ -61,7 +61,7 @@ struct Line {
 }
 
 pub(super) struct Chew {
-    quiz: bool,
+    pub(super) quiz: bool,
     chat: Ragchew,
     over: Over,
     /// The current over's lines are in `lines`.
@@ -135,7 +135,7 @@ impl Ui {
     pub(super) fn draw_ragchew(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Ragchew(c)) = &self.session else { return };
         let t = &self.theme;
-        t.header(lcd, "RECEIVE", &[if c.quiz { "QUIZ" } else { "CHEW" }, speed_label(s).as_str()]);
+        self.header(lcd, s, "RECEIVE", &[if c.quiz { "QUIZ" } else { "CHEW" }]);
         let pause = if c.state == State::Paused { "GO" } else { "STOP" };
         t.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
         if c.quiz {

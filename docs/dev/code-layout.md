@@ -36,6 +36,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `serial` | Commands from the computer on the USB serial port. |
 | `sender`, `winkeyer` | The sender that keys text from the serial port, and the WinKeyer host protocol. |
 | `buttons`, `input`, `ticks`, `rng`, `math` | Button debounce and events, button actions, tick arithmetic, random numbers, and math helpers. |
+| `dial` | What the dial sets on each screen, and the hold on dial turns while you key. |
 
 ## firmware modules
 
@@ -50,7 +51,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `battery` | ADC readings of the battery and the supply. |
 | `link` | The serial link to the decoder board. |
 | `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard and serial port. |
-| `ui/` | One file per screen, plus shared parts: `exchange` and `transcript` for the QSO screens, `tape` for the timing tape. |
+| `ui/` | One file per screen, plus shared parts: `dial` for the header values, `exchange` and `transcript` for the QSO screens, `tape` for the timing tape. |
 | `text` | A re-export of the fixed size string type. |
 | `bin/probe.rs`, `bin/usbprobe.rs` | Separate hardware and USB probe images. See [Build and flash](building.md). |
 

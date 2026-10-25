@@ -22,10 +22,10 @@ const MIXUP_Y: i32 = 176;
 const SHOWN_MIXUPS: usize = 6;
 
 impl Ui {
-    pub(super) fn draw_letters(&mut self, lcd: &mut Lcd) {
+    pub(super) fn draw_letters(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         let level = Text::<10>::format(format_args!("KOCH {}", self.letters.level));
-        t.header(lcd, "LETTERS", &[level.as_str()]);
+        self.header(lcd, s, "LETTERS", &[level.as_str()]);
         t.softkeys(lcd, ["SET", "CLR", "DRIL", "BACK"]);
         for (i, &c) in KOCH.iter().enumerate() {
             let x = 2 + (i % PER_ROW) as i32 * TILE_W;

@@ -16,7 +16,7 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 | Statistics line | Your average gaps and speed. See below. |
 | Decode | Five lines of what your keying decodes to. |
 
-A small mark under a value shows which value the dial sets: speed, tone or volume.
+A small mark under a value shows which value the dial sets: speed, volume or tone.
 
 ### Timing tape
 
@@ -57,7 +57,7 @@ Each character has an underline in its grade: a thin line for good, a dashed lin
 | F2 (MEM) | Opens the memory row. See [Memories](memories.md). |
 | F3 (OUT) | Turns KEY OUT on or off. |
 | F4 (MENU) | Opens the [menu](menu.md). |
-| Dial turn | Changes the marked value: speed, tone or volume. |
-| Dial click | Moves the mark to the next value: speed, then tone, then volume. |
+| Dial turn | Changes the marked value: speed, volume or tone. A turn does nothing while you key, and for one word gap after you stop. |
+| Dial click | Moves the mark to the next value: speed, then volume, then tone. |
 | Dial hold | Turns the device off. |
 | Key | Draws on the timing tape and decodes. Stops a memory that is sending. |

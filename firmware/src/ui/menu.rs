@@ -47,7 +47,7 @@ fn step(s: &Settings) -> i32 {
 impl Ui {
     pub(super) fn draw_menu(&mut self, lcd: &mut Lcd, s: &Settings) {
         self.menu = self.menu.min(shown(s) - 1);
-        self.theme.header(lcd, "MENU", &[s.callsign()]);
+        self.header(lcd, s, "MENU", &[s.callsign()]);
         self.theme.softkeys(lcd, ["SET", "", "", "BACK"]);
         for i in 0..shown(s) {
             self.draw_menu_item(lcd, s, i);

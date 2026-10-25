@@ -31,7 +31,7 @@ Under the tiles, MIXUPS lists the six most common mixups, such as `S/H 4X`: the 
 | F2 (CLR) | Press once: the status line says `CLR AGAIN TO ERASE STATS`. Press again to erase all counts and mixups. Your Koch level stays. Any other control cancels the erase. |
 | F3 (DRIL) | Starts the KOCH drill. |
 | F4 (BACK) | Opens the [menu](menu.md). |
-| Dial turn | Nothing. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Nothing more. |

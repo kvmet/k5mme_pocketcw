@@ -962,7 +962,7 @@ mod app {
                 Some(Action::PowerHold) => ui.status(lcd, "RELEASE TO POWER OFF"),
                 Some(Action::PowerOff) => power_off(ui, lcd, bus, settings, unsaved),
                 Some(Action::PowerCancel) => ui.status(lcd, ""),
-                Some(action) => ui.act(lcd, settings, action),
+                Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
             },
             Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),
             Message::Edge { line, down, at_ms, dit_ms } => ui.edge(lcd, settings, line, down, at_ms, dit_ms),

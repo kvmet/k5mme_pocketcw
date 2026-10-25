@@ -4,6 +4,7 @@ use core::fmt::Write;
 
 use pocketcw_logic::{
     decode_lines::DecodeLines,
+    dial::Target,
     input::Action,
     keyer::{MAX_WPM, MIN_WPM},
     settings::{Field, Settings},
@@ -36,15 +37,24 @@ const UNDERLINE_Y: i32 = DECODE_STEP - UNDERLINE_H;
 const ROWS: usize = 5;
 pub(super) const KEYS: [&str; 4] = ["SET", "MEM", "OUT", "MENU"];
 
-/// Fields the dial sets, in click order; the value cell each lives in, if not the digits.
-pub(super) const FIELDS: [(Field, Option<usize>); 3] = [(Field::Speed, None), (Field::Tone, Some(0)), (Field::Volume, Some(1))];
+/// What the dial sets here, in click order.
+pub(super) const TARGETS: [Target; 3] = [Target::Send, Target::Volume, Target::Tone];
+
+/// The field a target shows in, and its value cell if not the digits.
+fn field(target: Target) -> (Field, Option<usize>) {
+    match target {
+        Target::Tone => (Field::Tone, Some(0)),
+        Target::Volume => (Field::Volume, Some(1)),
+        _ => (Field::Speed, None),
+    }
+}
 
 pub(super) type Decode = DecodeLines<COLS, ROWS>;
 
 impl Ui {
     pub(super) fn draw_home(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        t.header(lcd, "KEYER", &[mode_name(s.mode)]);
+        self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
         t.softkeys(lcd, KEYS);
         rect(lcd, DIGITS_X - 5, DIGITS_Y - 3, DIGITS_W + 10, DIGITS_H + 6, t.panel());
         tiny(lcd, DIGITS_X + DIGITS_W + 8, DIGITS_Y + DIGITS_H - 12, "WPM", t.muted, t.bg);
@@ -54,7 +64,7 @@ impl Ui {
         for field in [Field::Speed, Field::Tone, Field::Volume, Field::KeyOut] {
             self.draw_home_value(lcd, s, field);
         }
-        self.focus_mark(lcd, self.focus, true);
+        self.focus_mark(lcd, self.focus_index(), true);
         self.tape.clear(lcd, &self.theme, lanes(s));
         self.draw_home_stats(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, self.theme.rule());
@@ -101,7 +111,7 @@ impl Ui {
     fn focus_mark(&self, lcd: &mut Lcd, index: usize, on: bool) {
         let t = &self.theme;
         let color = if on { t.accent } else { t.bg };
-        match FIELDS[index].1 {
+        match field(TARGETS[index]).1 {
             None => para(lcd, DIGITS_X - 1, DIGITS_Y + DIGITS_H + 5, DIGITS_W + 4, 3, t.skew(), color),
             Some(cell) => para(lcd, CELL_X + cell as i32 * CELL_STEP, CELL_VALUE_Y + 17, 36, 2, t.skew(), color),
         }
@@ -170,7 +180,7 @@ impl Ui {
         }
     }
 
-    pub(super) fn home_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
+    pub(super) fn home_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
         if self.mem_row {
             match action {
                 Action::Soft(slot) => {
@@ -188,15 +198,16 @@ impl Ui {
             return self.stop_sending(lcd);
         }
         match action {
+            Action::Turn(_) if !self.key_guard.quiet(now_ms) => {}
             Action::Turn(delta) => {
-                let field = FIELDS[self.focus].0;
-                s.adjust(field, delta);
-                self.draw_home_value(lcd, s, field);
+                let target = TARGETS[self.focus_index()];
+                target.step(s, delta);
+                self.draw_home_value(lcd, s, field(target).0);
             }
             Action::Click => {
-                self.focus_mark(lcd, self.focus, false);
-                self.focus = (self.focus + 1) % FIELDS.len();
-                self.focus_mark(lcd, self.focus, true);
+                self.focus_mark(lcd, self.focus_index(), false);
+                self.focus_next();
+                self.focus_mark(lcd, self.focus_index(), true);
             }
             Action::Soft(0) => self.open_settings_at(lcd, s, KEYER_TAB),
             Action::Soft(1) => self.open_mem_row(lcd),

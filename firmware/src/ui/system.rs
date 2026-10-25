@@ -99,9 +99,9 @@ pub struct SystemInfo {
 }
 
 impl Ui {
-    pub(super) fn draw_system(&mut self, lcd: &mut Lcd) {
+    pub(super) fn draw_system(&mut self, lcd: &mut Lcd, s: &pocketcw_logic::settings::Settings) {
         let t = &self.theme;
-        t.header(lcd, "SYSTEM", &[]);
+        self.header(lcd, s, "SYSTEM", &[]);
         t.softkeys(lcd, ["SET", "", "", "BACK"]);
         for row in ROWS {
             text(lcd, 10, row.y(), row.label(), t.muted, t.bg);

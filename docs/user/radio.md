@@ -38,7 +38,7 @@ The device decodes only while the RADIO screen is open, or on every screen while
 | F2 (FILT) | Changes the filter setting of the board: 0, 1, 2, then 0 again. |
 | F3 (NR) | Changes the noise reduction level of the board: 0 to 6, then 0 again. |
 | F4 (BACK) | Opens the [menu](menu.md). |
-| Dial turn | Nothing. |
-| Dial click | Clears the text. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Nothing more. |

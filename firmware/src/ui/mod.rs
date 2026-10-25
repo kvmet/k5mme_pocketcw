@@ -2,6 +2,7 @@
 //! progress, the menu, settings and system. Each event redraws only what it changed; a full
 //! redraw takes about 70 ms.
 
+mod dial;
 mod exchange;
 mod home;
 mod hunt;
@@ -23,6 +24,7 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::Point};
 use pocketcw_logic::{
     battery::Gauge,
     decoder::Decoded,
+    dial::{KeyGuard, Target},
     input::Action,
     morse,
     letters::{Letters, RECORD_LEN as LETTERS_LEN},
@@ -56,6 +58,8 @@ const STATUS_Y: i32 = 222;
 /// When each contact, tip then ring, stops keying.
 const STUCK_MS: [u32; 2] = [keyer::TIP_STUCK_MS as u32, keyer::RING_STUCK_MS as u32];
 
+const SCREENS: usize = 12;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Screen {
     Home,
@@ -71,6 +75,7 @@ enum Screen {
     Progress,
     Radio,
 }
+const _: () = assert!(Screen::Radio as usize + 1 == SCREENS);
 
 /// The practice running on its screen, or on settings opened from it.
 // Without a heap the large variant can't be boxed; one union still costs less than four fields.
@@ -114,8 +119,9 @@ pub struct Ui {
     theme: Theme,
     boot_count: u16,
     screen: Screen,
-    /// Index into `home::FIELDS`.
-    focus: usize,
+    /// Each screen's focused dial target, once a click has moved it.
+    dial_focus: [Option<Target>; SCREENS],
+    key_guard: KeyGuard,
     decode: Decode,
     menu: usize,
     tab: usize,
@@ -172,7 +178,8 @@ impl Ui {
             theme: Theme::new(settings.style, settings.palette, settings.boot_count),
             boot_count: settings.boot_count,
             screen: Screen::Home,
-            focus: 0,
+            dial_focus: [None; SCREENS],
+            key_guard: KeyGuard::default(),
             decode: Decode::new(),
             menu: 0,
             tab: 0,
@@ -214,25 +221,29 @@ impl Ui {
         match self.screen {
             Screen::Home => self.draw_home(lcd, s),
             Screen::Timing => self.draw_timing(lcd, s),
-            Screen::Qso => self.draw_qso(lcd),
+            Screen::Qso => self.draw_qso(lcd, s),
             Screen::Hunt => self.draw_hunt(lcd, s),
             Screen::Menu => self.draw_menu(lcd, s),
             Screen::Settings => self.draw_settings(lcd, s),
-            Screen::System => self.draw_system(lcd),
+            Screen::System => self.draw_system(lcd, s),
             Screen::Receive => self.draw_receive(lcd, s),
             Screen::Ragchew => self.draw_ragchew(lcd, s),
-            Screen::Letters => self.draw_letters(lcd),
-            Screen::Progress => self.draw_progress(lcd),
-            Screen::Radio => self.draw_radio(lcd),
+            Screen::Letters => self.draw_letters(lcd, s),
+            Screen::Progress => self.draw_progress(lcd, s),
+            Screen::Radio => self.draw_radio(lcd, s),
         }
         self.battery_shown = self.battery_icon();
         self.theme.battery(lcd, self.battery_shown);
     }
 
-    /// Runs `action` on the current screen. Changes land in `s`; the caller applies them.
-    pub fn act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
+    /// Runs `action` on the current screen at `now_ms`. Changes land in `s`; the caller applies
+    /// them.
+    pub fn act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
+        if self.dial_act(lcd, s, action, now_ms) {
+            return;
+        }
         match self.screen {
-            Screen::Home => self.home_act(lcd, s, action),
+            Screen::Home => self.home_act(lcd, s, action, now_ms),
             Screen::Timing => self.timing_act(lcd, s, action),
             Screen::Qso => self.qso_act(lcd, s, action),
             Screen::Hunt => self.hunt_act(lcd, s, action),
@@ -252,6 +263,21 @@ impl Ui {
         match self.screen {
             Screen::Home => self.draw_home_value(lcd, s, Field::Speed),
             Screen::Settings => self.draw_settings(lcd, s),
+            _ => {
+                if s.rx_wpm == 0 {
+                    self.bot_speed_changed(s);
+                }
+                self.draw_dial_chips(lcd, s);
+            }
+        }
+    }
+
+    /// The bots' base speed changed: their stations move to it, each keeping its own offset.
+    fn bot_speed_changed(&mut self, s: &Settings) {
+        let options = Self::qso_options(s);
+        match &mut self.session {
+            Some(Session::Qso(q)) => q.bot.set_options(options, s.wpm),
+            Some(Session::Hunt(h)) => h.bot.set_options(options, s.wpm),
             _ => {}
         }
     }
@@ -301,6 +327,7 @@ impl Ui {
         let on_tape = matches!(self.screen, Screen::Home | Screen::Timing);
         match line {
             Line::Key => {
+                self.key_guard.edge(down, at_ms, dit);
                 if down {
                     self.history.active(at_ms);
                 }

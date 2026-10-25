@@ -2,7 +2,7 @@
 
 On this screen you are the hunter. An activator calls CQ from a park (POTA) or a summit (SOTA), you work the activator, and then you log the QSO. About two activators in three are on a park. An activator on a summit signs with `/P` after the callsign.
 
-Open 06 HUNT in the [menu](menu.md). The header shows HUNT and your callsign. Set your callsign first on the CALL tab of the [settings](settings.md).
+Open 06 HUNT in the [menu](menu.md). The header shows HUNT and the RCV, SND and VOL values. Set your callsign first on the CALL tab of the [settings](settings.md).
 
 ## Work a QSO
 
@@ -62,8 +62,8 @@ The hunt uses the QSO tab of the [settings](settings.md): CHAR SPEED, FARNSWORTH
 | F2 (QRS) | The same as sending `QRS`. |
 | F3 (HINT) | Shows or hides the hidden text and the exact next step. |
 | F4 (BACK) | Opens the [menu](menu.md). The hunt ends, and the counts start from zero next time. |
-| Dial turn | Nothing. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Keys your over. |
 

@@ -92,7 +92,7 @@ fn rows(tab: usize) -> &'static [(&'static str, Field)] {
 impl Ui {
     pub(super) fn draw_settings(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        t.header(lcd, "SETTINGS", &[]);
+        self.header(lcd, s, "SETTINGS", &[]);
         let keys = match self.tab {
             CALL_TAB => ["TAB", "DEL", "CLR", "BACK"],
             MEM_TAB => self.mem_tab_keys(),

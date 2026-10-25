@@ -5,6 +5,7 @@ use core::fmt::Write;
 
 use pocketcw_logic::{
     decoder::{Decoded, copy_end},
+    dial::Target,
     drill::{Drill, Kind, MAX_COPY, MAX_GROUP, Mark},
     input::Action,
     letters::{KOCH, Mastery},
@@ -84,13 +85,17 @@ impl Receive {
     pub(super) fn running(&self) -> bool {
         self.state != State::Paused
     }
+
+    pub(super) fn kind(&self) -> Kind {
+        self.drill.kind
+    }
 }
 
 impl Ui {
     pub(super) fn draw_receive(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Receive(rx)) = &self.session else { return };
         let t = &self.theme;
-        t.header(lcd, "RECEIVE", &[rx.drill.kind.name(), speed_label(s).as_str()]);
+        self.header(lcd, s, "RECEIVE", &[rx.drill.kind.name()]);
         let pause = if rx.state == State::Paused { "GO" } else { "STOP" };
         t.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
@@ -100,17 +105,23 @@ impl Ui {
     }
 
     /// Koch level and progress, and the character set colored by your accuracy.
-    fn draw_receive_info(&self, lcd: &mut Lcd) {
+    pub(super) fn draw_receive_info(&self, lcd: &mut Lcd) {
         let Some(Session::Receive(rx)) = &self.session else { return };
         let t = &self.theme;
         rect(lcd, 0, INFO_Y, MAIN, RULE_Y - INFO_Y, t.bg);
         let mut info = Text::<40>::new();
+        let mut info_x = 2;
         let drill = &rx.drill;
         let set = match drill.kind {
             Kind::Koch => {
+                // The level is a dial target, inverted while focused.
+                let level = Text::<10>::format(format_args!("LEVEL {}", drill.level));
+                let (fg, bg) = if self.focused() == Some(Target::Level) { (ink(t.accent), t.accent) } else { (t.muted, t.bg) };
+                tiny(lcd, info_x, INFO_Y, level.as_str(), fg, bg);
+                info_x += level.len() as i32 * TINY_W;
                 let (right, total) = drill.window();
                 let percent = if total > 0 { right as u32 * 100 / total as u32 } else { 0 };
-                let _ = write!(info, "LEVEL {}  {}% OF {}  NEED 90% OF 50", drill.level, percent, total);
+                let _ = write!(info, "  {}% OF {}  NEED 90% OF 50", percent, total);
                 &KOCH[..drill.level as usize]
             }
             _ => {
@@ -118,7 +129,7 @@ impl Ui {
                 &KOCH[..]
             }
         };
-        tiny(lcd, 2, INFO_Y, info.as_str(), t.muted, t.bg);
+        tiny(lcd, info_x, INFO_Y, info.as_str(), t.muted, t.bg);
         let mut cell = 0;
         for (i, &c) in set.iter().enumerate() {
             let cells = char_cells(c);
@@ -288,15 +299,17 @@ impl Ui {
         }
     }
 
+    /// The dial stepped the Koch level; the caller redraws it.
+    pub(super) fn step_level(&mut self, delta: i8) {
+        let Some(Session::Receive(rx)) = &mut self.session else { return };
+        rx.drill.set_level((rx.drill.level as i32 + delta as i32).clamp(0, u8::MAX as i32) as u8);
+        self.letters.level = rx.drill.level;
+        self.koch_window = (rx.drill.level, rx.drill.window());
+    }
+
     pub(super) fn receive_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         match action {
-            Action::Turn(delta) if rx.drill.kind == Kind::Koch => {
-                rx.drill.set_level((rx.drill.level as i32 + delta as i32).clamp(0, u8::MAX as i32) as u8);
-                self.letters.level = rx.drill.level;
-                self.koch_window = (rx.drill.level, rx.drill.window());
-                self.draw_receive_info(lcd);
-            }
             Action::Soft(1) => {
                 let kind = rx.drill.kind;
                 self.stop_players();
@@ -326,12 +339,6 @@ impl Ui {
             _ => {}
         }
     }
-}
-
-/// The receive speed for a header: the character speed, then the Farnsworth speed when slower.
-pub(super) fn speed_label(s: &Settings) -> Text<10> {
-    let (wpm, effective) = s.receive_speed(s.wpm);
-    if effective < wpm { Text::format(format_args!("{wpm}/{effective}WPM")) } else { Text::format(format_args!("{wpm}WPM")) }
 }
 
 /// One scored row at `y`: what was sent, your copy marked against it from `copy_x`, and the

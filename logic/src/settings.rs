@@ -421,6 +421,20 @@ impl Settings {
     pub fn farnsworth(&self, wpm: u8) -> u8 {
         if self.rx_effective == 0 { wpm } else { self.rx_effective.min(wpm) }
     }
+
+    /// Steps the character speed from the dial. MATCH steps from the speed it matches, and the
+    /// dial never sets MATCH.
+    pub fn step_receive(&mut self, delta: i8) {
+        let (wpm, _) = self.receive_speed(self.wpm);
+        self.rx_wpm = (wpm as i32 + delta as i32).clamp(MIN_RX_WPM as i32, MAX_RX_WPM as i32) as u8;
+    }
+
+    /// Steps the Farnsworth speed from the dial, up to the character speed, where it is off.
+    pub fn step_farnsworth(&mut self, delta: i8) {
+        let (wpm, effective) = self.receive_speed(self.wpm);
+        let to = (effective as i32 + delta as i32).clamp(MIN_RX_WPM as i32, wpm.max(MIN_RX_WPM) as i32) as u8;
+        self.rx_effective = if to >= wpm { 0 } else { to.min(MAX_RX_WPM) };
+    }
 }
 
 /// Steps a receive speed where 0 means "off" or "match" and sits just below the minimum.
@@ -722,6 +736,26 @@ mod tests {
         s.rx_effective = 10;
         assert_eq!(s.receive_speed(s.wpm), (18, 10));
         assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+    }
+
+    #[test]
+    fn the_dial_steps_receive_speeds_from_what_you_hear() {
+        let mut s = Settings { wpm: 20, ..Settings::default() };
+        s.step_receive(-1);
+        assert_eq!((s.rx_wpm, s.receive_speed(s.wpm)), (19, (19, 19)));
+        s.step_farnsworth(1);
+        assert_eq!(s.rx_effective, 0);
+        s.step_farnsworth(-2);
+        assert_eq!(s.receive_speed(s.wpm), (19, 17));
+        s.step_farnsworth(2);
+        assert_eq!(s.rx_effective, 0);
+        s.rx_wpm = MIN_RX_WPM;
+        s.step_receive(-1);
+        assert_eq!(s.rx_wpm, MIN_RX_WPM);
+        s.rx_wpm = 0;
+        s.wpm = 50;
+        s.step_receive(1);
+        assert_eq!(s.rx_wpm, MAX_RX_WPM);
     }
 
     #[test]

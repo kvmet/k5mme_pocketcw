@@ -12,7 +12,7 @@ KOCH, WORDS, CALLS, then the [ragchew](ragchew.md) CHEW and QUIZ, then KOCH agai
 | WORDS | One common word or abbreviation heard on the air, such as `QTH`, `5NN` or `<BK>`. |
 | CALLS | One US callsign. |
 
-The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECV tab in [Settings](settings.md). The header shows the drill and the speed, such as `20WPM`, or `20/10WPM` with Farnsworth spacing.
+The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECV tab in [Settings](settings.md). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
 
 ## How a drill runs
 
@@ -53,8 +53,8 @@ The device keeps your level and your progress toward the next level while you us
 | F2 (KIND) | Starts the next drill. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
 | F4 (BACK) | Opens the [menu](menu.md). |
-| Dial turn | KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Keys your copy. |
 

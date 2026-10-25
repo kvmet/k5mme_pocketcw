@@ -1,6 +1,6 @@
 # Timing
 
-The TIMING screen gives a close look at your keying. The header shows TIMING, the keyer mode and your speed.
+The TIMING screen gives a close look at your keying. The header shows TIMING, the keyer mode, and the SND and VOL values.
 
 The screen measures every mark and gap against the dot length the decoder uses: the dot length of your set speed in the iambic modes, or of the speed you actually send in STRAIGHT mode. It grades each mark and gap as good, off or bad. See [Timing grades](keyer.md#timing-grades).
 
@@ -43,7 +43,7 @@ The statistics collect your keying on every screen since the device was turned o
 | F2 (CLR) | Clears the statistics and the tape. |
 | F3 | Nothing. |
 | F4 (BACK) | Opens the KEYER screen. |
-| Dial turn | Nothing. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Draws on the tape and adds to the statistics. |

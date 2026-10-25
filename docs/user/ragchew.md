@@ -46,8 +46,8 @@ The footer shows your score for this session.
 | F2 (KIND) | CHEW: starts QUIZ. QUIZ: starts the KOCH drill. |
 | F3 (STOP or GO) | Pauses, or starts again from the start of the current over. |
 | F4 (BACK) | Opens the [menu](menu.md). |
-| Dial turn | Nothing. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | QUIZ: keys your answer. CHEW: nothing more. |
 

@@ -40,7 +40,7 @@ Before your first session, the chart says `NOTHING YET: START KEYING`.
 | F1, F3 | Nothing. |
 | F2 (LTRS) | Opens [Letters](letters.md). |
 | F4 (BACK) | Opens the [menu](menu.md). |
-| Dial turn | Nothing. |
-| Dial click | Nothing. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Nothing more. |

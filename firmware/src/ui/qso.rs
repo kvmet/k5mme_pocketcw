@@ -51,7 +51,7 @@ struct Logged {
 }
 
 pub(super) struct Qso {
-    bot: Bot,
+    pub(super) bot: Bot,
     /// Your over so far, as decoded.
     over: Text<MAX_TEXT>,
     /// Tick time at which your over ends, while you are sending one.
@@ -138,10 +138,10 @@ impl Qso {
 }
 
 impl Ui {
-    pub(super) fn draw_qso(&mut self, lcd: &mut Lcd) {
+    pub(super) fn draw_qso(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Qso(q)) = &self.session else { return };
         let t = &self.theme;
-        t.header(lcd, "QSO", &[q.bot.program.name(), "ACTIVATE"]);
+        self.header(lcd, s, "QSO", &[q.bot.program.name()]);
         t.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_qso_lines(lcd);

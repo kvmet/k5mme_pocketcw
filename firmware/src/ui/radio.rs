@@ -1,5 +1,5 @@
 //! Radio: what the Pro decoder board hears, decoded, with the board's filter and noise
-//! reduction. F2 and F3 step them, as on the vendor decoder screen; a click clears the text.
+//! reduction. F2 and F3 step them, as on the vendor decoder screen.
 
 use core::fmt::Write;
 
@@ -39,9 +39,9 @@ pub(super) struct Board {
 }
 
 impl Ui {
-    pub(super) fn draw_radio(&self, lcd: &mut Lcd) {
+    pub(super) fn draw_radio(&self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        t.header(lcd, "RADIO", &[]);
+        self.header(lcd, s, "RADIO", &[]);
         t.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
         self.draw_radio_info(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
@@ -88,10 +88,6 @@ impl Ui {
                 self.draw_radio_info(lcd);
             }
             Action::Soft(3) => self.open(lcd, s, Screen::Menu),
-            Action::Click => {
-                self.heard = Heard::new();
-                self.draw(lcd, s);
-            }
             _ => {}
         }
     }

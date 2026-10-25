@@ -4,7 +4,7 @@
 
 | Control | How you use it |
 | - | - |
-| F1 to F4 | The four buttons beside the screen, F1 at the top. Press a button to use it. The right edge of the screen shows what each button does on the current screen. A blank label means the button does nothing there. |
+| F1 to F4 | The four buttons beside the screen, F1 at the top. Press a button to use it. The column at the right edge, under the header, shows what each button does on the current screen. A blank label means the button does nothing there. |
 | Dial turn | Turn the dial left or right. Hold it turned to step again and again. |
 | Dial click | Press the dial and let go within 1 second. |
 | Dial hold | Press the dial and keep it down for 1 second. This turns the device off on every screen after the boot screen. |
@@ -32,9 +32,27 @@ When the battery is empty, the device saves everything and turns off by itself. 
 
 ## The screen
 
-- The header at the top names the screen. It also shows details such as the keyer mode or the speed, and a battery icon at the right end.
-- The column at the right edge shows the labels of F1 to F4.
+- The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end.
+- The column at the right edge, under the header, shows the labels of F1 to F4.
 - The status line at the bottom shows short messages. A message stays until the screen draws that area again. See [Status messages](status-messages.md).
+
+## Header values
+
+On every screen except KEYER, MENU and SETTINGS, the dial sets values that show at the right end of the header. Each screen shows the values it uses.
+
+| Value | What it is | Setting |
+| - | - | - |
+| `VOL 23` | The volume. | VOLUME on the SOUND tab |
+| `SND 20` | Your keyer speed, in WPM. | SPEED on the KEYER tab |
+| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH on the RECV tab |
+
+- A dial click moves the focus to the next value. The focused number shows inverted. On RECEIVE KOCH, the focus also reaches `LEVEL` under the header.
+- A dial turn changes the focused value.
+- A dial turn does nothing while you key, and for one word gap after you stop. A brushed dial cannot change a value in the middle of your over.
+- Each screen keeps its own focus while the device is on. A screen starts on RCV where it shows, on SND on TIMING, and on VOL on the others.
+- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the RECV tab.
+- Turn the second RCV number down for Farnsworth spacing. Turn it up to the first number to stop the spacing.
+- On QSO and HUNT, a new RCV speed moves every station by the same amount: each keeps its offset from RCV and its fist. Any QRS ends.
 
 ## What the device saves
 

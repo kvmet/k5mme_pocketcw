@@ -5,16 +5,22 @@ use embedded_graphics::pixelcolor::{Rgb565, RgbColor};
 use pocketcw_logic::settings::{PALETTE_COUNT, STYLE_COUNT};
 use pocketcw_logic::timing::Quality;
 
-use crate::gfx::{self, CHAR_W, ink, mix, para, rect, rgb, text, tiny};
+use crate::gfx::{self, CHAR_W, TINY_W, ink, mix, para, rect, rgb, text, tiny};
 use crate::lcd::{HEIGHT, Lcd, WIDTH};
 
-/// Width of the main area; the soft key column fills the rest.
+/// Width of the main area; the soft key column fills the rest, under the header.
 pub const MAIN: i32 = 272;
+/// The header spans the full width; everything else starts below it.
+pub const HEADER_H: i32 = 23;
 const KEYS_W: i32 = WIDTH as i32 - MAIN;
-const KEY_SLOT: i32 = HEIGHT as i32 / 4;
+const KEY_SLOT: i32 = (HEIGHT as i32 - HEADER_H) / 4;
 /// The battery icon at the right end of the header: body, then the terminal nub.
 const BATTERY_W: i32 = 21;
-const BATTERY_X: i32 = MAIN - 6 - BATTERY_W;
+const BATTERY_X: i32 = WIDTH as i32 - 6 - BATTERY_W;
+/// Right end of the header chips, left of the battery icon.
+pub const CHIPS_RIGHT: i32 = BATTERY_X - 8;
+/// Space between header chips.
+pub const CHIP_GAP: i32 = 8;
 const BATTERY_Y: i32 = 6;
 pub const BATTERY_SEGMENTS: u8 = 4;
 
@@ -270,36 +276,73 @@ impl Theme {
         rect(lcd, 0, 0, WIDTH as i32, HEIGHT as i32, self.bg);
     }
 
-    /// Title bar, 22 pixels: the title in block letters and short text chips at the right.
-    pub fn header(&self, lcd: &mut Lcd, title: &str, chips: &[&str]) {
-        let chip_colors = |i: usize| if i == 0 { self.fg } else { self.muted };
-        match self.style {
+    /// Title bar across the full width, `HEADER_H` pixels: the title in block letters. Chips
+    /// go on it afterwards. Returns the right edge of the title, its slant included.
+    pub fn header(&self, lcd: &mut Lcd, title: &str) -> i32 {
+        const W: i32 = WIDTH as i32;
+        let end = match self.style {
             Style::Hazard => {
-                for (k, x) in (-4..MAIN).step_by(8).enumerate() {
+                for (k, x) in (-4..W).step_by(8).enumerate() {
                     para(lcd, x, 0, 4, 3, -3, self.stripes[k % self.stripe_count]);
                 }
-                gfx::blocks(lcd, 6, 5, title, 2, 2, 4, self.accent, None);
-                self.chips(lcd, chips, 3, chip_colors, self.bg);
-                rect(lcd, 0, 22, MAIN, 1, mix(self.fg, self.bg, 80));
+                rect(lcd, 0, 22, W, 1, mix(self.fg, self.bg, 80));
+                gfx::blocks(lcd, 6, 5, title, 2, 2, 4, self.accent, None)
             }
             Style::Hud => {
+                rect(lcd, 0, 21, W - 40, 1, self.accent);
+                rect(lcd, W - 36, 21, 30, 1, self.echo);
                 gfx::blocks(lcd, 7, 5, title, 2, 2, 6, self.echo, None);
-                gfx::blocks(lcd, 6, 4, title, 2, 2, 6, self.accent, None);
-                self.chips(lcd, chips, 3, chip_colors, self.bg);
-                rect(lcd, 0, 21, MAIN - 40, 1, self.accent);
-                rect(lcd, MAIN - 36, 21, 30, 1, self.echo);
+                gfx::blocks(lcd, 6, 4, title, 2, 2, 6, self.accent, None) + 1
             }
             Style::Block => {
-                rect(lcd, 0, 0, MAIN, 20, self.accent);
-                gfx::blocks(lcd, 6, 3, title, 2, 2, 0, ink(self.accent), None);
-                self.chips(lcd, chips, 2, |_| ink(self.accent), self.accent);
-                const SEGMENTS: i32 = 17;
+                rect(lcd, 0, 0, W, 20, self.accent);
+                const SEGMENTS: i32 = 20;
                 for i in 0..SEGMENTS {
-                    let x = i * MAIN / SEGMENTS;
-                    rect(lcd, x, 20, (i + 1) * MAIN / SEGMENTS - x, 2, self.alternate(i as usize, SEGMENTS as usize));
+                    let x = i * W / SEGMENTS;
+                    rect(lcd, x, 20, (i + 1) * W / SEGMENTS - x, 2, self.alternate(i as usize, SEGMENTS as usize));
                 }
+                gfx::blocks(lcd, 6, 3, title, 2, 2, 0, ink(self.accent), None)
             }
+        };
+        // The slant leans the top row up to 4 pixels right.
+        end + 4
+    }
+
+    /// Top row and background of header chips.
+    fn chip_row(&self) -> (i32, Rgb565) {
+        match self.style {
+            Style::Block => (2, self.accent),
+            _ => (3, self.bg),
         }
+    }
+
+    /// A dial chip ending at `right`: a tiny label, then one number, or two split by a slash.
+    /// The number at `focus` is inverted. Returns the chip's left edge.
+    pub fn dial_chip(&self, lcd: &mut Lcd, right: i32, label: &str, numbers: &[&str], focus: Option<usize>) -> i32 {
+        const LABEL_GAP: i32 = 2;
+        let (y, bg) = self.chip_row();
+        let (fg, focus_bg, focus_fg) = match self.style {
+            Style::Block => (ink(self.accent), self.bg, self.fg),
+            _ => (self.fg, self.accent, ink(self.accent)),
+        };
+        let boxes: i32 = numbers.iter().map(|n| n.len() as i32 * CHAR_W + 2).sum();
+        let w = label.len() as i32 * TINY_W + LABEL_GAP + boxes + (numbers.len() as i32 - 1) * CHAR_W;
+        let left = right - w;
+        rect(lcd, left, y, w, 16, bg);
+        tiny(lcd, left, y + 4, label, fg, bg);
+        let mut x = left + label.len() as i32 * TINY_W + LABEL_GAP;
+        for (i, number) in numbers.iter().enumerate() {
+            if i > 0 {
+                text(lcd, x, y, "/", fg, bg);
+                x += CHAR_W;
+            }
+            let box_w = number.len() as i32 * CHAR_W + 2;
+            let (on, under) = if focus == Some(i) { (focus_fg, focus_bg) } else { (fg, bg) };
+            rect(lcd, x, y, box_w, 16, under);
+            text(lcd, x + 1, y, number, on, under);
+            x += box_w;
+        }
+        left
     }
 
     /// The header's battery icon; None draws nothing there.
@@ -330,68 +373,78 @@ impl Theme {
         }
     }
 
-    /// Chips right to left, left of the battery icon; chip 0 is the rightmost.
-    fn chips(&self, lcd: &mut Lcd, chips: &[&str], y: i32, color: impl Fn(usize) -> Rgb565, bg: Rgb565) {
-        let mut right = BATTERY_X - 8;
+    /// Text chips right to left from `right`, while they stay right of `left`; chip 0 is the
+    /// rightmost and brightest.
+    pub fn chips(&self, lcd: &mut Lcd, chips: &[&str], left: i32, right: i32) {
+        let (y, bg) = self.chip_row();
+        let mut right = right;
         for (i, chip) in chips.iter().rev().enumerate() {
-            gfx::text_right(lcd, right, y, chip, color(i), bg);
+            if right - (chip.len() as i32 * CHAR_W) < left {
+                return;
+            }
+            let color = match self.style {
+                Style::Block => ink(self.accent),
+                _ if i == 0 => self.fg,
+                _ => self.muted,
+            };
+            gfx::text_right(lcd, right, y, chip, color, bg);
             right -= chip.len() as i32 * CHAR_W + 12;
         }
     }
 
-    /// The F1..F4 labels, up to four characters, in the column beside the keys. An empty label
-    /// marks an unused key.
+    /// The F1..F4 labels, up to four characters, in the column beside the keys and under the
+    /// header. An empty label marks an unused key.
     pub fn softkeys(&self, lcd: &mut Lcd, labels: [&str; 4]) {
         const KEY_NAMES: [&str; 4] = ["F1", "F2", "F3", "F4"];
         let x = MAIN;
         match self.style {
             Style::Hazard => {
                 let column = mix(self.bg, Rgb565::WHITE, 4);
-                rect(lcd, x, 0, KEYS_W, HEIGHT as i32, column);
-                rect(lcd, x, 0, 1, HEIGHT as i32, mix(self.fg, self.bg, 80));
+                rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, column);
+                rect(lcd, x, HEADER_H, 1, HEIGHT as i32 - HEADER_H, mix(self.fg, self.bg, 80));
                 for (i, label) in labels.iter().enumerate() {
-                    let y = i as i32 * KEY_SLOT;
+                    let y = HEADER_H + i as i32 * KEY_SLOT;
                     if i > 0 {
                         rect(lcd, x + 1, y, KEYS_W - 1, 1, mix(self.fg, self.bg, 86));
                     }
-                    tiny(lcd, x + 32, y + 6, KEY_NAMES[i], mix(self.fg, self.bg, 60), column);
+                    tiny(lcd, x + 32, y + 9, KEY_NAMES[i], mix(self.fg, self.bg, 60), column);
                     if label.is_empty() {
-                        text(lcd, x + 14, y + 22, "--", mix(self.fg, self.bg, 75), column);
+                        text(lcd, x + 14, y + 25, "--", mix(self.fg, self.bg, 75), column);
                         continue;
                     }
                     let mark = if self.flag { self.stripe(i, 4) } else { self.accent };
-                    para(lcd, x + 5, y + 9, 14, 4, 2, mark);
-                    text(lcd, x + 4, y + 22, label, self.fg, column);
+                    para(lcd, x + 5, y + 12, 14, 4, 2, mark);
+                    text(lcd, x + 4, y + 25, label, self.fg, column);
                 }
             }
             Style::Hud => {
-                rect(lcd, x, 0, KEYS_W, HEIGHT as i32, self.bg);
-                rect(lcd, x, 6, 1, HEIGHT as i32 - 12, self.dim);
+                rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, self.bg);
+                rect(lcd, x, HEADER_H + 4, 1, HEIGHT as i32 - HEADER_H - 8, self.dim);
                 for (i, label) in labels.iter().enumerate() {
-                    let y = i as i32 * KEY_SLOT;
+                    let y = HEADER_H + i as i32 * KEY_SLOT;
                     if label.is_empty() {
-                        text(lcd, x + 14, y + 22, "--", self.dim, self.bg);
+                        text(lcd, x + 14, y + 18, "--", self.dim, self.bg);
                         continue;
                     }
                     let color = if self.flag { self.stripe(i, 4) } else { self.accent };
-                    brackets(lcd, x + 3, y + 7, 43, 46, color, 5);
-                    text(lcd, x + 4, y + 22, label, self.fg, self.bg);
-                    tiny(lcd, x + 18, y + 38, KEY_NAMES[i], self.muted, self.bg);
+                    brackets(lcd, x + 3, y + 3, 43, 48, color, 5);
+                    text(lcd, x + 4, y + 18, label, self.fg, self.bg);
+                    tiny(lcd, x + 18, y + 35, KEY_NAMES[i], self.muted, self.bg);
                 }
             }
             Style::Block => {
-                rect(lcd, x, 0, KEYS_W, HEIGHT as i32, self.bg);
+                rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, self.bg);
                 for (i, label) in labels.iter().enumerate() {
-                    let y = i as i32 * KEY_SLOT;
+                    let y = HEADER_H + i as i32 * KEY_SLOT;
                     if label.is_empty() {
-                        rect(lcd, x + 3, y + 3, 44, 54, mix(self.fg, self.bg, 90));
+                        rect(lcd, x + 3, y + 3, 44, KEY_SLOT - 6, mix(self.fg, self.bg, 90));
                         continue;
                     }
                     let color = self.alternate(i, 4);
                     let on = ink(color);
-                    rect(lcd, x + 3, y + 3, 44, 54, color);
+                    rect(lcd, x + 3, y + 3, 44, KEY_SLOT - 6, color);
                     tiny(lcd, x + 6, y + 6, KEY_NAMES[i], mix(color, on, 55), color);
-                    text(lcd, x + 4, y + 30, label, on, color);
+                    text(lcd, x + 4, y + 28, label, on, color);
                 }
             }
         }
