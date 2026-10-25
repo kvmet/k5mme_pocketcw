@@ -205,6 +205,40 @@ def close_gaps(samples: np.ndarray, hz: int) -> np.ndarray:
     return samples[keep]
 
 
+STRAY_FRAME_S = 0.01
+VOICED_HZ = (100, 1500)
+HISS_HZ = 3500
+# A frame is silence when its voiced and hiss power is under this, in dB of the peak squared times
+# the frame's samples: about 58 dB under a sine at the peak, for 24 kHz speech.
+STRAY_SILENCE_DB = -45.0
+# Kokoro's stray vowel before an s or f ran 20 to 90 ms; FIST, with no hiss at its f, voiced 260.
+STRAY_MIN_S = 0.02
+STRAY_MAX_S = 0.1
+STRAY_FADE_S = 0.005
+
+
+def cut_stray_vowel(samples: np.ndarray, hz: int) -> np.ndarray:
+    """`samples` from their first hiss on, faded in, when STRAY_MIN_S to STRAY_MAX_S of voiced
+    sound comes before it. A hiss frame has more power above HISS_HZ than in VOICED_HZ."""
+    n = int(STRAY_FRAME_S * hz)
+    frames = len(samples) // n
+    power = np.abs(np.fft.rfft(samples[: frames * n].reshape(frames, n) * np.hanning(n), axis=1)) ** 2
+    freqs = np.fft.rfftfreq(n, 1 / hz)
+    voiced = power[:, (freqs > VOICED_HZ[0]) & (freqs < VOICED_HZ[1])].sum(axis=1)
+    hiss = power[:, freqs > HISS_HZ].sum(axis=1)
+    loud = voiced + hiss >= np.abs(samples).max() ** 2 * n * 10 ** (STRAY_SILENCE_DB / 10)
+    hissing = np.flatnonzero(loud & (hiss > voiced))
+    if not len(hissing):
+        return samples
+    vowel = hissing[0] - np.flatnonzero(loud)[0]
+    if not round(STRAY_MIN_S / STRAY_FRAME_S) <= vowel <= round(STRAY_MAX_S / STRAY_FRAME_S):
+        return samples
+    kept = samples[hissing[0] * n :].copy()
+    fade = min(len(kept), int(STRAY_FADE_S * hz))
+    kept[:fade] *= np.linspace(0, 1, fade, endpoint=False)
+    return kept
+
+
 FRAME_S = 0.02
 # 20 ms frames more than this far under the loudest one are pauses, not speech.
 ACTIVE_RANGE_DB = 30.0

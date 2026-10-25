@@ -48,7 +48,7 @@ CLIP_START = 2
 SPEECH_RECIPE = 2
 # Change when this file's making of clips from speech changes. A change to tools/pack/voiceclips.py
 # makes clips again by itself.
-CLIP_RECIPE = 4
+CLIP_RECIPE = 5
 HERE = Path(__file__).parent
 WORDS = HERE / "words"
 VOICES = HERE / "voices"
@@ -289,7 +289,7 @@ class Voice:
 
         import numpy as np
         import soundfile
-        from voiceclips import OUTPUT_HZ, close_gaps, level, resample, shape, undo_upsampling
+        from voiceclips import OUTPUT_HZ, close_gaps, cut_stray_vowel, level, resample, shape, undo_upsampling
 
         speech = self.cache / "speech" / (speech_key + ".flac")
         how = "made" if speech.exists() else "spoken"
@@ -300,6 +300,9 @@ class Voice:
             soundfile.write(part, samples * (0.9 / max(np.abs(samples).max(), 1e-9)), hz, subtype="PCM_24")
             os.replace(part, speech)
         samples, hz = soundfile.read(speech, dtype="float32")
+        # Kokoro often says a short vowel before a first s or f: "ehsports", "vast". A z or v starts voiced.
+        if phonemes.lstrip("ˈˌ")[:1] in ("s", "f"):
+            samples = cut_stray_vowel(samples, hz)
         if SENTENCES.search(phonemes):
             samples = close_gaps(samples, hz)
         pcm = np.frombuffer(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), "<i2") / 32768
