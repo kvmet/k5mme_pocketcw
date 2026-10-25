@@ -56,6 +56,12 @@ impl Iterator for Clip<'_> {
 /// The most clips one `Clips` plays.
 pub const MAX_CLIPS: usize = 32;
 
+/// How many samples `Upsample::new(Clips::new(..), factor)` gives for `clips` clips of `bytes`
+/// in all, `gap` apart: two per byte and `gap` between clips, each `factor` times.
+pub fn played_samples(bytes: usize, clips: usize, gap: u16, factor: u8) -> u32 {
+    (2 * bytes as u32 + clips.saturating_sub(1) as u32 * gap as u32) * factor.max(1) as u32
+}
+
 /// Clips one after another in one buffer, each decoded from a fresh start, with `gap` silent
 /// samples between them.
 pub struct Clips<'a> {
@@ -178,5 +184,13 @@ mod tests {
         assert!(Upsample::new([300, 600].into_iter(), 3).eq(out));
         // Each line ends at its input sample, so output runs one input sample behind.
         assert!(Upsample::new([7, 9].into_iter(), 1).eq([0, 7]));
+    }
+
+    #[test]
+    fn played_samples_counts_what_the_clips_play() {
+        let bytes = [0x12, 0x34, 0x56, 0x78, 0x9A];
+        let ends = [2, 3, 5];
+        let played = Upsample::new(Clips::new(&bytes, &ends, 7), 2).count();
+        assert_eq!(played as u32, played_samples(bytes.len(), ends.len(), 7, 2));
     }
 }

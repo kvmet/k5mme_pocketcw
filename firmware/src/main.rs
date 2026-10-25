@@ -980,6 +980,7 @@ mod app {
             save_memories(&mut ui, &mut lcd, &mut bus, false);
             // One lock for all of them, so the tick never sees the gap between a stop and the play
             // after it and reports that play as finished.
+            let mut stopped = false;
             cx.shared.players.lock(|players| {
                 while let Some(command) = ui.take_command(&settings) {
                     match command {
@@ -996,10 +997,20 @@ mod app {
                         Command::Stop => {
                             PLAYER_KEYS.store(false, Ordering::Relaxed);
                             players.iter_mut().for_each(Player::stop);
+                            stopped = true;
                         }
                     }
                 }
             });
+            if stopped {
+                cx.shared.audio.lock(|audio| audio.synth.say(None));
+            }
+            // After the stop, so it does not cut off this speech.
+            if let Some(text) = ui.take_say() {
+                let ms = ui.pack().map_or(0, |pack| speech::say(&mut lcd, pack, text.as_str().as_bytes(), &mut cx.shared.audio));
+                // The pack reads above take a while, so the time is read after them.
+                ui.said(ms, TICKS.load(Ordering::Relaxed));
+            }
             if let Some(command) = ui.take_board_command() {
                 cx.shared.link.lock(|link| link.send(command.as_str().as_bytes()));
             }

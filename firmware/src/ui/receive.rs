@@ -10,6 +10,7 @@ use pocketcw_logic::{
     input::Action,
     letters::{KOCH, Mastery},
     morse,
+    pack::WORD_TEXT,
     player::{Keying, MAX_TEXT},
     settings::Settings,
 };
@@ -18,6 +19,7 @@ use super::{COLS, Play, Screen, Session, Ui, char_cells, draw_char, push_scrolli
 use crate::fonts::{SMALL, TINY};
 use crate::gfx::{CHAR_W, TINY_W, ink, rect, text_cols, tiny};
 use crate::lcd::Lcd;
+use crate::pack::Pack;
 use crate::text::Text;
 use crate::theme::{BAD, GOOD, MAIN, Theme, WARN};
 
@@ -35,6 +37,10 @@ const NOW_Y: i32 = ROW_Y + ROWS as i32 * ROW_STEP + 4;
 const FOOT_Y: i32 = 226;
 /// Time after a group ends to start keying it back before it counts as missed.
 const START_MS: u32 = 5000;
+/// NINJA's time to start keying before the voice says the word.
+const THINK_MS: u32 = 1500;
+/// Pack words to try for one that fits a group and has a clip.
+const PICK_TRIES: usize = 20;
 const NEXT_GROUP_MS: u32 = 900;
 const GROUP_DELAY_MS: u32 = 400;
 
@@ -44,9 +50,11 @@ enum State {
     /// The group ended; waiting for you to start keying.
     Waiting,
     Copying,
-    /// Scored; the next group starts at the deadline.
+    /// Scored, or for NINJA said; the next group starts at the deadline.
     Between,
     Paused,
+    /// NINJA with no content pack, or none of its words fit.
+    NoPack,
 }
 
 #[derive(Clone, Copy)]
@@ -54,11 +62,15 @@ struct Row {
     sent: Text<MAX_GROUP>,
     marks: [Mark; MAX_GROUP],
     right: u8,
+    /// False for a NINJA word you only listened to.
+    scored: bool,
 }
 
 pub(super) struct Receive {
     drill: Drill,
     group: Text<MAX_GROUP>,
+    /// The NINJA word as the pack spells it, for the voice: `QTH`, `<KN>`.
+    word: Text<WORD_TEXT>,
     copy: Text<MAX_COPY>,
     state: State,
     pub(super) deadline: Option<u32>,
@@ -72,6 +84,7 @@ impl Receive {
         Receive {
             drill: Drill::new(kind, level, seed),
             group: Text::new(),
+            word: Text::new(),
             copy: Text::new(),
             state: State::Between,
             deadline: None,
@@ -83,7 +96,7 @@ impl Receive {
 
     /// Groups are playing or waiting on you, not paused.
     pub(super) fn running(&self) -> bool {
-        self.state != State::Paused
+        !matches!(self.state, State::Paused | State::NoPack)
     }
 
     pub(super) fn kind(&self) -> Kind {
@@ -124,6 +137,14 @@ impl Ui {
                 let _ = write!(info, "  {}% OF {}  NEED 90% OF 50", percent, total);
                 &KOCH[..drill.level as usize]
             }
+            Kind::Ninja if rx.state == State::NoPack => {
+                let _ = write!(info, "CONTENT PACK MISSING: REINSTALL");
+                &KOCH[..]
+            }
+            Kind::Ninja => {
+                let _ = write!(info, "NINJA DRILL  LISTEN, OR KEY IT BACK");
+                &KOCH[..]
+            }
             _ => {
                 let _ = write!(info, "{} DRILL  KEY BACK WHAT YOU HEAR", drill.kind.name());
                 &KOCH[..]
@@ -160,6 +181,13 @@ impl Ui {
             let y = ROW_Y + k as i32 * ROW_STEP;
             rect(lcd, 0, y, MAIN, ROW_STEP, t.bg);
             let Some(row) = row else { continue };
+            if !row.scored {
+                let mut x = 4;
+                for c in row.sent.as_str().bytes() {
+                    x += draw_char(lcd, &SMALL, x, y, c, t.muted, t.bg);
+                }
+                continue;
+            }
             draw_marked(lcd, t, y, COPY_X, row.sent.as_str().bytes(), &row.marks, row.right);
         }
     }
@@ -178,19 +206,29 @@ impl Ui {
             State::Playing => "LISTEN",
             State::Waiting => "YOUR TURN",
             State::Copying => "PAUSE ENDS",
-            State::Between => "",
+            State::Between | State::NoPack => "",
             State::Paused => "PAUSED",
         };
         rect(lcd, MAIN - 72, NOW_Y + 3, 72, 12, t.bg);
         tiny(lcd, MAIN - 2 - status.len() as i32 * TINY_W, NOW_Y + 3, status, t.echo, t.bg);
-        draw_session(lcd, t, rx.session_right, rx.session_total, "KEY BACK WHAT YOU HEARD  ? REPEATS");
+        let hint = if rx.drill.kind == Kind::Ninja { "LISTEN, OR KEY IT BACK  ? REPEATS" } else { "KEY BACK WHAT YOU HEARD  ? REPEATS" };
+        draw_session(lcd, t, rx.session_right, rx.session_total, hint);
     }
 
     /// Starts the next group, or the same one again with `again`.
     fn play_group(&mut self, lcd: &mut Lcd, s: &Settings, again: bool) {
         let seed = self.next_seed();
         let Some(Session::Receive(rx)) = &mut self.session else { return };
-        if !again {
+        if !again && rx.drill.kind == Kind::Ninja {
+            let Some((word, group)) = ninja_word(&mut rx.drill, self.pack.as_ref().ok(), lcd) else {
+                rx.state = State::NoPack;
+                rx.deadline = None;
+                self.draw_receive_info(lcd);
+                self.draw_receive_now(lcd);
+                return;
+            };
+            (rx.word, rx.group) = (word, group);
+        } else if !again {
             rx.group = rx.drill.next(&self.letters);
         }
         rx.copy.clear();
@@ -224,14 +262,15 @@ impl Ui {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         if rx.state == State::Playing {
             rx.state = State::Waiting;
-            rx.deadline = Some(now_ms.wrapping_add(START_MS));
+            let wait = if rx.drill.kind == Kind::Ninja { THINK_MS } else { START_MS };
+            rx.deadline = Some(now_ms.wrapping_add(wait));
             self.draw_receive_now(lcd);
         }
     }
 
     pub(super) fn receive_key(&mut self, lcd: &mut Lcd, down: bool, at_ms: u32, dit_ms: u16) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
-        if matches!(rx.state, State::Between | State::Paused) {
+        if matches!(rx.state, State::Between | State::Paused | State::NoPack) {
             return;
         }
         let was = rx.state;
@@ -273,13 +312,26 @@ impl Ui {
         if rx.copy.as_str().trim() == "?" {
             return self.play_group(lcd, s, true);
         }
+        let ninja = rx.drill.kind == Kind::Ninja;
+        if ninja {
+            self.say = Some(rx.word);
+        }
+        if ninja && rx.state == State::Waiting && rx.copy.as_str().trim().is_empty() {
+            push_scrolling(&mut rx.rows, Row { sent: rx.group, marks: [Mark::Missed; MAX_GROUP], right: 0, scored: false });
+            rx.copy.clear();
+            rx.state = State::Between;
+            rx.deadline = Some(now_ms.wrapping_add(NEXT_GROUP_MS));
+            self.draw_receive_rows(lcd);
+            self.draw_receive_now(lcd);
+            return;
+        }
         let score = rx.drill.score(rx.group.as_str(), rx.copy.as_str(), &mut self.letters);
         self.letters.level = rx.drill.level;
         self.koch_window = (rx.drill.level, rx.drill.window());
         self.history.copied(score.right, score.len as u8);
         rx.session_right += score.right as u16;
         rx.session_total += score.len as u16;
-        push_scrolling(&mut rx.rows, Row { sent: rx.group, marks: score.marks, right: score.right });
+        push_scrolling(&mut rx.rows, Row { sent: rx.group, marks: score.marks, right: score.right, scored: true });
         rx.copy.clear();
         rx.state = State::Between;
         rx.deadline = Some(now_ms.wrapping_add(NEXT_GROUP_MS));
@@ -299,6 +351,15 @@ impl Ui {
         }
     }
 
+    /// The voice started saying the NINJA word at `now_ms` and lasts `ms`: the next word waits
+    /// until it ends. With `ms` 0 nothing was said, and the next word keeps its deadline.
+    pub(super) fn receive_said(&mut self, ms: u32, now_ms: u32) {
+        let Some(Session::Receive(rx)) = &mut self.session else { return };
+        if rx.state == State::Between && ms > 0 {
+            rx.deadline = Some(now_ms.wrapping_add(ms + NEXT_GROUP_MS));
+        }
+    }
+
     /// The dial stepped the Koch level; the caller redraws it.
     pub(super) fn step_level(&mut self, delta: i8) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
@@ -314,7 +375,7 @@ impl Ui {
                 let kind = rx.drill.kind;
                 self.stop_players();
                 match kind {
-                    Kind::Calls => self.open_ragchew(lcd, s, false),
+                    Kind::Ninja => self.open_ragchew(lcd, s, false),
                     kind => self.open_receive(lcd, s, kind.next()),
                 }
             }
@@ -324,6 +385,7 @@ impl Ui {
                 rx.copy.clear();
                 self.open_settings_at(lcd, s, RECEIVE_TAB);
             }
+            Action::Soft(2) if rx.state == State::NoPack => {}
             Action::Soft(2) => {
                 if rx.state == State::Paused {
                     self.play_group(lcd, s, false);
@@ -339,6 +401,23 @@ impl Ui {
             _ => {}
         }
     }
+}
+
+/// A NINJA word from the pack: its pack text, for the voice, and the group to send. None when
+/// there is no pack, or no word tried fits a group and has a clip.
+fn ninja_word(drill: &mut Drill, pack: Option<&Pack>, lcd: &mut Lcd) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
+    let pack = pack?;
+    let (first, count) = pack.words();
+    if count == 0 {
+        return None;
+    }
+    (0..PICK_TRIES).find_map(|_| {
+        let word = pack.word(lcd, drill.pick_word(first, count))?;
+        let mut group = Text::new();
+        let fits = morse::chars(word.text()).all(|c| group.push(c));
+        let text = Text::format(format_args!("{}", core::str::from_utf8(word.text()).ok()?));
+        (fits && word.clip.is_some()).then_some((text, group))
+    })
 }
 
 /// One scored row at `y`: what was sent, your copy marked against it from `copy_x`, and the

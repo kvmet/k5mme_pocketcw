@@ -31,7 +31,7 @@ These run on a computer when the pack is built. None of them ship in a release.
 | - | - | - |
 | [VBand](https://hamradio.solutions/vband/) | Ham Radio Solutions | The CW Hotline protocol and the USB keyboard keys that [USB](user/usb.md) speaks to VBand. |
 | [WinKeyer](https://www.hamcrafters2.com/) | K1EL | The WinKeyer host protocol on the [serial port](dev/serial.md). |
-| [Morse Code Ninja](https://morsecode.ninja) | Kurt Zoglmann, AD0WE | Morse, then the word spoken: the idea behind the planned NINJA drill. |
+| [Morse Code Ninja](https://morsecode.ninja) | Kurt Zoglmann, AD0WE | Morse, then the word spoken: the idea behind the NINJA drill. |
 | The Koch method | Ludwig Koch | The order the [letters](user/letters.md) drill adds characters in. |
 | Farnsworth timing | Donald R. Farnsworth, W6TTB | Characters at full speed with longer gaps, in the receive drills. |
 | [Parks on the Air](https://parksontheair.com) and [Summits on the Air](https://www.sota.org.uk) | Their volunteer teams | The activation and hunting practice. |

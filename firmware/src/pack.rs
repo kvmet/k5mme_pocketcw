@@ -21,6 +21,8 @@ pub struct Pack {
     /// Each spelling character and its entry.
     chars: [(u8, u16); MAX_CHARS],
     char_count: usize,
+    /// The first entry that is a word, not a character.
+    first_word: u16,
 }
 
 impl Pack {
@@ -43,9 +45,11 @@ impl Pack {
         crc.update(&start);
         let mut chars = [(0, 0); MAX_CHARS];
         let mut char_count = 0;
+        let mut first_word = count;
         scan(lcd, words, count, |index, entry| {
             crc.update(entry);
-            if let Some(word) = Word::parse(entry)
+            let word = Word::parse(entry);
+            if let Some(word) = word
                 && let &[c] = word.text()
                 && word.char
                 && char_count < MAX_CHARS
@@ -53,17 +57,26 @@ impl Pack {
                 chars[char_count] = (c, index);
                 char_count += 1;
             }
+            if word.is_some_and(|w| !w.char) {
+                first_word = first_word.min(index);
+            }
             true
         });
         if crc.finish() != words.crc {
             return Err(Error::Corrupt);
         }
         lcd.spi_flash().read(ADDRESS + clips.offset, &mut start);
-        Ok(Pack { words, clips, count, factor: start[0], chars, char_count })
+        Ok(Pack { words, clips, count, factor: start[0], chars, char_count, first_word })
     }
 
     pub fn count(&self) -> u16 {
         self.count
+    }
+
+    /// The words, not characters, as (first index, count). The pack lists the characters
+    /// first.
+    pub fn words(&self) -> (u16, u16) {
+        (self.first_word, self.count - self.first_word)
     }
 
     pub fn word(&self, lcd: &mut Lcd, index: u16) -> Option<Word> {

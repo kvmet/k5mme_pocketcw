@@ -29,6 +29,7 @@ use pocketcw_logic::{
     input::Action,
     morse,
     letters::{Letters, RECORD_LEN as LETTERS_LEN},
+    pack::WORD_TEXT,
     memories::{Memories, RECORD_LEN as MEMORIES_LEN},
     progress::{History, SLOT_LEN},
     keyer::{self, Mode},
@@ -158,6 +159,8 @@ pub struct Ui {
     stop: bool,
     /// A transmission to start, after any stop.
     play: Option<Play>,
+    /// Text for the voice to say, after any stop.
+    say: Option<Text<WORD_TEXT>>,
     /// A PLAY from the serial port is sounding.
     serial_play: bool,
     seed: u32,
@@ -216,6 +219,7 @@ impl Ui {
             confirm_clear: false,
             stop: false,
             play: None,
+            say: None,
             serial_play: false,
             seed: settings.boot_count as u32 * 7919 + 1,
             system,
@@ -434,10 +438,24 @@ impl Ui {
         self.qso_next_play(s).or_else(|| self.hunt_next_play(s)).map(Command::Play)
     }
 
-    /// Stops every player, and drops a transmission not yet started.
+    /// Text for the voice to say now; run it after the players' commands, since a stop also
+    /// stops the voice.
+    pub fn take_say(&mut self) -> Option<Text<WORD_TEXT>> {
+        self.say.take()
+    }
+
+    /// The voice started at `now_ms` and lasts `ms`, 0 when it said nothing.
+    pub fn said(&mut self, ms: u32, now_ms: u32) {
+        if self.screen == Screen::Receive {
+            self.receive_said(ms, now_ms);
+        }
+    }
+
+    /// Stops every player and the voice, and drops a transmission or speech not yet started.
     fn stop_players(&mut self) {
         self.stop = true;
         self.play = None;
+        self.say = None;
     }
 
     /// Band noise plays: practice while it runs, the SOUND tab, so you hear the noise level you

@@ -21,7 +21,7 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `PRESS CLICK` | Presses and releases the dial. No reply. |
 | `SEND TEXT` | Keys up to 48 characters of text. See [Send](#send). |
 | `PLAY TEXT` | Sounds up to 48 characters of text. See [Play](#play). |
-| `SAY TEXT` | Speaks up to 48 characters from the content pack: each word the pack holds, and every other word spelled a character at a time. One abbreviation on its own also gets its meaning: `SAY QTH` says "Q T H. location", and `SAY QTH IS` says "Q T H is". Answers `OK SAY TEXT`, or `ERROR SAY: NO PACK`, or `ERROR SAY: NOTHING TO SAY`. Speech stops at about 5.6 s or 32 clips. Lower case counts as upper case; a prosign is written as `<BK>`. |
+| `SAY TEXT` | Speaks up to 48 characters from the content pack: each word the pack holds, and every other word spelled a character at a time. One abbreviation on its own also gets its meaning: `SAY QTH` says "Q T H. location", and `SAY QTH IS` says "Q T H is". Answers `OK SAY TEXT`, or `ERROR SAY: NO PACK`, or `ERROR SAY: NOTHING TO SAY`. Speech stops at about 3.7 s or 32 clips. A screen change, or a drill's STOP, also stops it. Lower case counts as upper case; a prosign is written as `<BK>`. |
 | `STOP` | Stops the text of `SEND` and `PLAY`, and anything else the device is sounding. No reply. |
 | `SHOT` | Sends the screen. See [Screenshot](#screenshot). |
 | `INFO` | Answers `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS PACK=3131`: the firmware version, the screen, the panel (`IPS` or `ILI9341`), and the content pack's word count, or `NONE`, `OLD` for a pack of an earlier format, or `BAD` for a corrupt one. |

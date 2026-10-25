@@ -15,6 +15,8 @@ pub enum Kind {
     Koch,
     Words,
     Calls,
+    /// A content pack word, then the voice says it; see `Drill::pick_word`.
+    Ninja,
 }
 
 impl Kind {
@@ -23,6 +25,7 @@ impl Kind {
             Kind::Koch => "KOCH",
             Kind::Words => "WORDS",
             Kind::Calls => "CALLS",
+            Kind::Ninja => "NINJA",
         }
     }
 
@@ -30,7 +33,8 @@ impl Kind {
         match self {
             Kind::Koch => Kind::Words,
             Kind::Words => Kind::Calls,
-            Kind::Calls => Kind::Koch,
+            Kind::Calls => Kind::Ninja,
+            Kind::Ninja => Kind::Koch,
         }
     }
 }
@@ -46,6 +50,10 @@ pub const MAX_LEVEL: u8 = KOCH.len() as u8;
 /// costs as much as missing them.
 const LEVEL_WINDOW: u16 = 50;
 const LEVEL_PERCENT: u16 = 90;
+
+/// NINJA picks among this many pack words from the first: the ham words, then the most common
+/// English words.
+pub const NINJA_WORDS: u16 = 500;
 
 /// Common words and abbreviations heard on the air.
 const WORDS: [&str; 64] = [
@@ -116,7 +124,13 @@ impl Drill {
         (self.window_right, self.window_total) = (right, total);
     }
 
-    /// The next group to send.
+    /// The index of a NINJA word, from the `count` pack words that start at `first`.
+    pub fn pick_word(&mut self, first: u16, count: u16) -> u16 {
+        first + self.rng.below(count.min(NINJA_WORDS).max(1) as u32) as u16
+    }
+
+    /// The next group to send. NINJA groups come from the pack through `pick_word`, so this
+    /// gives an empty one for NINJA.
     pub fn next(&mut self, letters: &Letters) -> Text<MAX_GROUP> {
         let mut group = Text::new();
         match self.kind {
@@ -134,6 +148,7 @@ impl Drill {
                 let digit = self.rng.below(10) as u8;
                 let _ = write!(group, "{}", us_call(digit, &mut self.rng).as_str());
             }
+            Kind::Ninja => {}
         }
         group
     }
@@ -250,6 +265,21 @@ mod tests {
         let score = align(b"KMRSE", b"KMRRSE");
         assert_eq!((score.right, score.extra), (5, 1));
         assert_eq!(marks("KMRSE", ""), [Missed; 5]);
+    }
+
+    #[test]
+    fn kind_goes_through_ninja_back_to_koch() {
+        let order: std::vec::Vec<Kind> = core::iter::successors(Some(Kind::Koch), |k| Some(k.next())).take(5).collect();
+        assert_eq!(order, [Kind::Koch, Kind::Words, Kind::Calls, Kind::Ninja, Kind::Koch]);
+    }
+
+    #[test]
+    fn ninja_words_come_from_the_first_of_the_pack_words() {
+        let mut drill = Drill::new(Kind::Ninja, MIN_LEVEL, 9);
+        let picks: std::vec::Vec<u16> = (0..2000).map(|_| drill.pick_word(49, 2979)).collect();
+        assert!(picks.iter().all(|&i| (49..49 + NINJA_WORDS).contains(&i)));
+        assert!(picks.contains(&49) && picks.contains(&(48 + NINJA_WORDS)));
+        assert!((0..50).all(|_| drill.pick_word(1, 3) < 4));
     }
 
     #[test]

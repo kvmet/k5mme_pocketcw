@@ -6,7 +6,7 @@
 
 use core::cell::UnsafeCell;
 
-use pocketcw_logic::adpcm::{Clips, MAX_CLIPS, Upsample};
+use pocketcw_logic::adpcm::{Clips, MAX_CLIPS, Upsample, played_samples};
 use rtic::Mutex;
 
 use crate::audio::{Audio, SAMPLE_HZ};
@@ -47,9 +47,9 @@ impl Ends {
     }
 }
 
-/// Stops any speech and speaks `text`, upper case, as far as the buffer holds. Returns the
-/// number of clips; 0 when nothing in `text` has a clip.
-pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = Audio>) -> usize {
+/// Stops any speech and speaks `text`, upper case, as far as the buffer holds. Returns how long
+/// the speech lasts in ms; 0 when nothing in `text` has a clip.
+pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = Audio>) -> u32 {
     audio.lock(|audio| audio.synth.say(None));
     // SAFETY: the synth holds no clips now, and only this function gives it some, so nothing
     // else reads the buffer while it fills.
@@ -83,5 +83,5 @@ pub fn say(lcd: &mut Lcd, pack: &Pack, text: &[u8], audio: &mut impl Mutex<T = A
         audio.synth.say(Some(Upsample::new(Clips::new(clips, &ends.ends[..ends.count], gap), pack.factor)));
         audio.wake();
     });
-    ends.count
+    (played_samples(ends.used, ends.count, gap, pack.factor) as f32 * 1000.0 / SAMPLE_HZ) as u32
 }
