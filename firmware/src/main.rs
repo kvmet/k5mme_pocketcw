@@ -63,16 +63,18 @@ mod app {
         keyboard::{self, NO_KEYS, Typist},
         panel::{self, Panel},
         board,
-        keyer::{Contacts, Jack, Keyer, Mode, Output, output_lines},
+        keyer::{Contacts, Jack, Keyer, MAX_WPM, MIN_WPM, Mode, Output, output_lines},
         listen::Listener,
         morse,
-        player::{Keying, MAX_TEXT, Player},
+        player::{MAX_TEXT, Player},
+        sender,
         serial::{Command as SerialCommand, CommandLine},
         settings::{Settings, UsbOut},
         synth::{PLAYERS, SIDETONE},
         volume::wm8978_speaker,
         ticks,
         timing::Line,
+        winkeyer::{self, Action as WkAction, Winkeyer},
     };
     use rtic_monotonics::systick::prelude::*;
     use rtic::Mutex;
@@ -101,6 +103,10 @@ mod app {
         Send(Text<MAX_TEXT>),
         /// The serial key finished its text, a word gap ago.
         Sent,
+        /// A WinKeyer host opened the serial port, or closed it.
+        Winkeyer(bool),
+        /// The WinKeyer host set the keyer speed; 0 keeps it.
+        Speed(u8),
     }
 
     const CHUNK_LEN: usize = 64;
@@ -108,6 +114,8 @@ mod app {
     const CHUNKS: usize = 8;
     /// How long the UI waits for room in the serial queue before it gives up on a screenshot.
     const SHOT_WAIT_MS: u32 = 500;
+    /// Bytes waiting for the WinKeyer host: echoes, status and replies.
+    const WK_BYTES: usize = 64;
 
     /// Bytes for the serial port, one USB packet at most. `start` steps past what the port took.
     pub struct Chunk {
@@ -164,6 +172,16 @@ mod app {
     static SERIAL_OPEN: AtomicBool = AtomicBool::new(false);
     /// Event lines the serial queue had no room for; shown on screen when nonzero.
     static SERIAL_LINES_LOST: AtomicU16 = AtomicU16::new(0);
+    /// A WinKeyer host has the serial port, and which echoes it asked for.
+    static WK_OPEN: AtomicBool = AtomicBool::new(false);
+    static WK_SERIAL_ECHO: AtomicBool = AtomicBool::new(false);
+    static WK_PADDLE_ECHO: AtomicBool = AtomicBool::new(false);
+    /// The WinKeyer status byte as of the last tick.
+    static WK_STATUS: AtomicU8 = AtomicU8::new(0);
+    /// WinKeyer bytes dropped for a full queue, either way; shown on screen when nonzero.
+    static WK_BYTES_LOST: AtomicU16 = AtomicU16::new(0);
+    /// The keyer speed setting, for the WinKeyer speed pot reply.
+    static KEYER_WPM: AtomicU8 = AtomicU8::new(0);
 
     fn usb_out() -> UsbOut {
         match USB_OUT.load(Ordering::Relaxed) {
@@ -185,8 +203,8 @@ mod app {
         link: Link,
         /// Characters the tick decoded, waiting for the USB task to type them.
         typist: Typist,
-        /// Keys text from the serial port as a straight key, into the same path as the paddle.
-        serial_key: Player,
+        /// Keys SEND or WinKeyer text from the serial port, into the same path as the paddle.
+        serial_key: sender::Sender,
     }
 
     #[local]
@@ -202,6 +220,9 @@ mod app {
         command_line: CommandLine,
         usb_messages: Sender<'static, Message, EVENT_QUEUE>,
         chunks: Receiver<'static, Chunk, CHUNKS>,
+        wk_replies: Sender<'static, u8, WK_BYTES>,
+        wk_echoes: Sender<'static, u8, WK_BYTES>,
+        wk_bytes: Receiver<'static, u8, WK_BYTES>,
     }
 
     const FLASH_SIZE_ADDRESS: u32 = 0x1FFF_F7E0;
@@ -281,6 +302,7 @@ mod app {
         gpio::set(b, SPEAKER_AMP, settings.volume > 0);
         store_output(&settings);
         USER_TONE.store(settings.tone_hz, Ordering::Relaxed);
+        KEYER_WPM.store(settings.wpm, Ordering::Relaxed);
 
         let audio = Audio::new(dp.TMR1, a, settings.sound());
         let keyer = Keyer::new(settings.mode, settings.swap, settings.wpm);
@@ -297,6 +319,8 @@ mod app {
         let board_messages = messages.clone();
         let usb_messages = messages.clone();
         let (chunk_sender, chunks) = rtic_sync::make_channel!(Chunk, CHUNKS);
+        let (wk_replies, wk_bytes) = rtic_sync::make_channel!(u8, WK_BYTES);
+        let wk_echoes = wk_replies.clone();
         let Some(frame_buffer) = cortex_m::singleton!(: [u8; link::FRAME_LEN] = [0; link::FRAME_LEN]) else {
             unreachable!("init runs once")
         };
@@ -331,8 +355,12 @@ mod app {
             command_line: CommandLine::default(),
             usb_messages,
             chunks,
+            wk_replies,
+            wk_echoes,
+            wk_bytes,
         };
-        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default(), serial_key: Player::new() }, local)
+        let serial_key = sender::Sender::new();
+        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default(), serial_key }, local)
     }
 
     /// The key jack's contacts from port B's input bits: a closed contact pulls its pin low.
@@ -404,14 +432,32 @@ mod app {
     #[task(
         binds = USBFS_L_CAN1_RX0,
         priority = 2,
-        shared = [typist],
-        local = [port, command_line, usb_messages, chunks, unsent: Option<Chunk> = None]
+        shared = [typist, serial_key],
+        local = [
+            port, command_line, usb_messages, chunks, wk_replies, wk_bytes,
+            unsent: Option<Chunk> = None,
+            winkeyer: Winkeyer = Winkeyer::new(),
+        ]
     )]
     fn usb_events(mut cx: usb_events::Context) {
         let port = cx.local.port;
         let ready = port.poll();
+        let serial_open = ready && port.serial_open();
         USB_READY.store(ready, Ordering::Relaxed);
-        SERIAL_OPEN.store(ready && port.serial_open(), Ordering::Relaxed);
+        SERIAL_OPEN.store(serial_open, Ordering::Relaxed);
+        let messages = cx.local.usb_messages;
+        let mut send = |message| {
+            if messages.try_send(message).is_err() {
+                DROPPED_EVENTS.fetch_add(1, Ordering::Relaxed);
+            }
+        };
+        let winkeyer = cx.local.winkeyer;
+        if winkeyer.is_open() && !serial_open {
+            winkeyer.close();
+            winkeyer_act(WkAction::Close, winkeyer, &mut cx.shared.serial_key, cx.local.wk_replies, &mut send);
+            while cx.local.wk_bytes.try_recv().is_ok() {}
+            publish(winkeyer);
+        }
         if !ready {
             cx.shared.typist.lock(Typist::clear);
             // Left over, these would land in front of the next screenshot.
@@ -422,12 +468,16 @@ mod app {
         let mut received = [0; CHUNK_LEN];
         match port.read_serial(&mut received) {
             Ok(n) => {
-                let mut send = |message| {
-                    if cx.local.usb_messages.try_send(message).is_err() {
-                        DROPPED_EVENTS.fetch_add(1, Ordering::Relaxed);
-                    }
-                };
                 for &byte in &received[..n] {
+                    // No text command starts with 0, so it can only open a WinKeyer.
+                    if winkeyer.is_open() || winkeyer.is_busy() || byte == 0 {
+                        let action = winkeyer.push(byte);
+                        winkeyer_act(action, winkeyer, &mut cx.shared.serial_key, cx.local.wk_replies, &mut send);
+                        if action == WkAction::Close {
+                            while cx.local.wk_bytes.try_recv().is_ok() {}
+                        }
+                        continue;
+                    }
                     // Through the same queue as SHOT, so a screenshot after a press shows its result.
                     match cx.local.command_line.push(byte) {
                         Some(SerialCommand::Shot) => send(Message::Shot),
@@ -444,7 +494,10 @@ mod app {
                 SERIAL_ERRORS.fetch_add(1, Ordering::Relaxed);
             }
         }
-        while let Some(mut chunk) = cx.local.unsent.take().or_else(|| cx.local.chunks.try_recv().ok()) {
+        publish(winkeyer);
+        let wk_bytes = &mut *cx.local.wk_bytes;
+        let chunks = &mut *cx.local.chunks;
+        while let Some(mut chunk) = cx.local.unsent.take().or_else(|| chunks.try_recv().ok()).or_else(|| wk_chunk(wk_bytes)) {
             match port.write_serial(chunk.unsent()) {
                 Ok(n) => {
                     chunk.start += n;
@@ -474,6 +527,69 @@ mod app {
         }
     }
 
+    /// Carries out what the WinKeyer parser asked for.
+    fn winkeyer_act(
+        action: WkAction,
+        winkeyer: &Winkeyer,
+        serial_key: &mut impl Mutex<T = sender::Sender>,
+        replies: &mut Sender<'static, u8, WK_BYTES>,
+        send: &mut impl FnMut(Message),
+    ) {
+        let mut reply = |byte| {
+            if replies.try_send(byte).is_err() {
+                WK_BYTES_LOST.fetch_add(1, Ordering::Relaxed);
+            }
+        };
+        match action {
+            WkAction::None => {}
+            WkAction::Reply(byte) => reply(byte),
+            WkAction::Open => {
+                reply(winkeyer::REVISION);
+                send(Message::Winkeyer(true));
+            }
+            WkAction::Close => {
+                serial_key.lock(|s| {
+                    s.clear();
+                    s.set_pause(false);
+                });
+                send(Message::Winkeyer(false));
+            }
+            WkAction::Queue(item) => {
+                if !serial_key.lock(|s| s.push(item)) {
+                    WK_BYTES_LOST.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            WkAction::Clear => serial_key.lock(sender::Sender::clear),
+            WkAction::Backspace => {
+                serial_key.lock(sender::Sender::backspace);
+            }
+            WkAction::Pause(paused) => serial_key.lock(|s| s.set_pause(paused)),
+            WkAction::Tune(down) => serial_key.lock(|s| s.set_tune(down)),
+            WkAction::Speed(wpm) => send(Message::Speed(wpm)),
+            WkAction::Status => reply(WK_STATUS.load(Ordering::Relaxed)),
+            WkAction::SpeedPot => reply(winkeyer.speed_pot(KEYER_WPM.load(Ordering::Relaxed))),
+        }
+    }
+
+    /// Tells the tick and UI whether a WinKeyer host is open, and which echoes it wants.
+    fn publish(winkeyer: &Winkeyer) {
+        WK_OPEN.store(winkeyer.is_open(), Ordering::Relaxed);
+        WK_SERIAL_ECHO.store(winkeyer.serial_echo(), Ordering::Relaxed);
+        WK_PADDLE_ECHO.store(winkeyer.paddle_echo(), Ordering::Relaxed);
+    }
+
+    /// Up to one chunk of the bytes waiting for the WinKeyer host.
+    fn wk_chunk(bytes: &mut Receiver<'static, u8, WK_BYTES>) -> Option<Chunk> {
+        let mut chunk = Chunk::new(&[]);
+        while chunk.end < CHUNK_LEN
+            && let Ok(byte) = bytes.try_recv()
+        {
+            chunk.bytes[chunk.end] = byte;
+            chunk.end += 1;
+        }
+        (chunk.end > 0).then_some(chunk)
+    }
+
     /// Every millisecond: paddle keyer, keyed outputs, the players and the voices they key, the
     /// decoders, then button debounce.
     #[task(
@@ -481,8 +597,11 @@ mod app {
         priority = 3,
         shared = [keyer, audio, players, typist, serial_key],
         local = [
-            timer, buttons, decoder, listener, jack, messages,
+            timer, buttons, decoder, listener, jack, messages, wk_echoes,
             sent_after_ms: Option<u32> = None,
+            paddle_hold_ms: u32 = 0,
+            paddled: bool = false,
+            wk_status: u8 = 0,
             listening: bool = false,
             key_down: bool = false, keyed: bool = false, key_out: (bool, bool) = (false, false), contacts: Contacts = Contacts { tip: false, ring: false },
             playing: bool = false,
@@ -497,14 +616,14 @@ mod app {
         cx.local.jack.tick(jack_contacts(b));
         let (contacts, keying) = (cx.local.jack.closed(), cx.local.jack.keying());
         let (keyer_down, dit_ms, mode, swap) = cx.shared.keyer.lock(|keyer| (keyer.tick(keying), keyer.dit_ms(), keyer.mode(), keyer.swap));
-        // Active before its tick, so a text with no Morse in it still ends with SENT.
-        let (serial_active, serial) = cx.shared.serial_key.lock(|player| {
+        // Busy before its tick, so a text with no Morse in it still ends with SENT.
+        let (serial_active, serial, queued) = cx.shared.serial_key.lock(|s| {
             if keying.tip || keying.ring {
-                player.stop();
+                s.clear();
             }
-            (player.is_active(), player.tick())
+            (s.is_busy(), s.tick(dit_ms), s.queued())
         });
-        let down = keyer_down || serial == Some(true);
+        let down = keyer_down || serial.down;
         let copy_dit_ms = cx.local.decoder.dit_ms();
 
         let messages = cx.local.messages;
@@ -523,6 +642,40 @@ mod app {
             }
             (false, after) => after.map(|ms| ms - 1),
         };
+
+        // Break-in lasts until a word gap after the last paddle mark; `paddled` says who keyed last.
+        if keyer_down {
+            *cx.local.paddle_hold_ms = 7 * dit_ms as u32;
+            *cx.local.paddled = true;
+        } else {
+            *cx.local.paddle_hold_ms = cx.local.paddle_hold_ms.saturating_sub(1);
+        }
+        if serial.down {
+            *cx.local.paddled = false;
+        }
+        let wk_open = WK_OPEN.load(Ordering::Relaxed);
+        let wk_echoes = cx.local.wk_echoes;
+        let mut to_host = |byte| {
+            if wk_echoes.try_send(byte).is_err() {
+                WK_BYTES_LOST.fetch_add(1, Ordering::Relaxed);
+            }
+            rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+        };
+        let idle_status = Winkeyer::status(false, false, false);
+        if wk_open {
+            if let Some(byte) = serial.sent
+                && WK_SERIAL_ECHO.load(Ordering::Relaxed)
+            {
+                to_host(byte);
+            }
+            let status = Winkeyer::status(serial_active, *cx.local.paddle_hold_ms > 0, queued > sender::QUEUE_LEN * 2 / 3);
+            WK_STATUS.store(status, Ordering::Relaxed);
+            if status != core::mem::replace(cx.local.wk_status, status) {
+                to_host(status);
+            }
+        } else {
+            *cx.local.wk_status = idle_status;
+        }
 
         let old = *cx.local.contacts;
         for (line, was, is) in [(Line::Tip, old.tip, contacts.tip), (Line::Ring, old.ring, contacts.ring)] {
@@ -584,6 +737,18 @@ mod app {
         let usb_ready = USB_READY.load(Ordering::Relaxed);
         if let Some(decoded) = cx.local.decoder.tick(down, dit_ms, mode == Mode::Straight) {
             send(Message::Decoded(decoded));
+            let echo = match decoded {
+                Decoded::Char(c) => winkeyer::paddle_byte(c),
+                Decoded::Space => Some(b' '),
+                Decoded::Unknown => None,
+            };
+            if wk_open
+                && *cx.local.paddled
+                && WK_PADDLE_ECHO.load(Ordering::Relaxed)
+                && let Some(byte) = echo
+            {
+                to_host(byte);
+            }
             if out == UsbOut::Text && usb_ready {
                 type_out(decoded);
             }
@@ -667,6 +832,7 @@ mod app {
         let mut usb_lost_shown = 0;
         let mut serial_errors_shown = 0;
         let mut serial_lines_lost_shown = 0;
+        let mut wk_bytes_lost_shown = 0;
         // From a SEND until its SENT, so a second SEND gets BUSY.
         let mut sending = false;
         loop {
@@ -684,11 +850,12 @@ mod app {
                     }
                 }
                 Ok(Ok(Message::Send(_))) if sending => emit(&mut chunks, "BUSY\n"),
-                Ok(Ok(Message::Send(text))) => {
-                    let keying = Keying { wpm: settings.wpm, effective: 0, fist: 0 };
-                    cx.shared.serial_key.lock(|player| player.start(text.as_str(), keying, 1, 0, 0));
-                    sending = true;
-                }
+                Ok(Ok(Message::Send(text))) => match cx.shared.serial_key.lock(|s| s.push_text(text.as_str()).then(|| s.is_busy())) {
+                    Some(true) => sending = true,
+                    // Nothing to key.
+                    Some(false) => emit(&mut chunks, "SENT\n"),
+                    None => emit(&mut chunks, "BUSY\n"),
+                },
                 Ok(Ok(message)) => {
                     sending &= !matches!(message, Message::Sent);
                     if let Some(line) = event_line(&message) {
@@ -777,6 +944,12 @@ mod app {
                 let line = Text::<32>::format(format_args!("{serial_lines_lost} SERIAL LINES LOST"));
                 ui.status(&mut lcd, line.as_str());
             }
+            let wk_bytes_lost = WK_BYTES_LOST.load(Ordering::Relaxed);
+            if wk_bytes_lost != wk_bytes_lost_shown {
+                wk_bytes_lost_shown = wk_bytes_lost;
+                let line = Text::<32>::format(format_args!("{wk_bytes_lost} WINKEYER BYTES LOST"));
+                ui.status(&mut lcd, line.as_str());
+            }
         }
     }
 
@@ -802,6 +975,14 @@ mod app {
             Message::Shot => unreachable!("the UI loop sends the screen, since that waits on USB"),
             Message::Send(_) => unreachable!("the UI loop starts the serial key, since that needs its lock"),
             Message::Sent => {}
+            Message::Winkeyer(open) => ui.status(lcd, if open { "WINKEYER OPEN" } else { "WINKEYER CLOSED" }),
+            Message::Speed(0) => {}
+            Message::Speed(wpm) => {
+                settings.wpm = wpm.clamp(MIN_WPM, MAX_WPM);
+                ui.speed_set(lcd, settings);
+                let line = Text::<32>::format(format_args!("WINKEYER {} WPM", settings.wpm));
+                ui.status(lcd, line.as_str());
+            }
         }
     }
 
@@ -825,10 +1006,10 @@ mod app {
         }
     }
 
-    /// Queues an event line for the USB task while the computer has the port open. A line the
-    /// full queue has no room for counts in SERIAL_LINES_LOST.
+    /// Queues an event line for the USB task while the computer has the port open in text mode.
+    /// A line the full queue has no room for counts in SERIAL_LINES_LOST.
     fn emit(chunks: &mut Sender<'static, Chunk, CHUNKS>, line: &str) {
-        if !SERIAL_OPEN.load(Ordering::Relaxed) {
+        if !SERIAL_OPEN.load(Ordering::Relaxed) || WK_OPEN.load(Ordering::Relaxed) {
             return;
         }
         if chunks.try_send(Chunk::new(line.as_bytes())).is_err() {
@@ -932,6 +1113,7 @@ mod app {
         }
         store_output(after);
         USER_TONE.store(after.tone_hz, Ordering::Relaxed);
+        KEYER_WPM.store(after.wpm, Ordering::Relaxed);
     }
 
     fn store_output(settings: &Settings) {

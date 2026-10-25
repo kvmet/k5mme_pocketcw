@@ -31,7 +31,7 @@ use pocketcw_logic::{
     keyer::{self, Mode},
     player::{Keying, MAX_TEXT},
     qso::{Options, Program},
-    settings::{Pileup, Settings},
+    settings::{Field, Pileup, Settings},
     ticks,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
 };
@@ -244,6 +244,15 @@ impl Ui {
             Screen::Letters => self.letters_act(lcd, s, action),
             Screen::Progress => self.progress_act(lcd, s, action),
             Screen::Radio => self.radio_act(lcd, s, action),
+        }
+    }
+
+    /// Shows a keyer speed set from outside the screen, on the screens that show it.
+    pub fn speed_set(&mut self, lcd: &mut Lcd, s: &Settings) {
+        match self.screen {
+            Screen::Home => self.draw_home_value(lcd, s, Field::Speed),
+            Screen::Settings => self.draw_settings(lcd, s),
+            _ => {}
         }
     }
 
