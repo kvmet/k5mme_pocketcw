@@ -14,7 +14,7 @@ pub const MAX_LEVEL: u8 = 10;
 /// One voice's peak, and the most all voices together reach: when stations overlap, the band's
 /// gain drops so their sum stays here.
 const VOICE_PEAK: f32 = 0.7;
-/// A clip's full scale. Clips peak at 0.9 of full scale, so speech peaks near a voice's peak.
+/// A clip's full scale. Clips peak under 0.95 of full scale, so speech peaks near a voice's peak.
 const SPEECH_PEAK: f32 = VOICE_PEAK;
 /// How long the band's gain takes to recover after an overlap ends, like a receiver's AGC. Much
 /// longer than a Morse element, so the gain holds through an over instead of pumping per element.

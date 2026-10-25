@@ -154,6 +154,62 @@ def undo_upsampling(samples: np.ndarray, factor: int) -> np.ndarray:
     return boosted * (np.abs(samples).max() / np.abs(boosted).max())
 
 
+# Speech level in dB of a clip's full scale. The synth plays a clip's full scale and the
+# sidetone's peak alike, so the sidetone's RMS is -3 dB: speech sits 7 dB under it.
+SPEECH_DB = -10.0
+FRAME_S = 0.02
+# 20 ms frames more than this far under the loudest one are pauses, not speech.
+ACTIVE_RANGE_DB = 30.0
+# The limiter's ceiling, under `PEAK`: ADPCM overshot dense peaks by up to 16% in a test of the
+# old clips, and with a ceiling of `PEAK` one leveled clip in 15 reached full scale.
+LIMIT_PEAK = 0.8
+# The level is set within this. 8 passes left one clip in five short of it; 40 left none.
+LEVEL_TOLERANCE_DB = 0.25
+LEVEL_PASSES = 40
+LIMIT_BLOCK_S = 0.001
+# dB a block that the limiter's gain falls before a peak, and comes back after it. At 8789 Hz a
+# block is 0.91 ms, so 12 dB takes 3.6 ms and 55 ms. The release is slow next to a 5 ms cycle of
+# the voice, so the gain does not follow the wave between peaks.
+LIMIT_ATTACK_DB = 3.0
+LIMIT_RELEASE_DB = 0.2
+
+
+def active_level(samples: np.ndarray, hz: int) -> float:
+    """The level of the speech in `samples`, in dB of full scale 1.0: the power of its 20 ms
+    frames, leaving out pauses."""
+    n = int(FRAME_S * hz)
+    power = (samples[: len(samples) // n * n].reshape(-1, n) ** 2).mean(axis=1)
+    return 10 * np.log10(power[power >= power.max() * 10 ** (-ACTIVE_RANGE_DB / 10)].mean())
+
+
+def limit(samples: np.ndarray, hz: int, ceiling: float) -> np.ndarray:
+    """Turns `samples` down where they pass `ceiling`, with the gain in dB set at block starts
+    about 1 ms apart and a straight line between."""
+    n = max(1, int(LIMIT_BLOCK_S * hz))
+    blocks = -(-len(samples) // n)
+    peaks = np.abs(np.concatenate([samples, np.zeros(blocks * n - len(samples))])).reshape(blocks, n).max(axis=1)
+    need = 20 * np.log10(np.minimum(1.0, ceiling / np.maximum(peaks, 1e-9)))
+    # A block lies between its own start and the next, so both starts take what it needs.
+    gain = np.minimum(np.concatenate([need, [0.0]]), np.concatenate([[0.0], need]))
+    for b in range(blocks - 1, -1, -1):
+        gain[b] = min(gain[b], gain[b + 1] + LIMIT_ATTACK_DB)
+    for b in range(1, blocks + 1):
+        gain[b] = min(gain[b], gain[b - 1] + LIMIT_RELEASE_DB)
+    return samples * 10 ** (np.interp(np.arange(len(samples)) / n, np.arange(blocks + 1), gain) / 20)
+
+
+def level(samples: np.ndarray, hz: int) -> np.ndarray:
+    """Sets the speech to `SPEECH_DB` with its peaks under `LIMIT_PEAK`: speech has short peaks
+    far above its level, so a clip scaled by its peak alone sounds much quieter than the
+    sidetone. Each pass of the limiter lowers the level, and the next pass makes up for it."""
+    for _ in range(LEVEL_PASSES):
+        short = SPEECH_DB - active_level(samples, hz)
+        if abs(short) < LEVEL_TOLERANCE_DB:
+            break
+        samples = limit(samples * 10 ** (short / 20), hz, LIMIT_PEAK)
+    return limit(samples, hz, LIMIT_PEAK)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("voice", choices=VOICES)

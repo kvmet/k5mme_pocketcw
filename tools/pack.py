@@ -5,8 +5,9 @@ a clip of the Kokoro voice af_heart at 8789 Hz. A ham word with a meaning gets a
 that says the word, then its meaning. The least common words are left out until the pack fits
 in one update file.
 
-Clips are kept in a cache folder by what they say and how they are made, so a rebuild only
-speaks new or changed words.
+The cache folder keeps what Kokoro says for each text, and each finished clip under a key of how
+it is made. A rebuild speaks only new or changed words, and a change to how clips are made redoes
+the clips in minutes without speaking again.
 
 Needs what tools/voiceclips.py needs for Kokoro: Python 3.12, numpy, soundfile, ffmpeg,
 espeak-ng, kokoro-onnx, kokoro-v1.0.onnx and voices-v1.0.bin.
@@ -19,8 +20,10 @@ espeak-ng, kokoro-onnx, kokoro-v1.0.onnx and voices-v1.0.bin.
 import argparse
 import hashlib
 import importlib.metadata
+import os
 import re
 import struct
+import subprocess
 import sys
 import zlib
 from pathlib import Path
@@ -40,8 +43,11 @@ CLIP_MAX = 16384
 FILE_MAX = 8_372_224
 WORD_ENTRY = 28
 CLIP_START = 2
-# Change when the shaping, resampling or encoding of clips changes, so the cache is rebuilt.
-CLIP_RECIPE = 2
+# Change when what Kokoro is given changes, such as the phonemes, so every text is spoken again.
+SPEECH_RECIPE = 1
+# Change when this file's making of clips from speech changes. A change to tools/voiceclips.py
+# makes clips again by itself.
+CLIP_RECIPE = 3
 WORDS = Path(__file__).parent / "words"
 # What Morse can send: letters, digits, and prosigns of two letters in angle brackets.
 SENDABLE = re.compile(r"(?:[A-Z0-9]|<[A-Z]{2}>)+")
@@ -107,34 +113,65 @@ def build(words: list[tuple[str, str, bytes | None, bytes | None]], factor: int 
 
 
 class Voice:
-    """Speaks clips through Kokoro, keeping each in `cache` under a key of everything that
-    shapes it."""
+    """Speaks clips through Kokoro. `cache` keeps the speech in `speech/` under a key of the
+    text and what speaks it, and each clip under a key of the speech and what makes the clip."""
 
     def __init__(self, models: Path, cache: Path):
         self.models = models
         self.cache = cache
         self.speaker = None
-        model = models / "kokoro-v1.0.onnx"
-        self.recipe = f"{CLIP_RECIPE}|{importlib.metadata.version('kokoro-onnx')}|{model.stat().st_size}|{VOICE}|{FACTOR}"
-        cache.mkdir(parents=True, exist_ok=True)
+        version = lambda tool: subprocess.run([tool, "-version" if tool == "ffmpeg" else "--version"], capture_output=True, text=True, check=True).stdout.splitlines()[0]
+        sizes = [(models / name).stat().st_size for name in ("kokoro-v1.0.onnx", "voices-v1.0.bin")]
+        self.speech_recipe = f"{SPEECH_RECIPE}|{importlib.metadata.version('kokoro-onnx')}|{sizes}|{VOICE}|{version('espeak-ng')}"
+        clips_source = hashlib.sha256((Path(__file__).parent / "voiceclips.py").read_bytes()).hexdigest()
+        self.clip_recipe = f"{CLIP_RECIPE}|{self.speech_recipe}|{FACTOR}|{clips_source}|{version('ffmpeg')}"
+        (cache / "speech").mkdir(parents=True, exist_ok=True)
 
-    def clip(self, spoken: str) -> tuple[bytes, bool]:
-        """The clip, and whether it was spoken now rather than taken from the cache."""
-        path = self.cache / (hashlib.sha256(f"{self.recipe}|{spoken}".encode()).hexdigest()[:24] + ".adpcm")
+    def clip(self, spoken: str) -> tuple[bytes, str]:
+        """The clip, and how it came: "cached", "made" from kept speech, or "spoken" now."""
+        path = self.cache / (key(f"{self.clip_recipe}|{spoken}") + ".adpcm")
         if path.exists():
-            return path.read_bytes(), False
+            return path.read_bytes(), "cached"
         import audioop
 
-        from voiceclips import OUTPUT_HZ, Speaker, resample, shape, undo_upsampling
+        import soundfile
+        from voiceclips import OUTPUT_HZ, Speaker, level, resample, shape, undo_upsampling
 
-        if self.speaker is None:
-            self.speaker = Speaker("kokoro", self.models)
-        samples, hz = self.speaker.speak(spoken)
-        pcm = np.frombuffer(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), "<i2").astype(np.float64)
-        pcm = np.clip(undo_upsampling(pcm, FACTOR), -32768, 32767).astype("<i2").tobytes()
-        clip = audioop.lin2adpcm(pcm, 2, None)[0]
-        path.write_bytes(clip)
-        return clip, True
+        speech = self.cache / "speech" / (key(f"{self.speech_recipe}|{spoken}") + ".flac")
+        how = "made" if speech.exists() else "spoken"
+        if how == "spoken":
+            if self.speaker is None:
+                self.speaker = Speaker("kokoro", self.models)
+            samples, hz = self.speaker.speak(spoken)
+            # FLAC holds integers up to full scale; `shape` sets the level again anyway.
+            part = speech.with_suffix(".part.flac")
+            soundfile.write(part, samples * (0.9 / max(np.abs(samples).max(), 1e-9)), hz, subtype="PCM_24")
+            os.replace(part, speech)
+        samples, hz = soundfile.read(speech, dtype="float32")
+        pcm = np.frombuffer(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), "<i2") / 32768
+        pcm = level(undo_upsampling(pcm, FACTOR), OUTPUT_HZ // FACTOR)
+        clip = audioop.lin2adpcm(np.clip(pcm * 32768, -32768, 32767).astype("<i2").tobytes(), 2, None)[0]
+        part = path.with_suffix(".part")
+        part.write_bytes(clip)
+        os.replace(part, path)
+        return clip, how
+
+
+def report_levels(clips: list[bytes]):
+    """Prints the speech level of the clips next to the sidetone's, which the device plays at
+    -3 dB of a clip's full scale."""
+    import audioop
+    import statistics
+
+    from voiceclips import OUTPUT_HZ, active_level
+
+    levels = [active_level(np.frombuffer(audioop.adpcm2lin(c, 2, None)[0], "<i2") / 32768, OUTPUT_HZ // FACTOR) + 3 for c in clips]
+    low, *_, high = statistics.quantiles(levels, n=20)
+    print(f"speech level against the sidetone: median {statistics.median(levels):+.1f} dB, 5% {low:+.1f}, 95% {high:+.1f}")
+
+
+def key(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()[:24]
 
 
 def main():
@@ -162,20 +199,19 @@ def main():
     clips = [(None, None)] * len(words)
     if not args.no_voice:
         voice = Voice(args.models, args.cache)
-        spoken_now = taken = 0
+        came = {"spoken": 0, "made": 0, "cached": 0}
         for i, (text, said, meaning, kind) in enumerate(words):
             # Kokoro rushes a lone letter; a period makes it the end of a sentence.
             phrases = [f"{said}." if kind == "char" else said, f"{said}. {meaning}" if meaning else None]
             pair = []
-            for phrase in phrases:
-                clip, new = voice.clip(phrase) if phrase else (None, False)
+            for phrase in filter(None, phrases):
+                clip, how = voice.clip(phrase)
                 pair.append(clip)
-                spoken_now += new
-                taken += bool(phrase) and not new
-                if new and spoken_now % 100 == 0:
-                    print(f"spoken {spoken_now}, at {i}/{len(words)} {text}", flush=True)
-            clips[i] = tuple(pair)
-        print(f"spoke {spoken_now} clips, took {taken} from the cache")
+                came[how] += 1
+                if how != "cached" and came[how] % 100 == 0:
+                    print(f"{how} {came[how]}, at {i}/{len(words)} {text}", flush=True)
+            clips[i] = tuple(pair + [None] * (2 - len(pair)))
+        print(f"spoke {came['spoken']} clips, made {came['made']} from kept speech, took {came['cached']} from the cache")
     entries = [(text, kind, clip, with_meaning) for (text, _, _, kind), (clip, with_meaning) in zip(words, clips)]
     common = sum(1 for e in entries if e[1] == "common")
     pack = build(entries)
@@ -185,6 +221,8 @@ def main():
     if over > 0:
         sys.exit(f"the pack is {over} bytes over {FILE_MAX} with no common words")
     pack = build(entries)
+    if not args.no_voice:
+        report_levels([c for e in entries for c in e[2:] if c])
     args.out.mkdir(parents=True, exist_ok=True)
     path = args.out / "F000400.bin"
     path.write_bytes(pack)

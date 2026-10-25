@@ -21,7 +21,7 @@ Both crates have the same version. `firmware/Cargo.toml` also names the version 
 
 ## Steps
 
-Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and what `tools/pack.py` needs to build the content pack: a Python 3.12 with the voice tools, and the Kokoro model files. See [Content pack](building.md#content-pack). With a full clip cache in `firmware/target/clip-cache`, the pack builds in about a minute; with none, in about 25 minutes. `cargo clean` deletes the cache.
+Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and what `tools/pack.py` needs to build the content pack: a Python 3.12 with the voice tools, and the Kokoro model files. See [Content pack](building.md#content-pack). With a full clip cache in `firmware/target/clip-cache`, the pack builds in about a minute; with only the saved speech, in about 5 minutes; with none, in about 25 minutes. `cargo clean` deletes the cache.
 
 1. Set the new version in three places: `version` in `firmware/Cargo.toml`, `version` in `logic/Cargo.toml`, and the `pocketcw-logic` dependency in `firmware/Cargo.toml`.
 2. Build once, so the `Cargo.lock` files take the new version. Commit everything.

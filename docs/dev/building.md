@@ -102,7 +102,7 @@ The content pack is `F000400.bin`: the words for the drills, each with a clip of
 - `tools/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says and, for an abbreviation, its meaning. An abbreviation gets two clips: the spelled form, "Q T H", for running text, and the spelled form then the meaning, "Q T H. location", for a word on its own and for drills.
 - `tools/words/common.txt`: the most frequent English words, from wordfreq. `tools/wordlist.py` writes it, leaving out the words in `tools/words/blocklist.txt`. It needs the `wordfreq` package, and runs only when the list changes. The pack takes the most frequent of them that fit in one update file, 8,372,224 bytes.
 
-`tools/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below). It keeps each clip in `firmware/target/clip-cache`, under a key of the spoken text, the voice and how the clip is made, so a rebuild speaks only new or changed entries. The first build speaks every clip:
+`tools/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below). It keeps what Kokoro says for each text in `firmware/target/clip-cache/speech`, about 150 MB, and each finished clip beside it under a key of what makes it: `tools/voiceclips.py`, the ffmpeg version and `CLIP_RECIPE` in `tools/pack.py`. `cargo clean` deletes both. A rebuild speaks only new or changed text. A change to how clips are made, such as their level, makes every clip again from the saved speech in about 4 minutes. The first build speaks every clip, in about 25 minutes:
 
 ```bash
 python tools/pack.py --models MODELS --out firmware/target/pack
@@ -113,6 +113,7 @@ How each clip is made, in `tools/voiceclips.py` and `tools/pack.py`:
 - Kokoro gets phonemes in the form of misaki, the tool its training data went through. espeak-ng makes the phonemes, and a table from misaki's espeak fallback converts them. Without the table, vowels sound foreign: "bee" comes out like "beay".
 - A character ends in a period. Kokoro rushes a lone letter; as the end of a sentence it says it in full.
 - Before encoding, a treble boost undoes the loss of the device's straight-line upsampling, 6 dB at the top of the band.
+- Then the speech level is set to 7 dB under the sidetone's, from the power of its 20 ms frames without the pauses. A limiter keeps the peaks under 0.8 of full scale: ADPCM overshot dense peaks by up to 16% in a test. A clip scaled by its peak alone sounds about 12 dB under the sidetone, since speech has short peaks far above its level. The build prints the level of the clips against the sidetone's.
 
 `tools/listenpack.py` builds a small pack that compares ways of making clips, to judge them on the device speaker. Each test word is made each way, as words such as `QTHA` and `QTHB`. The ways at lower rates go through what the device does to them, so the pack plays at 17,578 Hz with any firmware.
 
