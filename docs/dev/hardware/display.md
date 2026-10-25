@@ -33,11 +33,11 @@ PocketCW picks the panel in this order (`logic/src/panel.rs`):
 
 ### ID read
 
-After the reset pulse, PocketCW bit-bangs RDDID (0x04) and reads 32 bits on both PB4 and PB5. A panel answers on its SDO pin if one is wired, and on its bidirectional SDA pin otherwise. Each read runs twice, once with the pins pulled up and once pulled down. A pin whose 32 bits differ between the two reads is not driven.
+After the reset pulse, PocketCW bit-bangs RDDID (0x04) and reads 32 bits on both PB4 and PB5. A panel answers on its SDO pin if one is wired, and on its bidirectional SDA pin otherwise. Each read runs twice, once with the pins pulled up and once pulled down. A pin whose 24 ID bits differ between the two reads is not driven. The dummy bit and the 7 bits after the ID can float, so they are left out of the check.
 
 The ST7789V answer 85 85 52, right after the one dummy clock that both datasheets document, picks IPS. An ILI9341 answers 00 80 00, or a module maker's ID with ID2 at 0x80 or more, so it cannot match. No ILI9341 ID is matched, because its D3h read is not documented for the serial interface.
 
-The SYSTEM screen shows the raw 32 bits for each pin, or FLOAT. Not yet seen on a board.
+The SYSTEM screen shows the raw 32 bits read pulled up for each pin, or FLOAT. On the 2.64 Mini, B4 reads `42C2A97F`: a dummy 0, the ID 85 85 52, and 7 floating ones. B5 is FLOAT.
 
 ### F2 override
 

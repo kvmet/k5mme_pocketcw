@@ -43,9 +43,10 @@ pub struct IdRead {
 }
 
 impl IdRead {
-    /// The answer when the panel drove the pin: both pulls read the same bits.
+    /// The pulled-up answer when the panel drove the pin: both pulls read the same ID bits. The
+    /// dummy clock and the bits after the ID can float, so they may differ.
     pub fn driven(self) -> Option<u32> {
-        (self.pulled_up == self.pulled_down).then_some(self.pulled_up)
+        ((self.pulled_up ^ self.pulled_down) & ID_BITS == 0).then_some(self.pulled_up)
     }
 }
 
@@ -55,6 +56,7 @@ const ST7789V_ID: u32 = 0x85_85_52;
 /// Both datasheets put one dummy clock before the 24 ID bits, so the ID ends 7 bits above the
 /// bottom of the 32 read.
 const ID_SHIFT: u32 = 7;
+const ID_BITS: u32 = 0xFF_FFFF << ID_SHIFT;
 
 /// The panel type a driven answer names exactly, on any pin.
 pub fn detect(reads: &[IdRead]) -> Option<Panel> {
@@ -155,6 +157,11 @@ mod tests {
         IdRead { pulled_up: bits, pulled_down: bits }
     }
 
+    /// `id` after one dummy clock, with the dummy and the bits after the ID left floating.
+    fn released(id: u32) -> IdRead {
+        IdRead { pulled_up: 1 << 31 | id << ID_SHIFT | 0x7F, pulled_down: id << ID_SHIFT }
+    }
+
     #[test]
     fn st7789v_id_after_one_dummy_clock_is_ips() {
         assert_eq!(detect(&[steady(answer(0x85_85_52, 1))]), Some(Panel::Ips));
@@ -174,9 +181,15 @@ mod tests {
         let id = answer(0x85_85_52, 1);
         assert_eq!(IdRead { pulled_up: id, pulled_down: id }.driven(), Some(id));
         assert_eq!(IdRead { pulled_up: 0xFFFF_FFFF, pulled_down: 0 }.driven(), None);
-        let one_bit_differs = IdRead { pulled_up: id, pulled_down: id & !1 };
-        assert_eq!(one_bit_differs.driven(), None, "all 32 bits must agree");
-        assert_eq!(detect(&[one_bit_differs]), None);
+        let id_bit_differs = IdRead { pulled_up: id, pulled_down: id ^ 1 << ID_SHIFT };
+        assert_eq!(id_bit_differs.driven(), None, "all 24 ID bits must agree");
+        assert_eq!(detect(&[id_bit_differs]), None);
+    }
+
+    #[test]
+    fn floating_bits_around_the_id_still_detect() {
+        assert_eq!(released(0x85_85_52).driven(), Some(released(0x85_85_52).pulled_up));
+        assert_eq!(detect(&[released(0x85_85_52)]), Some(Panel::Ips));
     }
 
     #[test]
