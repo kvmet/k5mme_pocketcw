@@ -109,8 +109,9 @@ class Speaker:
             self.name = "ESPEAK-NG EN-US"
 
     def phonemes(self, text: str) -> str:
-        """What Kokoro is given for `text`."""
-        return misaki_form(self.espeak.phonemize([text])[0].strip())
+        """What Kokoro is given for `text`. espeak gives nothing for blank text."""
+        phonemized = self.espeak.phonemize([text])
+        return misaki_form(phonemized[0].strip()) if phonemized else ""
 
     def speak_phonemes(self, phonemes: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
         """Kokoro's mono float samples and their rate. Kokoro drops what is not in its
@@ -134,12 +135,17 @@ class Speaker:
         return samples, hz
 
 
+def trim(samples: np.ndarray) -> np.ndarray:
+    """`samples` without the silence at both ends."""
+    loud = np.flatnonzero(np.abs(samples) >= TRIM * np.abs(samples).max())
+    return samples[loud[0]:loud[-1] + 1]
+
+
 def shape(samples: np.ndarray, hz: int) -> np.ndarray:
     """Trims silence at both ends, scales to PEAK, and pads a short lead and tail."""
     if samples.ndim > 1:
         samples = samples.mean(axis=1)
-    loud = np.flatnonzero(np.abs(samples) >= TRIM * np.abs(samples).max())
-    samples = samples[loud[0]:loud[-1] + 1]
+    samples = trim(samples)
     samples = samples * (PEAK / np.abs(samples).max())
     return np.concatenate([np.zeros(int(LEAD_S * hz)), samples, np.zeros(int(TAIL_S * hz))]).astype(np.float32)
 
@@ -173,6 +179,35 @@ def upsample(samples: np.ndarray, factor: int) -> np.ndarray:
     start = np.concatenate([[0], to[:-1]])
     phase = np.arange(factor)
     return (start[:, None] + np.trunc((to - start)[:, None] * phase / factor)).astype(np.int16).ravel()
+
+
+# A spelled word's pauses between its letters are cut to this. Each letter ends in a period,
+# and Kokoro paused up to 225 ms after one in the word lists; a stop such as T keeps its silent
+# build up.
+GAP_S = 0.05
+GAP_FRAME_S = 0.005
+# Under this, in dB of the peak, a frame is part of a pause.
+GAP_DB = -40.0
+
+
+def close_gaps(samples: np.ndarray, hz: int) -> np.ndarray:
+    """`samples` with each pause inside them longer than GAP_S cut to GAP_S, from its middle."""
+    n = int(GAP_FRAME_S * hz)
+    frames = len(samples) // n
+    power = (samples[: frames * n].reshape(frames, n) ** 2).mean(axis=1)
+    quiet = power < np.abs(samples).max() ** 2 * 10 ** (GAP_DB / 10)
+    longest = int(GAP_S / GAP_FRAME_S)
+    keep = np.ones(len(samples), dtype=bool)
+    start = None
+    for frame, is_quiet in enumerate([*quiet, False]):
+        if is_quiet and start is None:
+            start = frame
+        elif not is_quiet and start is not None:
+            # A pause at either end is the trim's to cut, not this.
+            if start > 0 and frame < frames and frame - start > longest:
+                keep[(start + longest // 2) * n : (frame - (longest - longest // 2)) * n] = False
+            start = None
+    return samples[keep]
 
 
 FRAME_S = 0.02

@@ -50,14 +50,22 @@ COLUMNS = ("Text", "Clip", "Mark", "Says", "Note")
 @dataclass
 class Row:
     text: str
-    entry: str
+    kind: str
     clip: str
-    then: str
     meaning: str | None
     base: str
     said: str = ""
-    phonemes: str = ""
+    parts: tuple[str, ...] = ()
+    phonemes: tuple[str, ...] = ()
     speech_key: str = ""
+
+    @property
+    def entry(self) -> str:
+        return pack.entry(self.kind)
+
+    def parts_of(self, said: str) -> tuple[str, ...]:
+        """What the voice says for this clip with `said`, part by part."""
+        return next(parts for clip, parts in pack.phrases(said, self.meaning, self.kind) if clip == self.clip)
 
 
 class Review:
@@ -70,17 +78,21 @@ class Review:
         # Stops on a fix for a word in no list.
         pack.read_words(self.fixes)
         self.rows = [
-            Row(text, pack.entry(kind), clip, then, meaning, said)
+            Row(text, kind, clip, meaning, said)
             for text, said, meaning, kind in pack.read_words()
-            for clip, then in pack.phrases(meaning, kind)
+            for clip, _ in pack.phrases(said, meaning, kind)
         ]
         for row in self.rows:
             self.update(row)
 
     def update(self, row: Row):
         row.said = self.fixes.get((row.text, row.entry), row.base)
-        row.phonemes = self.voice.phonemes(row.said, row.then)
+        row.parts = row.parts_of(row.said)
+        row.phonemes = self.phonemes(row.parts)
         row.speech_key = self.voice.speech_key(row.phonemes)
+
+    def phonemes(self, parts: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(self.voice.phonemes(part) for part in parts)
 
     def state(self, row: Row) -> str:
         """good, bad, stale or unmarked."""
@@ -102,7 +114,7 @@ class Review:
     def fix(self, fixed: Row, said: str):
         """Says `said` for the row's entry from now on. A said with the phonemes of the word
         list's drops the fix."""
-        if self.voice.phonemes(said, fixed.then) == self.voice.phonemes(fixed.base, fixed.then):
+        if self.phonemes(fixed.parts_of(said)) == self.phonemes(fixed.parts_of(fixed.base)):
             self.fixes.pop((fixed.text, fixed.entry), None)
         else:
             self.fixes[fixed.text, fixed.entry] = said
@@ -336,15 +348,23 @@ class Window(QMainWindow):
             self.says.clear()
             return
         self.word.setText(row.text)
-        self.says.setText(f"Says: {row.said}{row.then}\nPhonemes: {row.phonemes}\nMark: {self.review.state(row)}")
+        self.says.setText(f"Says: {' + '.join(row.parts)}\nPhonemes: {' + '.join(row.phonemes)}\nMark: {self.review.state(row)}")
         self.note.setText(self.review.note(row))
         fixed = pack.PHONEMES.fullmatch(row.said)
         self.respelling.setText(row.base if fixed else row.said)
-        self.auto_phonemes = self.review.voice.speaker.phonemes(self.respelling.text())
+        self.auto_phonemes = self.said_phonemes(self.respelling.text())
         self.phonemes.setText(fixed[1] if fixed else self.auto_phonemes)
         self.play_timer.start()
 
-    def clip(self, phonemes: str) -> bytes | None:
+    def said_phonemes(self, said: str) -> str:
+        """The phonemes of `said` as the entry's first clip says it: a period after a character
+        and after each letter of a spelled word, so that phonemes edited from them keep these."""
+        row = self.current()
+        if row is None:
+            return ""
+        return self.review.voice.phonemes(pack.phrases(said, None, row.kind)[0][1][0])
+
+    def clip(self, phonemes: tuple[str, ...]) -> bytes | None:
         """The clip for `phonemes`, spoken now when it is not in the cache."""
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -374,7 +394,7 @@ class Window(QMainWindow):
     def respelled(self, text: str):
         """Keeps the phonemes in step with the respelling until they are edited by hand."""
         in_step = self.phonemes.text() == self.auto_phonemes
-        self.auto_phonemes = self.review.voice.speaker.phonemes(text)
+        self.auto_phonemes = self.said_phonemes(text)
         if in_step:
             self.phonemes.setText(self.auto_phonemes)
 
@@ -391,10 +411,11 @@ class Window(QMainWindow):
         if said in ("", "//"):
             self.status.setText("Nothing to speak")
             return
-        clip = self.clip(self.review.voice.phonemes(said, row.then))
+        parts = row.parts_of(said)
+        clip = self.clip(self.review.phonemes(parts))
         if clip is not None:
             self.trial = (said, clip)
-            self.status.setText(f"Trying: {said}{row.then}")
+            self.status.setText(f"Trying: {' + '.join(parts)}")
             self.player.play(clip)
 
     def keep(self):
@@ -416,7 +437,7 @@ class Window(QMainWindow):
         if row is None:
             return
         self.respelling.setText(row.base)
-        self.auto_phonemes = self.review.voice.speaker.phonemes(row.base)
+        self.auto_phonemes = self.said_phonemes(row.base)
         self.phonemes.setText(self.auto_phonemes)
         self.speak()
 

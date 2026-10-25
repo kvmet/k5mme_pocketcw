@@ -46,14 +46,23 @@ CLIP_START = 2
 SPEECH_RECIPE = 2
 # Change when this file's making of clips from speech changes. A change to tools/pack/voiceclips.py
 # makes clips again by itself.
-CLIP_RECIPE = 3
+CLIP_RECIPE = 4
 HERE = Path(__file__).parent
 WORDS = HERE / "words"
 VOICES = HERE / "voices"
 CACHE = HERE.parent.parent / "firmware" / "target" / "clip-cache"
 VOICE = "kokoro-af_heart"
-# A said of /phonemes/ in fixes.txt goes to the voice as it is.
-PHONEMES = re.compile(r"/(.+)/")
+# A said of /phonemes/ in fixes.txt goes to the voice as it is, and so does the start of a
+# clip's text in that form.
+PHONEMES = re.compile(r"/([^/]+)/")
+FIXED = re.compile(r"/([^/]+)/(.*)")
+# A said with a lone capital letter spells a word.
+SPELLED = re.compile(r"(?<!\S)[A-Z](?![^\s.,!?;:])")
+ENDS = ".,!?;:"
+# Phonemes with a sentence end inside them, after which the voice pauses.
+SENTENCES = re.compile(r"[.!?] +\S")
+# Between a word and its meaning in one clip: about the pause Kokoro makes after a sentence.
+MEANING_PAUSE_S = 0.25
 # What a cell of fixes.txt or review.txt may not hold: what ends a cell or a line.
 BREAKS = re.compile("[\t\n\r\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
 CLIPS = ("char", "word", "meaning")
@@ -107,11 +116,22 @@ def read_words(fixes: dict[tuple[str, str], str] | None = None) -> list[tuple[st
     return [(text, fixes.get((text, entry(kind)), said), meaning, kind) for text, said, meaning, kind in entries]
 
 
-def phrases(meaning: str | None, kind: str) -> list[tuple[str, str]]:
-    """(clip, then) for each clip of an entry: what follows its said. Kokoro rushes a lone
-    letter; a period makes it the end of a sentence."""
-    first = [("char", ".")] if kind == "char" else [("word", "")]
-    return first + [("meaning", f". {meaning}")] if meaning else first
+def ended(text: str) -> str:
+    """`text` ending in a period, unless it ends in a mark already; /phonemes/ too."""
+    return text if text.rstrip("/")[-1:] in ENDS else f"{text}."
+
+
+def phrases(said: str, meaning: str | None, kind: str) -> list[tuple[str, tuple[str, ...]]]:
+    """(clip, parts) for each clip of an entry: what the voice says, each part spoken on its
+    own. Kokoro rushes a lone letter and runs spelled letters together; as the end of a sentence
+    it says each one in full, so a character and each part of a spelled word end in a period. A
+    meaning clip is the word, then its meaning."""
+    if kind == "char":
+        return [("char", (ended(said),))]
+    if not PHONEMES.fullmatch(said) and SPELLED.search(said):
+        said = " ".join(ended(part) for part in said.split())
+    word = [("word", (said,))]
+    return word + [("meaning", (ended(said), ended(meaning)))] if meaning else word
 
 
 def read_table(path: Path, columns: int) -> list[list[str]]:
@@ -220,38 +240,56 @@ class Voice:
         self.clip_recipe = f"{CLIP_RECIPE}|{FACTOR}|{sha256(HERE / 'voiceclips.py')}|{version('ffmpeg')}"
         (cache / "speech").mkdir(parents=True, exist_ok=True)
 
-    def phonemes(self, said: str, then: str) -> str:
-        """What the voice is given for `said`, then `then`."""
-        fixed = PHONEMES.fullmatch(said)
+    def phonemes(self, text: str) -> str:
+        """What the voice is given for one part of a clip."""
+        fixed = FIXED.fullmatch(text)
         if fixed:
-            return fixed[1] + (self.speaker.phonemes(then) if then else "")
-        return self.speaker.phonemes(said + then)
+            return fixed[1] + (self.speaker.phonemes(fixed[2]) if fixed[2] else "")
+        return self.speaker.phonemes(text)
 
-    def speech_key(self, phonemes: str) -> str:
-        return key(f"{self.speech_recipe}|{phonemes}")
+    def speech_key(self, phonemes: tuple[str, ...]) -> str:
+        """The key of what the voice says for a clip's parts, whatever is made of it after."""
+        return key(f"{self.speech_recipe}|{' | '.join(phonemes)}")
 
-    def clip(self, phonemes: str) -> tuple[bytes, str]:
-        """The clip, and how it came: "cached", "made" from kept speech, or "spoken" now.
+    def speech(self, phonemes: str) -> tuple["np.ndarray", int, bool]:
+        """What the voice says for one part, and whether it was spoken now."""
+        import numpy as np
+        import soundfile
+
+        path = self.cache / "speech" / (self.speech_key((phonemes,)) + ".flac")
+        spoken = not path.exists()
+        if spoken:
+            samples, hz = self.speaker.speak_phonemes(phonemes, self.speed)
+            # FLAC holds integers up to full scale; `shape` sets the level again anyway.
+            part = path.with_suffix(".part.flac")
+            soundfile.write(part, samples * (0.9 / max(np.abs(samples).max(), 1e-9)), hz, subtype="PCM_24")
+            os.replace(part, path)
+        samples, hz = soundfile.read(path, dtype="float32")
+        return samples, hz, spoken
+
+    def clip(self, phonemes: tuple[str, ...]) -> tuple[bytes, str]:
+        """The clip of the parts, MEANING_PAUSE_S apart, and how it came: "cached", "made" from
+        kept speech, or "spoken" now. A part with sentences inside has its pauses shortened.
         Raises ValueError for phonemes the voice does not have."""
-        speech_key = self.speech_key(phonemes)
-        path = self.cache / (key(f"{self.clip_recipe}|{speech_key}") + ".adpcm")
+        path = self.cache / (key(f"{self.clip_recipe}|{self.speech_key(phonemes)}") + ".adpcm")
         if path.exists():
             return path.read_bytes(), "cached"
         import audioop
 
         import numpy as np
-        import soundfile
-        from voiceclips import OUTPUT_HZ, level, resample, shape, undo_upsampling
+        from voiceclips import OUTPUT_HZ, close_gaps, level, resample, shape, trim, undo_upsampling
 
-        speech = self.cache / "speech" / (speech_key + ".flac")
-        how = "made" if speech.exists() else "spoken"
-        if how == "spoken":
-            samples, hz = self.speaker.speak_phonemes(phonemes, self.speed)
-            # FLAC holds integers up to full scale; `shape` sets the level again anyway.
-            part = speech.with_suffix(".part.flac")
-            soundfile.write(part, samples * (0.9 / max(np.abs(samples).max(), 1e-9)), hz, subtype="PCM_24")
-            os.replace(part, speech)
-        samples, hz = soundfile.read(speech, dtype="float32")
+        parts = []
+        how = "made"
+        for part in phonemes:
+            samples, hz, spoken = self.speech(part)
+            how = "spoken" if spoken else how
+            if SENTENCES.search(part):
+                samples = close_gaps(samples, hz)
+            if parts:
+                parts.append(np.zeros(int(MEANING_PAUSE_S * hz), dtype=np.float32))
+            parts.append(trim(samples))
+        samples = np.concatenate(parts)
         pcm = np.frombuffer(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), "<i2") / 32768
         pcm = level(undo_upsampling(pcm, FACTOR), OUTPUT_HZ // FACTOR)
         clip = audioop.lin2adpcm(np.clip(pcm * 32768, -32768, 32767).astype("<i2").tobytes(), 2, None)[0]
@@ -332,8 +370,8 @@ def main():
         came = {"spoken": 0, "made": 0, "cached": 0}
         for i, (text, said, meaning, kind) in enumerate(words):
             pair = []
-            for clip_name, then in phrases(meaning, kind):
-                phonemes = voice.phonemes(said, then)
+            for clip_name, parts in phrases(said, meaning, kind):
+                phonemes = tuple(voice.phonemes(part) for part in parts)
                 speech_keys[text, clip_name] = voice.speech_key(phonemes)
                 try:
                     clip, how = voice.clip(phonemes)
