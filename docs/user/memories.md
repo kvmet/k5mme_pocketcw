@@ -26,11 +26,13 @@ A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. Wi
 
 Touch your key, press any F button, or leave the KEYER screen. While the memory row is closed, a dial click also stops the memory. An F button stops it as the button goes down, and does nothing else: press again to send a memory. A dial turn does not stop it.
 
+Keying from a logging program over USB also stops a memory, so the two never key the radio together. A memory you send stops the program's keying.
+
 ### Controls with the memory row open
 
 | Control | Action |
 | - | - |
-| F1 to F4 (M1 to M4) | Sends that memory once. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, the press only stops it. |
+| F1 to F4 (M1 to M4) | Sends that memory once. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, its button shows STOP, and a press of any button only stops it. |
 | F1 to F4 hold (REPEAT) | Sends that memory again and again, until you stop it. |
 | Dial turn | Changes the marked value on the KEYER screen. |
 | Dial click | Closes the memory row. While a memory sends, the click stops it instead. |

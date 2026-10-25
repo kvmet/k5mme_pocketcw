@@ -423,6 +423,8 @@ impl Ui {
             Shortcut::Timing => "TIMING",
         };
         let holds = match (self.mem_row, self.screen) {
+            // While a memory sends, a press or hold only stops it.
+            (true, _) if self.sending.is_some() => [""; 4],
             (true, _) => ["REPEAT"; 4],
             (false, Screen::Home) => [f1, "", "", ""],
             (false, Screen::Letters | Screen::Timing) => [f1, "CLEAR", "", "HOME"],
@@ -504,6 +506,10 @@ impl Ui {
                 self.key_guard.edge(down, at_ms, dit);
                 if down {
                     self.history.active(at_ms);
+                }
+                // Serial keying has no contact edge, and must still end a memory and its repeats.
+                if down && self.screen == Screen::Home {
+                    self.stop_sending(lcd);
                 }
                 if down && on_tape {
                     let paused = self.meter_paused(at_ms, dit);

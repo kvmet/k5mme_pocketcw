@@ -33,7 +33,7 @@ pub(super) struct Sending {
 impl Ui {
     pub(super) fn open_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = true;
-        self.softkeys(lcd, ["M1", "M2", "M3", "M4"]);
+        self.draw_mem_keys(lcd);
         let t = &self.theme;
         for i in 0..SLOTS {
             let y = HOME_Y + i as i32 * HOME_STEP;
@@ -45,6 +45,18 @@ impl Ui {
             text_cols(lcd, HOME_TEXT_X, y, shown, COLS - 3, color, t.bg);
         }
         self.idle_status(lcd);
+    }
+
+    /// M1 to M4 on the open MEM row, with STOP on the memory that is sending.
+    fn draw_mem_keys(&self, lcd: &mut Lcd) {
+        if !self.mem_row {
+            return;
+        }
+        let mut keys = ["M1", "M2", "M3", "M4"];
+        if let Some(sending) = self.sending {
+            keys[sending.slot] = "STOP";
+        }
+        self.softkeys(lcd, keys);
     }
 
     /// The status line when no memory is sending: what the MEM row does, if it is open.
@@ -80,6 +92,7 @@ impl Ui {
         let keying = Keying { wpm: s.wpm, effective: s.wpm, fist: 0 };
         self.play = Some(Play { text: message, keying, seed, delay_ms: 0, pitch_hz: s.tone_hz, transmit: true });
         self.sending = Some(Sending { slot, repeat, again_at: None });
+        self.draw_mem_keys(lcd);
         let _ = if s.output == Output::Paddle {
             write!(line, "M{} TONE ONLY: OUT IS PADDLE", slot + 1)
         } else {
@@ -92,6 +105,7 @@ impl Ui {
     pub(super) fn stop_sending(&mut self, lcd: &mut Lcd) {
         if self.sending.take().is_some() {
             self.stop_players();
+            self.draw_mem_keys(lcd);
             self.idle_status(lcd);
         }
     }
@@ -104,6 +118,7 @@ impl Ui {
         }
         if !sending.repeat {
             self.sending = None;
+            self.draw_mem_keys(lcd);
             return self.idle_status(lcd);
         }
         sending.again_at = Some(now_ms.wrapping_add(self.memories.every_s as u32 * 1000));

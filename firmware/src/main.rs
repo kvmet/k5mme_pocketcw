@@ -719,7 +719,8 @@ mod app {
         let mut played = [None; PLAYERS];
         let mut pitches = [0; PLAYERS];
         cx.shared.players.lock(|players| {
-            if (keying.tip || keying.ring) && PLAYER_KEYS.load(Ordering::Relaxed) {
+            // Your key or a logging program's text stops a memory, so the two never key the radio together.
+            if (keying.tip || keying.ring || serial.down) && PLAYER_KEYS.load(Ordering::Relaxed) {
                 PLAYER_KEYS.store(false, Ordering::Relaxed);
                 players[0].stop();
             }
@@ -997,6 +998,10 @@ mod app {
                             let i = if p.transmit { 0 } else { players.iter().position(|p| !p.is_active()).unwrap_or(0) };
                             if i == 0 {
                                 PLAYER_KEYS.store(p.transmit, Ordering::Relaxed);
+                            }
+                            // A memory you press cancels a logging program's text, as your key does.
+                            if p.transmit {
+                                cx.shared.serial_key.lock(sender::Sender::clear);
                             }
                             players[i].start(p.text.as_str(), p.keying, p.seed, p.delay_ms, p.pitch_hz);
                             PLAYS_STARTED.fetch_add(1, Ordering::Relaxed);
