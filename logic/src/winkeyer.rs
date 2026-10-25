@@ -37,6 +37,8 @@ pub enum Action {
 
 pub struct Winkeyer {
     open: bool,
+    /// The host asked for WK2 mode, which reports the pushbuttons.
+    wk2: bool,
     mode: u8,
     pot_min: u8,
     /// The command whose parameters are still coming: its code, with an admin command as
@@ -62,7 +64,7 @@ const ADMIN: u16 = 0x100;
 
 impl Winkeyer {
     pub const fn new() -> Self {
-        Winkeyer { open: false, mode: 0, pot_min: POT_MIN_WPM, command: None, params: [0; DEFAULTS_LEN], got: 0, need: 0, skip: 0 }
+        Winkeyer { open: false, wk2: false, mode: 0, pot_min: POT_MIN_WPM, command: None, params: [0; DEFAULTS_LEN], got: 0, need: 0, skip: 0 }
     }
 
     pub fn is_open(&self) -> bool {
@@ -72,6 +74,11 @@ impl Winkeyer {
     /// Mid-command: the next byte belongs to it, whatever it is.
     pub fn is_busy(&self) -> bool {
         self.command.is_some() || self.skip > 0
+    }
+
+    /// F1 to F4 are WinKeyer's pushbuttons PB1 to PB4, for the host's macros.
+    pub fn reports_pushbuttons(&self) -> bool {
+        self.open && self.wk2
     }
 
     /// Echo each character sent from the host, once keyed.
@@ -177,6 +184,10 @@ impl Winkeyer {
             4 => self.start(ADMIN_ECHO, 1),
             5..=7 | 21 | 24 => Action::Reply(0),
             9 => Action::Reply(REVISION),
+            10 | 11 => {
+                self.wk2 = number == 11;
+                Action::None
+            }
             23 => Action::Reply(0),
             13 => {
                 self.skip = 256;
@@ -197,6 +208,13 @@ impl Winkeyer {
     /// The status byte: busy sending, the paddles in use, and the queue over 2/3 full.
     pub fn status(busy: bool, break_in: bool, xoff: bool) -> u8 {
         0xC0 | (busy as u8) << 2 | (break_in as u8) << 1 | xoff as u8
+    }
+
+    /// The pushbutton status byte, with pushbutton `held` (0 for PB1 to 3 for PB4) down. A
+    /// WinKeyer reports one press at a time.
+    pub fn pushbutton_status(held: Option<usize>) -> u8 {
+        const BITS: [u8; 4] = [1 << 0, 1 << 1, 1 << 2, 1 << 4];
+        0xC8 | held.map_or(0, |i| BITS[i])
     }
 
     /// The speed pot byte for keyer speed `wpm`: its steps above the pot's lowest speed.
@@ -372,5 +390,18 @@ mod tests {
         assert_eq!(paddle_byte(ar), Some(b'+'), "the first sign for AR");
         let hh = morse::chars(b"<HH>").next().unwrap();
         assert_eq!(paddle_byte(hh), None);
+    }
+
+    #[test]
+    fn wk2_mode_reports_pushbuttons_until_wk1_mode_or_close() {
+        let mut wk = opened();
+        assert!(!wk.reports_pushbuttons());
+        assert_eq!(actions(&mut wk, &[0x00, 0x0B]), []);
+        assert!(wk.reports_pushbuttons());
+        assert_eq!(actions(&mut wk, &[0x00, 0x0A]), []);
+        assert!(!wk.reports_pushbuttons());
+        actions(&mut wk, &[0x00, 0x0B, 0x00, 0x03]);
+        assert!(!wk.reports_pushbuttons());
+        assert_eq!([None, Some(0), Some(1), Some(2), Some(3)].map(Winkeyer::pushbutton_status), [0xC8, 0xC9, 0xCA, 0xCC, 0xD8]);
     }
 }

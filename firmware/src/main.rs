@@ -181,6 +181,10 @@ mod app {
     static WK_BYTES_LOST: AtomicU16 = AtomicU16::new(0);
     /// The keyer speed setting, for the WinKeyer speed pot reply.
     static KEYER_WPM: AtomicU8 = AtomicU8::new(0);
+    /// The WinKeyer host asked for pushbutton reports, so F1 to F4 go to it.
+    static WK_PUSHBUTTONS: AtomicBool = AtomicBool::new(false);
+    /// SPEED changed on the device, so the WinKeyer host gets a speed pot byte.
+    static WK_POT_CHANGED: AtomicBool = AtomicBool::new(false);
 
     fn usb_out() -> UsbOut {
         match USB_OUT.load(Ordering::Relaxed) {
@@ -493,6 +497,9 @@ mod app {
             }
         }
         publish(winkeyer);
+        if WK_POT_CHANGED.swap(false, Ordering::Relaxed) && winkeyer.is_open() {
+            winkeyer_act(WkAction::SpeedPot, winkeyer, &mut cx.shared.serial_key, cx.local.wk_replies, &mut send);
+        }
         let wk_bytes = &mut *cx.local.wk_bytes;
         let chunks = &mut *cx.local.chunks;
         while let Some(mut chunk) = cx.local.unsent.take().or_else(|| chunks.try_recv().ok()).or_else(|| wk_chunk(wk_bytes)) {
@@ -574,6 +581,7 @@ mod app {
         WK_OPEN.store(winkeyer.is_open(), Ordering::Relaxed);
         WK_SERIAL_ECHO.store(winkeyer.serial_echo(), Ordering::Relaxed);
         WK_PADDLE_ECHO.store(winkeyer.paddle_echo(), Ordering::Relaxed);
+        WK_PUSHBUTTONS.store(winkeyer.reports_pushbuttons(), Ordering::Relaxed);
     }
 
     /// Up to one chunk of the bytes waiting for the WinKeyer host.
@@ -777,7 +785,18 @@ mod app {
         raw[Button::Click as usize] = high(a, POWER_BUTTON);
         raw[Button::Left as usize] = high(c, DIAL_LEFT);
         raw[Button::Right as usize] = high(c, DIAL_RIGHT);
-        cx.local.buttons.tick(raw, |event| send(Message::Button(event)));
+        let pushbuttons = wk_open && WK_PUSHBUTTONS.load(Ordering::Relaxed);
+        cx.local.buttons.tick(raw, |event| {
+            let (Event::Press(button) | Event::Repeat(button) | Event::Hold(button) | Event::Release(button)) = event;
+            let pushbutton = [Button::F1, Button::F2, Button::F3, Button::F4].iter().position(|&f| f == button);
+            match (event, pushbutton) {
+                (_, Some(_)) if !pushbuttons => send(Message::Button(event)),
+                (Event::Press(_), Some(i)) => to_host(Winkeyer::pushbutton_status(Some(i))),
+                (Event::Release(_), Some(_)) => to_host(Winkeyer::pushbutton_status(None)),
+                (_, Some(_)) => {}
+                (_, None) => send(Message::Button(event)),
+            }
+        });
     }
 
     #[task(priority = 1, shared = [keyer, audio, players, link, serial_key])]
@@ -843,6 +862,8 @@ mod app {
                 None => Ok(messages.recv().await),
             };
             let before = settings;
+            // A speed the WinKeyer host set needs no speed pot byte back.
+            let host_speed = matches!(received, Ok(Ok(Message::Speed(_))));
             edges &= SERIAL_OPEN.load(Ordering::Relaxed);
             match received {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
@@ -894,6 +915,11 @@ mod app {
             if settings != before {
                 save_at = Some(Mono::now() + SAVE_DELAY_MS.millis());
                 apply(&mut cx, &mut ui, &mut lcd, &mut bus, &mut devices, &before, &settings);
+                // After `apply` stores KEYER_WPM, which the USB task reads as soon as it is pended.
+                if settings.wpm != before.wpm && !host_speed {
+                    WK_POT_CHANGED.store(true, Ordering::Relaxed);
+                    rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
+                }
             }
             save_letters(&mut ui, &mut lcd, &mut bus, false);
             save_history(&mut ui, &mut lcd, &mut bus, false);
