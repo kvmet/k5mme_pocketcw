@@ -67,6 +67,7 @@ pub struct Hunter {
     pub state: &'static str,
     /// The report this hunter gives you.
     pub report: &'static str,
+    habits: Habits,
     wpm: u8,
     fist: u8,
     pub pitch_offset_hz: i16,
@@ -139,10 +140,12 @@ impl Bot {
         }
     }
 
-    /// Applies new options to the hunters already here: each gets a new speed and fist, and
-    /// without a pileup only the hunter you are working (or the first) stays.
+    /// Applies new options to the hunters already here, who keep their habits and send at their
+    /// own speed again, without QRS. Without a pileup only the hunter you are working (or the
+    /// first) stays.
     pub fn set_options(&mut self, options: Options, my_wpm: u8) {
         self.options = options;
+        self.qrs = 0;
         if !options.pileup {
             let keep = self.working.unwrap_or_else(|| self.first_in_pile());
             for (i, slot) in self.pile.iter_mut().enumerate() {
@@ -153,7 +156,7 @@ impl Bot {
         }
         for i in 0..PILE_MAX {
             let Some(mut h) = self.pile[i] else { continue };
-            (h.wpm, h.fist) = keying(self.options, my_wpm, &mut self.rng);
+            (h.wpm, h.fist) = h.habits.keying(self.options, my_wpm);
             self.pile[i] = Some(h);
         }
         for slot in &mut self.last {
@@ -396,11 +399,13 @@ impl Bot {
         let states = STATES_BY_AREA[digit];
         let state = states[self.random(states.len() as u32) as usize];
         let report = REPORTS[self.random(REPORTS.len() as u32) as usize];
-        let (wpm, fist) = keying(self.options, my_wpm, &mut self.rng);
+        let habits = Habits::new(&mut self.rng);
+        let (wpm, fist) = habits.keying(self.options, my_wpm);
         Hunter {
             call,
             state,
             report,
+            habits,
             wpm,
             fist,
             pitch_offset_hz: (self.random(41) as i16 - 20) * 10,
@@ -413,13 +418,27 @@ impl Bot {
     }
 }
 
-/// A station's speed and fist under `options`: the base speed, spread evenly 5 WPM either side.
-pub(crate) fn keying(options: Options, my_wpm: u8, rng: &mut Rng) -> (u8, u8) {
-    let base = if options.wpm == 0 { my_wpm } else { options.wpm };
-    let spread = if options.spread { rng.below(11) as i32 - 5 } else { 0 };
-    let wpm = (base as i32 + spread).clamp(MIN_WPM as i32, MAX_WPM as i32) as u8;
-    let fist = if options.human_fist { rng.below(13) as u8 } else { 0 };
-    (wpm, fist)
+/// A station's own offset from the base speed and its timing jitter, picked once, so new options
+/// change how it sends without making it a different station.
+#[derive(Clone, Copy)]
+pub(crate) struct Habits {
+    spread: i8,
+    fist: u8,
+}
+
+impl Habits {
+    /// Offsets spread evenly 5 WPM either side of the base speed.
+    pub(crate) fn new(rng: &mut Rng) -> Habits {
+        Habits { spread: rng.below(11) as i8 - 5, fist: rng.below(13) as u8 }
+    }
+
+    /// Speed and fist under `options`.
+    pub(crate) fn keying(self, options: Options, my_wpm: u8) -> (u8, u8) {
+        let base = if options.wpm == 0 { my_wpm } else { options.wpm };
+        let spread = if options.spread { self.spread as i32 } else { 0 };
+        let wpm = (base as i32 + spread).clamp(MIN_WPM as i32, MAX_WPM as i32) as u8;
+        (wpm, if options.human_fist { self.fist } else { 0 })
+    }
 }
 
 /// Second letters of a mainland two-letter prefix: H, L and P mark Hawaii and the Pacific,
@@ -725,10 +744,25 @@ mod tests {
     fn the_speed_spread_is_even_about_the_base() {
         let options = Options { wpm: 20, ..Options::default() };
         let mut rng = Rng::new(5);
-        let speeds: Vec<u8> = (0..2000).map(|_| keying(options, 20, &mut rng).0).collect();
+        let speeds: Vec<u8> = (0..2000).map(|_| Habits::new(&mut rng).keying(options, 20).0).collect();
         assert_eq!((speeds.iter().min(), speeds.iter().max()), (Some(&15), Some(&25)));
         let mean = speeds.iter().map(|&w| w as f32).sum::<f32>() / speeds.len() as f32;
         assert!((mean - 20.0).abs() < 0.3, "{mean}");
+    }
+
+    #[test]
+    fn a_new_speed_moves_each_hunter_by_the_same_amount() {
+        let mut bot = Bot::new(Program::Pota, "K5MME", 9, Options { wpm: 20, ..Options::default() });
+        while bot.pile_size() < 3 {
+            heard(&mut bot, "CQ POTA DE K5MME K");
+        }
+        heard(&mut bot, "QRS");
+        let before: Vec<(u8, u8)> = bot.pile().map(|h| (h.wpm, h.fist)).collect();
+        bot.set_options(Options { wpm: 30, ..Options::default() }, 20);
+        let after: Vec<(u8, u8)> = bot.pile().map(|h| (h.wpm, h.fist)).collect();
+        let moved: Vec<(u8, u8)> = before.iter().map(|&(wpm, fist)| (wpm + 10, fist)).collect();
+        assert_eq!(after, moved);
+        assert_eq!(bot.qrs, 0);
     }
 
     #[test]

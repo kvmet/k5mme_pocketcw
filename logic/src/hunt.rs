@@ -6,7 +6,7 @@ use core::fmt::Write;
 
 use crate::player::MAX_TEXT;
 use crate::qso::{
-    CALL_LEN, MAX_WPM, MIN_WPM, Options, Out, Program, QRS_STEP, REPORTS, STATES_BY_AREA, Squashed, Tx, cut, keying,
+    CALL_LEN, MAX_WPM, MIN_WPM, Options, Out, Program, QRS_STEP, REPORTS, STATES_BY_AREA, Squashed, Tx, cut, Habits,
     text_of, us_call,
 };
 use crate::rng::Rng;
@@ -20,6 +20,7 @@ pub struct Activator {
     pub state: &'static str,
     /// The report the activator gives you.
     pub report: &'static str,
+    habits: Habits,
     wpm: u8,
     fist: u8,
     pitch_offset_hz: i16,
@@ -201,10 +202,12 @@ impl Hunt {
         }
     }
 
-    /// Applies new options to the activator already calling.
+    /// Applies new options to the activator already calling, which keeps its habits and sends
+    /// at its own speed again, without QRS.
     pub fn set_options(&mut self, options: Options, my_wpm: u8) {
         self.options = options;
-        (self.activator.wpm, self.activator.fist) = keying(options, my_wpm, &mut self.rng);
+        self.qrs = 0;
+        (self.activator.wpm, self.activator.fist) = self.activator.habits.keying(options, my_wpm);
     }
 
     /// The call the activator copies from your over: yours when it is there, else a call-like
@@ -295,8 +298,9 @@ fn new_activator(options: Options, my_wpm: u8, rng: &mut Rng) -> Activator {
     let states = STATES_BY_AREA[digit as usize];
     let state = states[rng.below(states.len() as u32) as usize];
     let report = REPORTS[rng.below(REPORTS.len() as u32) as usize];
-    let (wpm, fist) = keying(options, my_wpm, rng);
-    Activator { program, call, state, report, wpm, fist, pitch_offset_hz: (rng.below(41) as i16 - 20) * 10 }
+    let habits = Habits::new(rng);
+    let (wpm, fist) = habits.keying(options, my_wpm);
+    Activator { program, call, state, report, habits, wpm, fist, pitch_offset_hz: (rng.below(41) as i16 - 20) * 10 }
 }
 
 #[cfg(test)]
