@@ -24,7 +24,7 @@ The dial click also closes the dial left contact: PC14 reads high while PA0 is p
 
 The click that wakes the device is still down when the app starts. `logic/src/input.rs` ignores that click until it is released.
 
-The F buttons also send a hold event after 800 ms, but no screen uses it.
+The F buttons also send a hold event after 500 ms. `Input` turns an F press into `SoftDown`, the hold into `SoftHold`, and the release into `Soft`, the short action. The UI skips the release of a key whose press or hold already acted. A press that `Input` did not map, such as one that skipped the boot screen or cancelled a power off, maps nothing at its hold or release.
 
 ## Panel override at power on
 

@@ -493,6 +493,11 @@ mod app {
                             send(Message::Button(Event::Press(button)));
                             send(Message::Button(Event::Release(button)));
                         }
+                        Some(SerialCommand::Hold(button)) => {
+                            send(Message::Button(Event::Press(button)));
+                            send(Message::Button(Event::Hold(button)));
+                            send(Message::Button(Event::Release(button)));
+                        }
                         Some(command) => send(Message::Serial(command)),
                         None => {}
                     }
@@ -1133,7 +1138,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) | SerialCommand::Hold(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }

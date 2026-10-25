@@ -6,7 +6,8 @@ usage: python3 -I tools/pocketcw.py [--port PORT] STEP...
 
 Steps run in order:
   F1 F2 F3 F4 LEFT RIGHT CLICK   press and release that button
-  shot FILE.png                  save the screen
+  hold F1                        hold an F button past its hold time, then release it
+  shot FILE.png                 save the screen
   wait MS                        pause, for screens that change on their own
   send TEXT                      key TEXT and wait until it is sent
   expect REGEX                   wait up to 60 s for an event line that matches
@@ -91,6 +92,12 @@ class Device:
             if b not in BUTTONS:
                 raise ValueError(f'no button {b}')
             self._write(f'PRESS {b}\n')
+
+    def hold(self, *buttons):
+        for b in buttons:
+            if b not in BUTTONS[:4]:
+                raise ValueError(f'only F1 to F4 hold, not {b}')
+            self._write(f'HOLD {b}\n')
 
     def shot(self, path=None):
         """The screen as (width, height, 8-bit RGB bytes); saved as a PNG when `path` is given."""
@@ -433,7 +440,7 @@ class Screens:
 
 # How many values each step takes.
 STEP_VALUES = {
-    'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
+    'hold': 1, 'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
     'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2,
 }
 
@@ -453,6 +460,8 @@ def steps(args):
             sys.exit(f'{word} takes milliseconds, not {values[0]}')
         if word in ('send', 'play') and len(values[0]) > MAX_SEND:
             sys.exit(f'{word} takes {MAX_SEND} characters at most, not {len(values[0])}')
+        if word == 'hold' and values[0] not in BUTTONS[:4]:
+            sys.exit(f'hold takes F1 to F4, not {values[0]}')
         if word == 'stats' and values[0] not in STATS_SAVERS:
             sys.exit(f'stats takes letters, progress or timing, not {values[0]}')
         out.append((word, values))
@@ -464,6 +473,8 @@ def run(d, plan):
         value = values[0] if values else None
         if step in BUTTONS:
             d.press(step)
+        elif step == 'hold':
+            d.hold(value)
         elif step == 'shot':
             width, height, _ = d.shot(value)
             print(f'{value}: {width} x {height}')

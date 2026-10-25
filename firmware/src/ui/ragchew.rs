@@ -137,7 +137,7 @@ impl Ui {
         let t = &self.theme;
         self.header(lcd, s, "RECEIVE", &[if c.quiz { "QUIZ" } else { "CHEW" }]);
         let pause = if c.state == State::Paused { "GO" } else { "STOP" };
-        t.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
+        self.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
         if c.quiz {
             rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         }

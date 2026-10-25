@@ -26,7 +26,7 @@ impl Ui {
         let t = &self.theme;
         let level = Text::<10>::format(format_args!("KOCH {}", self.letters.level));
         self.header(lcd, s, "LETTERS", &[level.as_str()]);
-        t.softkeys(lcd, ["SET", "CLR", "DRIL", "BACK"]);
+        self.softkeys(lcd, ["SET", "CLR", "DRIL", "BACK"]);
         for (i, &c) in KOCH.iter().enumerate() {
             let x = 2 + (i % PER_ROW) as i32 * TILE_W;
             let y = GRID_Y + (i / PER_ROW) as i32 * (TILE_H + 2);

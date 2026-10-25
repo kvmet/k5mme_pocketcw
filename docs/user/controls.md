@@ -4,13 +4,25 @@
 
 | Control | How you use it |
 | - | - |
-| F1 to F4 | The four buttons beside the screen, F1 at the top. Press a button to use it. The column at the right edge, under the header, shows what each button does on the current screen. A blank label means the button does nothing there. |
+| F1 to F4 | The four buttons beside the screen, F1 at the top. Press a button and let go to use it. The column at the right edge, under the header, shows what each button does on the current screen. A blank label means the button does nothing there. |
+| F hold | Keep an F button down for half a second. The button does its second action as soon as the half second ends, and nothing more when you let go. The small label in the button's box names the second action. A button with no second action does its usual action when you let go. |
 | Dial turn | Turn the dial left or right. Hold it turned to step again and again. |
 | Dial click | Press the dial and let go within 1 second. |
 | Dial hold | Press the dial and keep it down for 1 second. This turns the device off on every screen after the boot screen. |
 | Key | The paddle, straight key or sideswiper in the key jack. See [Keys and jacks](keys.md). |
 
 Each screen page in this manual has a table of what these controls do on that screen.
+
+## Held buttons
+
+Two held buttons do the same thing on every screen:
+
+| Hold | Label | Action |
+| - | - | - |
+| F1 | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. |
+| F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in ends. |
+
+While the MEM row is open on the KEYER screen, a held button sends its memory as a press does.
 
 On every screen, your key sounds the sidetone, keys the func jack when KEY OUT is ON, and types or keys VBand over USB when USB OUT is TEXT or VBAND. The Key row of each table lists what else the key does on that screen.
 

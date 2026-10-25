@@ -100,7 +100,7 @@ impl Ui {
             MEM_TAB => self.mem_tab_keys(),
             _ => ["TAB", "-", "+", "BACK"],
         };
-        t.softkeys(lcd, keys);
+        self.softkeys(lcd, keys);
         let mut x = 4;
         for (i, name) in TABS.iter().enumerate() {
             let w = name.len() as i32 * TINY_W + 2 * TAB_PAD;

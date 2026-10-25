@@ -22,13 +22,13 @@ A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. Wi
 
 ### Stop a memory
 
-Touch your key, or leave the KEYER screen. While the memory row is closed, any F button or a dial click also stops the memory. A dial turn does not stop it.
+Touch your key, press any F button, or leave the KEYER screen. While the memory row is closed, a dial click also stops the memory. An F button stops it as the button goes down, and does nothing else: press again to send a memory. A dial turn does not stop it.
 
 ### Controls with the memory row open
 
 | Control | Action |
 | - | - |
-| F1 to F4 (M1 to M4) | Sends that memory, in place of a memory that is sending. With AFTER SEND set to CLOSE, the memory row closes. |
+| F1 to F4 (M1 to M4) | Sends that memory. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, the press only stops it. |
 | Dial turn | Changes the marked value on the KEYER screen. |
 | Dial click | Closes the memory row. While a memory sends, the click stops it instead. |
 | Dial hold | Turns the device off. |

@@ -115,7 +115,7 @@ impl Ui {
         let t = &self.theme;
         self.header(lcd, s, "RECEIVE", &[rx.drill.kind.name()]);
         let pause = if rx.state == State::Paused { "GO" } else { "STOP" };
-        t.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
+        self.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_receive_info(lcd);
         self.draw_receive_rows(lcd);

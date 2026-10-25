@@ -155,6 +155,8 @@ pub struct Ui {
     memories_saved: Memories,
     /// The MEM row is open on Home: F1..F4 send M1..M4.
     mem_row: bool,
+    /// Each F key's press or hold already acted, so its release does nothing.
+    spent: [bool; 4],
     sending: Option<memory::Sending>,
     /// CLR on the Letters screen was pressed once.
     confirm_clear: bool,
@@ -219,6 +221,7 @@ impl Ui {
             memories,
             memories_saved: memories,
             mem_row: false,
+            spent: [false; 4],
             sending: None,
             confirm_clear: false,
             stop: false,
@@ -267,6 +270,18 @@ impl Ui {
     /// Runs `action` on the current screen at `now_ms`. Changes land in `s`; the caller applies
     /// them.
     pub fn act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
+        match action {
+            Action::SoftDown(key) => {
+                self.spent[key as usize] = self.soft_down(lcd);
+                return;
+            }
+            Action::SoftHold(key) => {
+                self.spent[key as usize] = self.hold_act(lcd, s, key);
+                return;
+            }
+            Action::Soft(key) if core::mem::take(&mut self.spent[key as usize]) => return,
+            _ => {}
+        }
         if self.dial_act(lcd, s, action, now_ms) {
             return;
         }
@@ -284,6 +299,48 @@ impl Ui {
             Screen::Progress => self.progress_act(lcd, s, action),
             Screen::Radio => self.radio_act(lcd, s, action),
         }
+    }
+
+    /// An F key went down. A memory that sends stops at once, and that is all the key does.
+    /// True when the key is spent.
+    fn soft_down(&mut self, lcd: &mut Lcd) -> bool {
+        if self.screen != Screen::Home || self.sending.is_none() {
+            return false;
+        }
+        self.stop_sending(lcd);
+        true
+    }
+
+    /// The second action of a held F key: F1 turns KEY OUT on or off and F4 opens KEYER, on
+    /// every screen. True when the key has one here.
+    fn hold_act(&mut self, lcd: &mut Lcd, s: &mut Settings, key: u8) -> bool {
+        if self.mem_row {
+            return false;
+        }
+        match key {
+            0 => {
+                s.adjust(Field::KeyOut, 1);
+                match self.screen {
+                    Screen::Home => self.draw_home_value(lcd, s, Field::KeyOut),
+                    Screen::Settings => self.draw_settings(lcd, s),
+                    _ => {}
+                }
+                self.status(lcd, if s.key_out { "KEY OUT ON" } else { "KEY OUT OFF" });
+            }
+            3 if self.screen != Screen::Home => self.open(lcd, s, Screen::Home),
+            _ => return false,
+        }
+        true
+    }
+
+    /// The F key labels: `keys` for a press, and this screen's hold labels.
+    fn softkeys(&self, lcd: &mut Lcd, keys: [&str; 4]) {
+        let holds = match (self.mem_row, self.screen) {
+            (true, _) => [""; 4],
+            (false, Screen::Home) => ["KEYOUT", "", "", ""],
+            (false, _) => ["KEYOUT", "", "", "HOME"],
+        };
+        self.theme.softkeys(lcd, keys, holds);
     }
 
     /// Shows a keyer speed set from outside the screen, on the screens that show it.
@@ -552,6 +609,9 @@ impl Ui {
         // A practice session stays alive while its settings are open.
         if screen != Screen::Settings && self.session.as_ref().map(Session::screen) != Some(screen) {
             self.session = None;
+        }
+        if screen != Screen::Settings {
+            self.settings_from = None;
         }
         if self.sending.is_some() {
             self.sending = None;

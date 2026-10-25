@@ -17,6 +17,7 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | Command | Device |
 | - | - |
 | `PRESS F1` to `PRESS F4` | Presses and releases that soft key. No reply. |
+| `HOLD F1` to `HOLD F4` | Presses that soft key, holds it past its hold time, and releases it. No reply. The dial cannot be held, since a held click turns the device off. |
 | `PRESS LEFT`, `PRESS RIGHT` | Turns the dial one step. No reply. |
 | `PRESS CLICK` | Presses and releases the dial. No reply. |
 | `SEND TEXT` | Keys up to 48 characters of text. See [Send](#send). |

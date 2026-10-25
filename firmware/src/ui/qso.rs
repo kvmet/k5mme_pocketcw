@@ -148,7 +148,7 @@ impl Ui {
         let Some(Session::Qso(q)) = &self.session else { return };
         let t = &self.theme;
         self.header(lcd, s, "QSO", &[q.bot.program.name()]);
-        t.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_qso_lines(lcd);
         self.draw_qso_state(lcd);

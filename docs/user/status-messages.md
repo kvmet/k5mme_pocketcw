@@ -37,6 +37,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `n SERIAL ERRORS` | USB refused `n` reads or writes on the serial port. |
 | `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
+| `KEY OUT ON`, `KEY OUT OFF` | You held F1 and turned KEY OUT on or off. See [Controls](controls.md#held-buttons). |
 
 ## WinKeyer
 

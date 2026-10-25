@@ -42,7 +42,7 @@ impl Ui {
     pub(super) fn draw_radio(&self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "RADIO", &[]);
-        t.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
+        self.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
         self.draw_radio_info(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         for row in 0..ROWS {

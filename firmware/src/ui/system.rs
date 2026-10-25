@@ -102,7 +102,7 @@ impl Ui {
     pub(super) fn draw_system(&mut self, lcd: &mut Lcd, s: &pocketcw_logic::settings::Settings) {
         let t = &self.theme;
         self.header(lcd, s, "SYSTEM", &[]);
-        t.softkeys(lcd, ["SET", "", "", "BACK"]);
+        self.softkeys(lcd, ["SET", "", "", "BACK"]);
         for row in ROWS {
             text(lcd, 10, row.y(), row.label(), t.muted, t.bg);
             self.draw_system_value(lcd, row);

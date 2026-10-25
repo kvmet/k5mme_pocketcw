@@ -236,6 +236,7 @@ python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
 | Step | Does |
 | - | - |
 | `F1` to `F4`, `LEFT`, `RIGHT`, `CLICK` | Presses and releases that button. `LEFT` and `RIGHT` turn the dial one step. |
+| `hold F1` to `hold F4` | Holds that F button past its hold time, then releases it. |
 | `shot FILE.png` | Saves the screen. |
 | `wait MS` | Pauses, for a screen that changes on its own. |
 | `send TEXT` | Keys the text and waits until it is sent, then shows what the device decoded. Put text with spaces in quotes. |
@@ -253,7 +254,7 @@ python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
 
 Event lines show as they arrive, after `< `. The script finds the serial port by itself when there is only one; else give it with `--port PORT` before the steps.
 
-A Python script can load the file and use its `Device` class: `press`, `shot`, `send`, `play`, `stop`, `info`, `get`, `set`, `stats`, `edges`, `expect`, `listen` and `drain` do what the steps do. A command the device answers with `ERROR` raises `RuntimeError`.
+A Python script can load the file and use its `Device` class: `press`, `hold`, `shot`, `send`, `play`, `stop`, `info`, `get`, `set`, `stats`, `edges`, `expect`, `listen` and `drain` do what the steps do. A command the device answers with `ERROR` raises `RuntimeError`.
 
 ### Every screen
 

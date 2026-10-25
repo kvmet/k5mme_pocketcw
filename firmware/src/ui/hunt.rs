@@ -95,7 +95,7 @@ impl Ui {
     pub(super) fn draw_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "HUNT", &[s.callsign()]);
-        t.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_hunt_lines(lcd);
         self.draw_hunt_state(lcd);

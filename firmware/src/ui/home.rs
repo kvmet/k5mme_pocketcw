@@ -55,7 +55,7 @@ impl Ui {
     pub(super) fn draw_home(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
-        t.softkeys(lcd, KEYS);
+        self.softkeys(lcd, KEYS);
         rect(lcd, DIGITS_X - 5, DIGITS_Y - 3, DIGITS_W + 10, DIGITS_H + 6, t.panel());
         tiny(lcd, DIGITS_X + DIGITS_W + 8, DIGITS_Y + DIGITS_H - 12, "WPM", t.muted, t.bg);
         for (i, label) in ["TONE", "VOL", "OUT", "DIT"].iter().enumerate() {

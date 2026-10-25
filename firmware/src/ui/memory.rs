@@ -45,7 +45,7 @@ pub(super) struct Sending {
 impl Ui {
     pub(super) fn open_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = true;
-        self.theme.softkeys(lcd, ["M1", "M2", "M3", "M4"]);
+        self.softkeys(lcd, ["M1", "M2", "M3", "M4"]);
         let t = &self.theme;
         for i in 0..SLOTS {
             let y = HOME_Y + i as i32 * HOME_STEP;
@@ -76,7 +76,7 @@ impl Ui {
 
     pub(super) fn close_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = false;
-        self.theme.softkeys(lcd, super::home::KEYS);
+        self.softkeys(lcd, super::home::KEYS);
         self.draw_decode_all(lcd);
     }
 
@@ -224,7 +224,7 @@ impl Ui {
                     self.draw_mem_tab_row(lcd, row);
                     self.draw_mem_tab_row(lcd, next);
                     if (row < SLOTS) != (next < SLOTS) {
-                        self.theme.softkeys(lcd, self.mem_tab_keys());
+                        self.softkeys(lcd, self.mem_tab_keys());
                     }
                 }
             }

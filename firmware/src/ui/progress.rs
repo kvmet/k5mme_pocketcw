@@ -52,7 +52,7 @@ impl Ui {
         let (sessions, n) = self.history.sessions();
         let count = Text::<12>::format(format_args!("{n} SESSIONS"));
         self.header(lcd, s, "PROGRESS", &[count.as_str()]);
-        t.softkeys(lcd, ["", "LTRS", "", "BACK"]);
+        self.softkeys(lcd, ["", "LTRS", "", "BACK"]);
         let bar_color = gfx::mix(t.fg, t.bg, 45);
 
         // Bars and hollow squares differ in shape, so the legend works without color.
