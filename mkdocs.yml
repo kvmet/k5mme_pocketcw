@@ -74,3 +74,4 @@ nav:
           - dev/hardware/decoder-board.md
           - dev/hardware/board-variants.md
           - dev/hardware/vendor-firmware.md
+  - credits.md

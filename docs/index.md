@@ -20,6 +20,7 @@ PocketCW was tested on a Mini with board version 2.64. Other boards from 2.60 an
 
 - [User manual](user/index.md): install PocketCW, go back to the stock firmware, and use every screen.
 - [Developer docs](dev/index.md): the hardware reference, the code layout, building, fonts and releases.
+- [Credits](credits.md): the data, assets, tools and ideas PocketCW builds on.
 
 ## Links
 

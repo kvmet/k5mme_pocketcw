@@ -28,6 +28,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `player` | Sends text as Morse, with optional human timing errors. |
 | `synth`, `volume` | Mixes the sidetone, up to four stations, band noise and fading into one signal. Maps volume levels to codec registers. |
 | `adpcm` | Decodes voice clips and raises their sample rate by a whole factor. |
+| `pack` | The content pack format: header, word list and voice clips. |
 | `drill`, `letters`, `ragchew` | Receive drills, Koch levels, letter statistics, and ragchew QSOs. |
 | `qso`, `hunt` | The bots for activating and for hunting. |
 | `progress` | Practice history, one slot per session. |
@@ -52,6 +53,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `audio`, `codec`, `es8388`, `wm8978` | The PA8 audio output and the two audio codecs. |
 | `i2c`, `eeprom`, `store` | The I2C bus, the EEPROM, and where each record lives. |
 | `spi_flash` | The 16 MB SPI flash, which shares SPI1 with the screen. |
+| `pack`, `speech` | Opens the content pack, and speaks a word's clip through the synth. |
 | `battery` | ADC readings of the battery and the supply. |
 | `link` | The serial link to the decoder board. |
 | `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard and serial port. |

@@ -54,7 +54,7 @@ A GigaDevice GD25Q128 (JEDEC ID `C8 40 18`), 16 MB, on SPI1 with the screen: `FL
 - Programming a 256 byte page takes at most 917 µs, with the transfer at 18 MHz.
 - One page programmed in 16 pieces of 16 bytes reads back whole. So small records can go into a page one at a time.
 
-`firmware/src/spi_flash.rs` is the driver: read 0x03, page program 0x02, 4 KB erase 0x20, JEDEC ID 0x9F, SFDP 0x5A, status 0x05, 0x35 and 0x15. The LCD changes the SPI1 divider and PB4, so every flash command sets both. The app does not use the SPI flash yet.
+`firmware/src/spi_flash.rs` is the driver: read 0x03, page program 0x02, 4 KB erase 0x20, JEDEC ID 0x9F, SFDP 0x5A, status 0x05, 0x35 and 0x15. The LCD changes the SPI1 divider and PB4, so every flash command sets both. The app reads the content pack (`firmware/src/pack.rs`) and writes nothing.
 
 ## No clock
 

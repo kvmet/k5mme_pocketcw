@@ -94,6 +94,33 @@ The screen shows the clock source, the USB state, the bus reset count, and the r
 
 The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flash the app again after.
 
+## Content pack
+
+The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart`. `logic/src/pack.rs` gives the format. The words come from two lists:
+
+- `tools/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says. Abbreviations are spelled, then given their meaning: `QTH` says "Q T H. location".
+- `tools/words/common.txt`: the 3000 most frequent English words, from wordfreq. `tools/wordlist.py` writes it, leaving out the words in `tools/words/blocklist.txt`. It needs the `wordfreq` package, and runs only when the list changes.
+
+`tools/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below), and takes about as long as Kokoro needs for 3131 words:
+
+```bash
+python tools/pack.py --models MODELS --out firmware/target/pack
+```
+
+`--no-voice` builds the words without clips, in a second. `--fixture logic/fixtures/pack.bin` writes the small pack the logic tests read; build it again after a format change.
+
+Install it, then speak a word over the serial port:
+
+```bash
+tools/pocketcw-flash firmware/target/pack/F000400.bin
+```
+
+```bash
+python3 -I tools/pocketcw.py info say QTH say 73 say hello
+```
+
+`INFO` gives `PACK=` and the word count, or `NONE`, `OLD` or `BAD`. At startup the device checks the word list's CRC, and not the clips', which take too long to read.
+
 ## Voice probe
 
 `firmware/src/bin/voiceprobe.rs` plays spoken words through PA8, so you can score by ear whether a voice is clear enough. Each image holds one voice: 20 words at 8789 Hz and 20 at 5859 Hz, the 17,578 Hz sample rate divided by 2 and 3. It also times the synth's heaviest load against the sample period, and shows it as `SYNTH worst/4096 MEAN n` in CPU cycles.

@@ -50,6 +50,8 @@ sh tools/mkimage.sh
 
 PocketCW is licensed under the [GNU General Public License v3.0 or later](LICENSE).
 
+[Credits](docs/credits.md) lists the data, assets, tools and ideas PocketCW builds on.
+
 The firmware draws text with [B612 Mono](https://github.com/polarsys/b612), licensed under the [SIL Open Font License 1.1](firmware/src/B612-OFL.txt).
 
 Vendor firmware files are not part of this project. To go back to stock, get them from [admvip/CW-Pokemon-Infomation](https://github.com/admvip/CW-Pokemon-Infomation).

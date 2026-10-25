@@ -21,9 +21,10 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `PRESS CLICK` | Presses and releases the dial. No reply. |
 | `SEND TEXT` | Keys up to 48 characters of text. See [Send](#send). |
 | `PLAY TEXT` | Sounds up to 48 characters of text. See [Play](#play). |
+| `SAY WORD` | Speaks a word from the content pack. Answers `OK SAY WORD`, or `ERROR SAY: NO PACK`, `ERROR SAY: NOT IN PACK`, or `ERROR SAY: NO CLIP`. Lower case counts as upper case; a prosign is written as `<BK>`. |
 | `STOP` | Stops the text of `SEND` and `PLAY`, and anything else the device is sounding. No reply. |
 | `SHOT` | Sends the screen. See [Screenshot](#screenshot). |
-| `INFO` | Answers `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS`: the firmware version, the screen, and the panel, `IPS` or `ILI9341`. |
+| `INFO` | Answers `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS PACK=3131`: the firmware version, the screen, the panel (`IPS` or `ILI9341`), and the content pack's word count, or `NONE`, `OLD` for a pack of an earlier format, or `BAD` for a corrupt one. |
 | `GET NAME`, `GET` | Sends a setting or memory, or all of them. See [Settings](#settings). |
 | `SET NAME VALUE` | Changes a setting or memory. See [Settings](#settings). |
 | `EDGE ON`, `EDGE OFF` | Starts or stops the key timing lines. See [Edges](#edges). |
