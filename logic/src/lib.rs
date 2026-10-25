@@ -20,6 +20,7 @@ pub mod listen;
 mod math;
 pub mod memories;
 pub mod morse;
+pub mod pack;
 pub mod panel;
 pub mod player;
 pub mod progress;
