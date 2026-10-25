@@ -141,7 +141,7 @@ impl Ui {
         let chips = [
             Chip { label: call_label, value: if reveal { a.call.as_str() } else { "" }, mark },
             Chip { label: "RST", value: if reveal { a.report } else { "" }, mark: None },
-            Chip { label: "STATE", value: if reveal { a.state } else { "" }, mark: None },
+            Chip { label: "STATE", value: if reveal { exchange::region(a.state) } else { "" }, mark: None },
             Chip { label: "FROM", value: if reveal { place } else { "" }, mark: None },
         ];
         exchange::draw_chips(lcd, t, chips);

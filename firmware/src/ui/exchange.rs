@@ -34,6 +34,11 @@ pub(super) struct Chip<'a> {
     pub mark: Option<Rgb565>,
 }
 
+/// What the state chip shows: a station outside the US and Canada sends no state.
+pub(super) fn region(state: &str) -> &str {
+    if state.is_empty() { "DX" } else { state }
+}
+
 /// The NOW row: what the chips show, then the log count in `log_color`.
 pub(super) fn draw_now(lcd: &mut Lcd, t: &Theme, label: &str, log: &str, log_color: Rgb565) {
     rect(lcd, 0, NOW_Y, MAIN, 12, t.bg);

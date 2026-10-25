@@ -9,8 +9,8 @@ Open 06 HUNT in the [menu](menu.md). The header shows HUNT and the RCV, SND and 
 Your over ends when you stop keying for three word gaps. The footer tells you what to send next.
 
 1. The activator calls CQ, such as `CQ POTA DE K1ABC K1ABC K`. While you are quiet, the activator calls again 3.5 seconds after each CQ. When you start to key, the CQs stop.
-2. Send your callsign. For a park to park QSO (P2P), send `P2P` with your callsign. The activator sends your callsign, your report and its state, such as `K5XYZ TU 5NN CA CA <BK>`.
-3. Close the QSO: send TU, a report, your state and 72 or 73, such as `TU 5NN TX 72`. The activator says goodbye: `TU 72 E E`.
+2. Send your callsign. For a park to park QSO (P2P), send `P2P` with your callsign. The activator sends your callsign, your report and its state, such as `K5XYZ GM UR 5NN CA CA BK`. An activator in Canada sends its province, such as `ON`. An activator outside the US and Canada sends no state.
+3. Close the QSO: send TU, a report, your state and 72 or 73, such as `TU 5NN TX 72`. The activator says goodbye, such as `TU 72 E E`.
 4. Log the QSO: key the activator's callsign, without `/P`. The activator you logged shows in the items, and the next activator calls 1.5 seconds later.
 
 The activator can copy your callsign wrong. This happens when you send a callsign with one character different from yours. The activator then sends that wrong callsign in its exchange. Send your callsign again before you close, and the activator sends the exchange again with your callsign. If you close with the wrong callsign, the QSO is busted.
@@ -41,7 +41,7 @@ Under the transcript:
 | GOOD | QSOs where you logged the activator's callsign right and the activator copied your callsign right. |
 | CALL | The activator's callsign. After you log, the label says COPIED with a green edge, MISSED with a red edge when you keyed a wrong callsign, or BUSTED with a red edge when the activator copied your callsign wrong. |
 | RST | The report the activator gave you. |
-| STATE | The activator's state. |
+| STATE | The activator's state or province, or DX for an activator outside the US and Canada. |
 | FROM | PARK, SUMMIT, or P2P for a park to park QSO. |
 
 During a QSO, only HINT shows the values of the items. `...` marks an item with no value.

@@ -82,15 +82,17 @@ impl Qso {
     }
 
     /// Adds the bot's answers to the queue and the transcript; the pileup's calls share a line.
-    fn queue(&mut self, txs: &[Option<Tx>]) {
+    /// `signing_off` labels the farewell of a hunter the bot has already logged.
+    fn queue(&mut self, txs: &[Option<Tx>], signing_off: Option<Text<CALL_LEN>>) {
         let mut pile = Text::<MAX_TEXT>::new();
         for (k, tx) in txs.iter().flatten().enumerate() {
             if let Some(slot) = self.queue.iter_mut().find(|q| q.is_none()) {
                 *slot = Some((*tx, k == 0));
             }
             if tx.working {
-                let call = self.bot.working().map(|h| h.call).unwrap_or_default();
-                push_scrolling(&mut self.lines, Line { who: Who::Working, call, text: tx.text, hidden: true });
+                let working = self.bot.working().map(|h| h.call);
+                let call = working.or(signing_off).unwrap_or_default();
+                push_scrolling(&mut self.lines, Line { who: Who::Working, call, text: tx.text, hidden: working.is_some() });
             } else {
                 // A full line goes to the transcript, and the next call starts a new one.
                 if !pile.is_empty() && pile.len() + PILE_GAP.len() + tx.text.len() > MAX_TEXT {
@@ -116,7 +118,11 @@ impl Qso {
         let _ = if !self.over.is_empty() {
             write!(step, "YOUR OVER ENDS WHEN YOU PAUSE")
         } else if let Some(h) = bot.working() {
-            if self.hint { write!(step, "SEND: TU {} {bye} E E", h.state) } else { write!(step, "SEND: TU, THEIR STATE, {bye} E E") }
+            if h.state.is_empty() {
+                write!(step, "SEND: TU {bye} E E")
+            } else if self.hint {
+                write!(step, "SEND: TU {} {bye} E E", h.state)
+            } else { write!(step, "SEND: TU, THEIR STATE, {bye} E E") }
         } else if let Some(h) = bot.pile().next() {
             if self.hint { write!(step, "SEND: {} 5NN", h.call.as_str()) } else { write!(step, "SEND A CALL YOU COPIED, THEN 5NN") }
         } else {
@@ -192,7 +198,7 @@ impl Ui {
         let chips = [
             Chip { label: "CALL", value: shown.as_ref().map_or("", |h| h.call.as_str()), mark: working.map(|_| GOOD) },
             Chip { label: "RST", value: if reveal { shown.map_or("", |h| h.report) } else { "" }, mark: None },
-            Chip { label: state_label, value: if reveal { shown.map_or("", |h| h.state) } else { "" }, mark: state_color },
+            Chip { label: state_label, value: if reveal { shown.map_or("", |h| exchange::region(h.state)) } else { "" }, mark: state_color },
             Chip { label: "PILE", value: pile.as_str(), mark: None },
         ];
         exchange::draw_chips(lcd, t, chips);
@@ -251,7 +257,7 @@ impl Ui {
                 line.hidden = false;
             }
         }
-        q.queue(&txs);
+        q.queue(&txs, working.map(|h| h.call));
         self.draw_qso_lines(lcd);
         self.draw_qso_state(lcd);
         self.draw_over(lcd);

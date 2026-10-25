@@ -1,6 +1,8 @@
 # Ragchew
 
-In a ragchew, two stations hold a full QSO for you to copy. One station calls CQ, the other answers, and they trade signal reports, names, cities (QTH), rigs, antennas and weather (WX). Then they sign off with 73. After 8 overs, two new stations start a new QSO.
+In a ragchew, two stations hold a full QSO for you to copy. One station calls CQ, the other answers, and they trade signal reports, names, cities (QTH), rigs, antennas, weather (WX), years licensed, ages and jobs. Then they sign off with 73, and the station that called CQ sends the last `E E`. After 11 overs, two new stations start a new QSO.
+
+Each station has its own way to word its overs, such as `NAME` or `OP`, and `HW?` or `HW CPY?`. Most stations are in the US. Some are in Canada or other countries: these send temperatures in Celsius and antenna heights in meters, and a station outside the US and Canada sends a city with no state.
 
 Open the ragchew from the [receive drills](receive.md): press F2 (KIND) on the CALLS drill. There are two kinds:
 
@@ -28,7 +30,7 @@ The footer repeats this choice.
 
 After an over that holds a fact, the screen asks one question, such as:
 
-`SENDER'S CALL?`, `RST?`, `NAME?`, `QTH CITY?`, `RIG?`, `POWER IN WATTS?`, `ANTENNA?`, `WX?` or `TEMPERATURE?`
+`SENDER'S CALL?`, `RST?`, `NAME?`, `QTH CITY?`, `RIG?`, `POWER IN WATTS?`, `ANTENNA?`, `WX?`, `TEMPERATURE?`, `YEARS LICENSED?`, `AGE?` or `JOB?`
 
 1. The status shows `YOUR TURN`. Start to key the answer within 10 seconds.
 2. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your answer ends.

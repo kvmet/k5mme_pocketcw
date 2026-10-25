@@ -8,6 +8,7 @@ DE	D E	from
 K	K	over
 <KN>	K N	prosign, over, to you only
 <BK>	B K	prosign, back to you
+BK	B K	back to you
 <SK>	S K	prosign, end of contact
 <AR>	ay R	prosign, end of message
 <BT>	B T	prosign, break
@@ -194,13 +195,17 @@ SUE	sue
 
 # City names the ragchew drill sends; a city of two words has an entry for each
 ALBANY	albany
+AMSTERDAM	amsterdam
 ATLANTA	atlanta
 AUSTIN	austin
 BALTIMORE	baltimore
+BERLIN	berlin
 BOISE	boy see
 BOZEMAN	bozeman
+BRISTOL	bristol
 BUFFALO	buffalo
 BURLINGTON	burlington
+CALGARY	calgary
 CONCORD	concord
 DAYTON	dayton
 DENVER	denver
@@ -208,33 +213,59 @@ DES	duh
 DETROIT	detroit
 DIEGO	diego
 DOVER	dover
+EDMONTON	edmonton
 EL	el
 ERIE	erie
 EUGENE	eugene
 FARGO	fargo
 FE	fay
 FRESNO	fresno
+HALIFAX	halifax
+HAMBURG	hamburg
 HARTFORD	hartford
+KYOTO	kyoto
+LEEDS	leeds
+LYON	lyon
 MADISON	madison
+MADRID	madrid
+MELBOURNE	melbourne
+MILAN	milan
 MOINES	moyn
+MONCTON	moncton
+MONTREAL	montreal
+MUNICH	munich
 NASHVILLE	nashville
 NEWARK	newark
 OAKLAND	oakland
 OMAHA	omaha
+OSAKA	osaka
+OTTAWA	ottawa
 PASO	paso
 PEORIA	peoria
+PERTH	perth
 PITTSBURGH	pittsburgh
 PORTLAND	portland
+QUEBEC	quebec
 RALEIGH	raleigh
 REDDING	redding
+REGINA	regina
 RENO	reno
 RICHMOND	richmond
+ROME	rome
+SASKATOON	saskatoon
 SEATTLE	seattle
 ST	saint
 TAMPA	tampa
+TOKYO	tokyo
 TOLEDO	toledo
 TRENTON	trenton
 TUCSON	too sawn
 TULSA	tulsa
+TURIN	turin
+UTRECHT	utrecht
+VALENCIA	valencia
+VANCOUVER	vancouver
+VICTORIA	victoria
 WHEELING	wheeling
 WICHITA	wichita
+WINNIPEG	winnipeg

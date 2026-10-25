@@ -116,6 +116,8 @@ pub struct Bot {
     /// Words per minute slower than the hunters' own speed, from your QRS requests to the hunter
     /// you are working.
     qrs: u8,
+    /// GM, GA or GE: one time of day for the activation.
+    greeting: &'static str,
 }
 
 pub(crate) const QRS_STEP: u8 = 4;
@@ -125,11 +127,13 @@ pub(crate) const MAX_WPM: u8 = 40;
 impl Bot {
     pub fn new(program: Program, my_call: &str, seed: u32, options: Options) -> Bot {
         let call = Text::format(format_args!("{my_call}"));
+        let mut rng = Rng::new(seed);
+        let greeting = GREETINGS[rng.below(GREETINGS.len() as u32) as usize];
         Bot {
             program,
             options,
             my_call: call,
-            rng: Rng::new(seed),
+            rng,
             pile: [None; PILE_MAX],
             working: None,
             exchange: Exchange::default(),
@@ -137,6 +141,7 @@ impl Bot {
             copied: 0,
             last: [None; PILE_MAX],
             qrs: 0,
+            greeting,
         }
     }
 
@@ -214,6 +219,10 @@ impl Bot {
         }
 
         if self.exchange.replied && self.closes(&others) {
+            let names_next = self.exact_call(others.as_str()).is_some_and(|i| Some(i) != self.working);
+            if !names_next {
+                self.farewell(out);
+            }
             self.log(words);
             // A call after the closing works that hunter next: TU NY 72 K2XYZ 5NN.
             if let Some(i) = self.exact_call(others.as_str()) {
@@ -271,10 +280,22 @@ impl Bot {
         ["TU", "73", "72", "TNX", "EE", "<SK>"].iter().any(|w| rest.as_str().contains(w))
     }
 
+    /// Two hunters in three sign off before they go.
+    fn farewell(&mut self, out: Out) {
+        let Some(i) = self.working else { return };
+        let text = match self.random(3) {
+            0 => return,
+            1 => "E E",
+            _ => "73 E E",
+        };
+        self.send(out, [Some((i, text_of(text), true))]);
+    }
+
     fn log(&mut self, words: &[&str]) {
         let Some(i) = self.working.take() else { return };
         let Some(hunter) = self.pile[i].take() else { return };
-        let copied = sent_word(words, hunter.state);
+        // A DX hunter sends no state, so there is nothing to copy back.
+        let copied = hunter.state.is_empty() || sent_word(words, hunter.state);
         self.exchange = Exchange { replied: false, state_copied: Some(copied) };
         self.logged = self.logged.saturating_add(1);
         self.copied = self.copied.saturating_add(copied as u8);
@@ -320,16 +341,18 @@ impl Bot {
 
     fn send_exchange(&mut self, i: usize, out: Out) {
         let Some(h) = self.pile[i] else { return };
-        let mut text = Text::new();
-        let variant = self.random(4);
-        let (st, rst, me) = (h.state, h.report, self.my_call.as_str());
-        let _ = match (self.program, variant) {
-            (Program::Pota, 0) => write!(text, "RR TU {rst} {st} {st} 72"),
-            (Program::Pota, 1) => write!(text, "TU UR {rst} {rst} {st} {st} 73"),
-            (Program::Pota, 2) if !me.is_empty() => write!(text, "{me} TU {rst} {st} 72"),
-            (Program::Pota, _) => write!(text, "R TU {rst} {st} <BK>"),
-            (Program::Sota, 0) => write!(text, "R R TU {rst} {rst} {st} 73"),
-            (Program::Sota, _) => write!(text, "TU {rst} {st} {st} 73"),
+        let variant = self.random(6);
+        let (g, st, rst, me) = (self.greeting, h.state, h.report, self.my_call.as_str());
+        let text = match (self.program, variant) {
+            (Program::Pota, 0) => phrase(&["RR", "TU", rst, st, st, "72"]),
+            (Program::Pota, 1) => phrase(&["TU", "UR", rst, rst, st, st, "73"]),
+            (Program::Pota, 2) => phrase(&[me, "TU", rst, st, "72"]),
+            (Program::Pota, 3) => phrase(&["R", "TU", rst, st, "BK"]),
+            (Program::Pota, 4) => phrase(&[g, "UR", rst, rst, st, st, "BK"]),
+            (Program::Pota, _) => phrase(&["R", g, "TU", rst, st, st, "73"]),
+            (Program::Sota, 0 | 1) => phrase(&["R", "R", "TU", rst, rst, st, "73"]),
+            (Program::Sota, 2 | 3) => phrase(&["TU", rst, st, st, "73"]),
+            (Program::Sota, _) => phrase(&[g, "UR", rst, rst, st, st, "73"]),
         };
         self.exchange.replied = true;
         self.send(out, [Some((i, text, true))]);
@@ -394,10 +417,9 @@ impl Bot {
     }
 
     fn new_hunter(&mut self, my_wpm: u8) -> Hunter {
-        let digit = self.random(10) as usize;
-        let call = us_call(digit as u8, &mut self.rng);
-        let states = STATES_BY_AREA[digit];
-        let state = states[self.random(states.len() as u32) as usize];
+        let home = home(&mut self.rng);
+        let call = home.call(&mut self.rng);
+        let state = home.region(&mut self.rng);
         let report = REPORTS[self.random(REPORTS.len() as u32) as usize];
         let habits = Habits::new(&mut self.rng);
         let (wpm, fist) = habits.keying(self.options, my_wpm);
@@ -480,7 +502,7 @@ pub fn us_call(digit: u8, rng: &mut Rng) -> Text<CALL_LEN> {
 }
 
 /// Words that come around a report or state in a closing over.
-const FILLER: [&str; 11] = ["TU", "TNX", "R", "72", "73", "E", "K", "<AR>", "<BK>", "<KN>", "<SK>"];
+const FILLER: [&str; 12] = ["TU", "TNX", "R", "72", "73", "E", "K", "BK", "<AR>", "<BK>", "<KN>", "<SK>"];
 
 /// Whether `target` was sent as its own word, split over several words (C A), or run into
 /// filler words (TUCA72).
@@ -531,6 +553,21 @@ pub(crate) fn text_of(s: &str) -> Text<MAX_TEXT> {
     Text::format(format_args!("{s}"))
 }
 
+/// The parts that are not empty, joined by spaces.
+pub(crate) fn phrase(parts: &[&str]) -> Text<MAX_TEXT> {
+    let mut text = Text::new();
+    for part in parts.iter().filter(|part| !part.is_empty()) {
+        if !text.is_empty() {
+            let _ = text.write_str(" ");
+        }
+        let _ = text.write_str(part);
+    }
+    text
+}
+
+/// The time of day an operator greets with.
+pub(crate) const GREETINGS: [&str; 3] = ["GM", "GA", "GE"];
+
 /// Reports hunters give, weighted toward the usual 5NN.
 pub(crate) const REPORTS: [&str; 8] = ["5NN", "5NN", "5NN", "599", "579", "559", "449", "339"];
 
@@ -546,6 +583,93 @@ pub(crate) const STATES_BY_AREA: [&[&str]; 10] = [
     &["WA", "OR", "ID", "MT", "WY", "NV", "UT", "AZ"],
     &["MI", "OH", "WV"],
     &["WI", "IL", "IN"],
+];
+
+/// Where a station is: a US call area, or a place abroad.
+#[derive(Clone, Copy)]
+pub(crate) enum Home {
+    Us(u8),
+    Abroad(&'static Abroad),
+}
+
+impl Home {
+    pub(crate) fn call(self, rng: &mut Rng) -> Text<CALL_LEN> {
+        match self {
+            Home::Us(digit) => us_call(digit, rng),
+            Home::Abroad(abroad) => abroad.call(rng),
+        }
+    }
+
+    /// The state or province sent in an exchange; empty for DX.
+    pub(crate) fn region(self, rng: &mut Rng) -> &'static str {
+        match self {
+            Home::Us(digit) => {
+                let states = STATES_BY_AREA[digit as usize];
+                states[rng.below(states.len() as u32) as usize]
+            }
+            Home::Abroad(abroad) => abroad.region,
+        }
+    }
+}
+
+/// A random home: 8 in 10 in the US, 1 in 10 in Canada, and 1 in 10 DX.
+pub(crate) fn home(rng: &mut Rng) -> Home {
+    match rng.below(10) {
+        0 => Home::Abroad(&CANADA[rng.below(CANADA.len() as u32) as usize]),
+        1 => Home::Abroad(&DX[rng.below(DX.len() as u32) as usize]),
+        _ => Home::Us(rng.below(10) as u8),
+    }
+}
+
+/// A place outside the US: its call prefixes, the call area digits they take, the province it
+/// sends in an exchange (empty outside Canada), and cities for a ragchew QTH.
+pub(crate) struct Abroad {
+    prefixes: &'static [&'static str],
+    digits: &'static [u8],
+    pub(crate) region: &'static str,
+    pub(crate) cities: &'static [&'static str],
+}
+
+impl Abroad {
+    /// A call of a two-letter prefix has a suffix of two or three letters; of a one-letter
+    /// prefix, three.
+    fn call(&self, rng: &mut Rng) -> Text<CALL_LEN> {
+        let mut pick = |n: usize| rng.below(n as u32) as usize;
+        let prefix = self.prefixes[pick(self.prefixes.len())];
+        let digit = self.digits[pick(self.digits.len())];
+        let suffix_len = if prefix.len() == 2 && pick(3) == 0 { 2 } else { 3 };
+        let mut call = Text::new();
+        let _ = write!(call, "{prefix}{digit}");
+        for _ in 0..suffix_len {
+            call.push(b'A' + pick(26) as u8);
+        }
+        call
+    }
+}
+
+pub(crate) const CANADA: [Abroad; 8] = [
+    Abroad { prefixes: &["VE", "VA"], digits: &[1], region: "NS", cities: &["HALIFAX"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[2], region: "QC", cities: &["MONTREAL", "QUEBEC"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[3], region: "ON", cities: &["TORONTO", "OTTAWA"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[4], region: "MB", cities: &["WINNIPEG"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[5], region: "SK", cities: &["REGINA", "SASKATOON"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[6], region: "AB", cities: &["CALGARY", "EDMONTON"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[7], region: "BC", cities: &["VANCOUVER", "VICTORIA"] },
+    Abroad { prefixes: &["VE"], digits: &[9], region: "NB", cities: &["MONCTON"] },
+];
+
+pub(crate) const DX: [Abroad; 11] = [
+    Abroad { prefixes: &["G", "M"], digits: &[0, 3, 4], region: "", cities: &["LONDON", "LEEDS", "BRISTOL"] },
+    Abroad { prefixes: &["DL", "DK", "DJ"], digits: &[1, 2, 3, 4, 5, 6, 7, 8, 9], region: "", cities: &["MUNICH", "BERLIN", "HAMBURG"] },
+    Abroad { prefixes: &["F"], digits: &[4, 5, 6, 8], region: "", cities: &["PARIS", "LYON"] },
+    Abroad { prefixes: &["I", "IK", "IZ"], digits: &[0, 1, 2, 3, 4, 5, 6, 7, 8], region: "", cities: &["ROME", "MILAN", "TURIN"] },
+    Abroad { prefixes: &["EA"], digits: &[1, 2, 3, 4, 5, 6, 7], region: "", cities: &["MADRID", "VALENCIA"] },
+    Abroad { prefixes: &["PA", "PD"], digits: &[0, 1, 2, 3], region: "", cities: &["AMSTERDAM", "UTRECHT"] },
+    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[1], region: "", cities: &["TOKYO"] },
+    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[3], region: "", cities: &["OSAKA", "KYOTO"] },
+    Abroad { prefixes: &["VK"], digits: &[2], region: "", cities: &["SYDNEY"] },
+    Abroad { prefixes: &["VK"], digits: &[3], region: "", cities: &["MELBOURNE"] },
+    Abroad { prefixes: &["VK"], digits: &[6], region: "", cities: &["PERTH"] },
 ];
 
 #[cfg(test)]
@@ -574,7 +698,8 @@ mod tests {
             let call = h.call.as_str();
             assert!((4..=6).contains(&call.len()), "{call}");
             assert!(call.bytes().any(|b| b.is_ascii_digit()), "{call}");
-            assert!(STATES_BY_AREA.iter().any(|s| s.contains(&h.state)));
+            let abroad = CANADA.iter().chain(&DX).any(|a| a.region == h.state);
+            assert!(abroad || STATES_BY_AREA.iter().any(|s| s.contains(&h.state)), "{}", h.state);
         }
         assert!(txs.iter().all(|t| !t.working));
     }
@@ -677,6 +802,55 @@ mod tests {
         assert_eq!(bot.pile_size(), 1);
         let again = heard(&mut bot, "AGN");
         assert!(again.len() <= 1 && again.iter().all(|t| t.wpm == 12 && t.fist == 0), "{:?}", texts(&again));
+    }
+
+    #[test]
+    fn a_dx_hunter_sends_no_state_and_counts_as_copied() {
+        for seed in 0..1000 {
+            let mut bot = Bot::new(Program::Pota, "K5MME", seed, Options::default());
+            heard(&mut bot, "CQ POTA DE K5MME K");
+            let Some(hunter) = bot.pile().find(|h| h.state.is_empty()).copied() else { continue };
+            heard(&mut bot, &std::format!("{} 5NN", hunter.call.as_str()));
+            heard(&mut bot, "TU 72 E E");
+            assert_eq!((bot.logged, bot.copied), (1, 1));
+            return;
+        }
+        panic!("no DX hunter called");
+    }
+
+    #[test]
+    fn most_hunters_sign_off_before_they_go() {
+        let mut signed = 0;
+        for seed in 0..30 {
+            let mut bot = Bot::new(Program::Pota, "K5MME", seed, Options::default());
+            heard(&mut bot, "CQ POTA DE K5MME K");
+            let hunter = *bot.pile().next().unwrap();
+            heard(&mut bot, &std::format!("{} 5NN", hunter.call.as_str()));
+            let reply = heard(&mut bot, &std::format!("TU {} 72 E E", hunter.state));
+            signed += reply.iter().filter(|t| t.working && t.text.as_str().ends_with("E E")).count();
+        }
+        assert!((10..30).contains(&signed), "{signed}");
+    }
+
+    #[test]
+    fn phrase_skips_empty_parts() {
+        assert_eq!(phrase(&["", "TU", "", "73", ""]).as_str(), "TU 73");
+    }
+
+    #[test]
+    fn calls_abroad_use_their_prefixes_and_digits() {
+        let mut rng = Rng::new(1);
+        for abroad in CANADA.iter().chain(&DX) {
+            for _ in 0..200 {
+                let call = abroad.call(&mut rng);
+                let call = call.as_str();
+                let digit = call.find(|c: char| c.is_ascii_digit()).unwrap();
+                assert!(abroad.prefixes.contains(&&call[..digit]), "{call}");
+                assert!(abroad.digits.contains(&(call.as_bytes()[digit] - b'0')), "{call}");
+                let suffix = &call[digit + 1..];
+                assert!((2..=3).contains(&suffix.len()) && suffix.bytes().all(|b| b.is_ascii_uppercase()), "{call}");
+            }
+        }
     }
 
     #[test]

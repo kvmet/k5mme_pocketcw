@@ -6,8 +6,8 @@ use core::fmt::Write;
 
 use crate::player::MAX_TEXT;
 use crate::qso::{
-    CALL_LEN, MAX_WPM, MIN_WPM, Options, Out, Program, QRS_STEP, REPORTS, STATES_BY_AREA, Squashed, Tx, cut, Habits,
-    text_of, us_call,
+    CALL_LEN, GREETINGS, MAX_WPM, MIN_WPM, Options, Out, Program, QRS_STEP, REPORTS, Squashed, Tx, cut, Habits, home,
+    phrase, text_of,
 };
 use crate::rng::Rng;
 use crate::text::Text;
@@ -17,9 +17,12 @@ pub struct Activator {
     pub program: Program,
     /// With /P on a summit.
     pub call: Text<CALL_LEN>,
+    /// Empty for DX.
     pub state: &'static str,
     /// The report the activator gives you.
     pub report: &'static str,
+    /// GM, GA or GE.
+    greeting: &'static str,
     habits: Habits,
     wpm: u8,
     fist: u8,
@@ -170,7 +173,12 @@ impl Hunt {
                 if closes(others.as_str()) {
                     self.phase = Phase::Closed { busted: heard.as_str() != me, p2p };
                     let bye = self.activator.program.bye();
-                    let text = if p2p { Text::format(format_args!("TU P2P {bye} E E")) } else { Text::format(format_args!("TU {bye} E E")) };
+                    let p2p = if p2p { "P2P" } else { "" };
+                    let text = match self.rng.below(3) {
+                        0 => phrase(&["RR", "TU", p2p, bye, "E", "E"]),
+                        1 => phrase(&["TU", p2p, bye, "E", "E", "QRZ"]),
+                        _ => phrase(&["TU", p2p, bye, "E", "E"]),
+                    };
                     return self.send(out, text);
                 }
                 self.send(out, text_of("AGN?"))
@@ -240,15 +248,15 @@ impl Hunt {
     fn send_exchange(&mut self, heard: Text<CALL_LEN>, p2p: bool, out: Out) {
         self.phase = Phase::Working { heard, p2p };
         let a = self.activator;
-        let (call, rst, st) = (heard.as_str(), a.report, a.state);
-        let p2p = if p2p { " P2P" } else { "" };
-        let mut text = Text::new();
-        let _ = match (a.program, self.rng.below(3)) {
-            (Program::Pota, 0) => write!(text, "{call}{p2p} TU {rst} {st} {st} <BK>"),
-            (Program::Pota, 1) => write!(text, "{call}{p2p} UR {rst} {rst} {st} {st} <BK>"),
-            (Program::Pota, _) => write!(text, "{call}{p2p} GM UR {rst} {st} <BK>"),
-            (Program::Sota, 0) => write!(text, "{call}{p2p} UR {rst} {rst} {st} {st} <BK>"),
-            (Program::Sota, _) => write!(text, "{call}{p2p} TU {rst} {st} <BK>"),
+        let (call, rst, st, g) = (heard.as_str(), a.report, a.state, a.greeting);
+        let p2p = if p2p { "P2P" } else { "" };
+        let text = match (a.program, self.rng.below(4)) {
+            (Program::Pota, 0) => phrase(&[call, p2p, "TU", rst, st, st, "BK"]),
+            (Program::Pota, 1) => phrase(&[call, p2p, "UR", rst, rst, st, st, "BK"]),
+            (Program::Pota, 2) => phrase(&[call, p2p, g, "UR", rst, st, "BK"]),
+            (Program::Pota, _) => phrase(&[call, p2p, "TU", g, "UR", rst, rst, st, st, "BK"]),
+            (Program::Sota, 0 | 1) => phrase(&[call, p2p, "UR", rst, rst, st, st, "BK"]),
+            (Program::Sota, _) => phrase(&[call, p2p, "TU", rst, st, "BK"]),
         };
         self.send(out, text);
     }
@@ -290,17 +298,17 @@ fn call_like(word: &str) -> bool {
 /// Parks are about twice as common on the air as summits.
 fn new_activator(options: Options, my_wpm: u8, rng: &mut Rng) -> Activator {
     let program = if rng.below(3) == 0 { Program::Sota } else { Program::Pota };
-    let digit = rng.below(10) as u8;
-    let mut call = us_call(digit, rng);
+    let home = home(rng);
+    let mut call = home.call(rng);
     if program == Program::Sota {
         let _ = write!(call, "/P");
     }
-    let states = STATES_BY_AREA[digit as usize];
-    let state = states[rng.below(states.len() as u32) as usize];
+    let state = home.region(rng);
     let report = REPORTS[rng.below(REPORTS.len() as u32) as usize];
+    let greeting = GREETINGS[rng.below(GREETINGS.len() as u32) as usize];
     let habits = Habits::new(rng);
     let (wpm, fist) = habits.keying(options, my_wpm);
-    Activator { program, call, state, report, habits, wpm, fist, pitch_offset_hz: (rng.below(41) as i16 - 20) * 10 }
+    Activator { program, call, state, report, greeting, habits, wpm, fist, pitch_offset_hz: (rng.below(41) as i16 - 20) * 10 }
 }
 
 #[cfg(test)]
@@ -329,8 +337,9 @@ mod tests {
         assert!(cq(&mut hunt).contains(a.call.as_str()));
         let exchange = heard(&mut hunt, "K5MME");
         assert!(exchange[0].starts_with("K5MME") && exchange[0].contains(a.state), "{exchange:?}");
-        let bye = if a.program == Program::Pota { "TU 72 E E" } else { "TU 73 E E" };
-        assert_eq!(heard(&mut hunt, "TU 5NN TX 72"), [bye]);
+        let bye = if a.program == Program::Pota { "72 E E" } else { "73 E E" };
+        let closing = heard(&mut hunt, "TU 5NN TX 72");
+        assert!(closing.len() == 1 && closing[0].contains(bye), "{closing:?}");
         let logged = hunt.log(&std::format!("{} US", a.call.as_str()), 20).unwrap();
         assert!(logged.copied && !logged.busted && !logged.p2p);
         assert_eq!((hunt.logged, hunt.good, hunt.phase), (1, 1, Phase::Calling));
@@ -390,7 +399,8 @@ mod tests {
         let mut hunt = Hunt::new("K5MME", 9, Options::default(), 20);
         let exchange = heard(&mut hunt, "P2P K5MME");
         assert!(exchange[0].starts_with("K5MME P2P"), "{exchange:?}");
-        assert!(heard(&mut hunt, "TU 5NN TX US1234 72")[0].starts_with("TU P2P 7"));
+        let closing = heard(&mut hunt, "TU 5NN TX US1234 72");
+        assert!(closing[0].contains("TU P2P 7"), "{closing:?}");
         assert!(hunt.log(hunt.activator.base_call().to_string().as_str(), 20).unwrap().p2p);
     }
 

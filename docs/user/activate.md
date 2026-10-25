@@ -16,10 +16,10 @@ Set your callsign first on the CALL tab of the [settings](settings.md). The hunt
 Your over ends when you stop keying for three word gaps. The footer tells you what to send next.
 
 1. Call CQ: `CQ POTA DE <your call> K`. With an empty pileup, one to three hunters call you. Each hunter sends its callsign once or twice.
-2. Send the callsign of one hunter, then a report: `K1ABC 5NN`. That hunter sends your report and its state, such as `RR TU 559 CA CA 72`.
-3. Close the QSO: send TU, the hunter's state, and 72 or 73: `TU CA 72 E E`. The QSO goes in your log. Then the pileup calls again, and new hunters can join it.
+2. Send the callsign of one hunter, then a report: `K1ABC 5NN`. That hunter sends your report and its state, such as `RR TU 559 CA CA 72`. A hunter in Canada sends its province, such as `ON`. A hunter outside the US and Canada sends no state.
+3. Close the QSO: send TU, the hunter's state, and 72 or 73: `TU CA 72 E E`. To a hunter with no state, send `TU 72 E E`. The QSO goes in your log, and most hunters send `E E` or `73 E E` back. Then the pileup calls again, and new hunters can join it.
 
-The device counts a QSO as copied when your closing over holds the hunter's state.
+The device counts a QSO as copied when your closing over holds the hunter's state. A QSO with a hunter that sends no state always counts as copied.
 
 More ways to talk to the hunters:
 
@@ -46,7 +46,7 @@ Under the transcript:
 | COPY | QSOs where you sent the hunter's state back. |
 | CALL | The callsign of the hunter. A green edge marks a QSO in progress. |
 | RST | The report the hunter gave you. During a QSO, only HINT shows it. |
-| STATE | The hunter's state. During a QSO, only HINT shows it. After the QSO, the label is COPIED with a green edge, or MISSED with a red edge: whether you sent the state back. |
+| STATE | The hunter's state or province, or DX for a hunter outside the US and Canada. During a QSO, only HINT shows it. After the QSO, the label is COPIED with a green edge, or MISSED with a red edge: whether you sent the state back. |
 | PILE | How many hunters are in the pileup. |
 
 `...` marks an item with no value yet.

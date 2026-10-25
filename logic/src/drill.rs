@@ -5,7 +5,7 @@ use core::fmt::Write;
 
 use crate::letters::{self, FIRST_LEVEL, KOCH, Letters};
 use crate::morse;
-use crate::qso::us_call;
+use crate::qso::home;
 use crate::ragchew;
 use crate::rng::Rng;
 use crate::text::Text;
@@ -193,8 +193,8 @@ impl Drill {
                 }
             }
             Kind::Calls => {
-                let digit = self.rng.below(10) as u8;
-                let _ = write!(group, "{}", us_call(digit, &mut self.rng).as_str());
+                let call = home(&mut self.rng).call(&mut self.rng);
+                let _ = write!(group, "{}", call.as_str());
             }
             Kind::Head if self.item() == Item::Sentence => group = ragchew::sentence(&mut self.rng),
             Kind::Ninja | Kind::Head => {}
