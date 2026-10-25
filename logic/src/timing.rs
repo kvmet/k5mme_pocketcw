@@ -196,7 +196,7 @@ pub struct Moments {
 }
 
 impl Moments {
-    fn add(&mut self, x: f32) {
+    pub(crate) fn add(&mut self, x: f32) {
         self.count += 1;
         let before = x - self.mean;
         self.mean += before / self.count as f32;
@@ -210,6 +210,19 @@ impl Moments {
     pub fn sd(&self) -> Option<f32> {
         (self.count > 0).then(|| sqrt(self.m2 / self.count as f32))
     }
+}
+
+/// A report line: `name`, then the count, mean and spread of `m`, with `-` for no value.
+pub(crate) fn moments_line<const N: usize>(name: &str, m: &Moments) -> Text<N> {
+    let mut line = Text::format(format_args!("{name} {}", m.count));
+    for value in [m.mean(), m.sd()] {
+        let _ = match value {
+            Some(v) => write!(line, " {}", Hundredths(v)),
+            None => write!(line, " -"),
+        };
+    }
+    let _ = line.write_str("\n");
+    line
 }
 
 pub const BINS: usize = 24;
@@ -289,17 +302,7 @@ impl Stats {
             ("GAP CHAR", &self.char_gap),
             ("GAP WORD", &self.word_gap),
         ];
-        let moments = moments.into_iter().map(|(name, m)| {
-            let mut line = Text::format(format_args!("{name} {}", m.count));
-            for value in [m.mean(), m.sd()] {
-                let _ = match value {
-                    Some(v) => write!(line, " {}", Hundredths(v)),
-                    None => write!(line, " -"),
-                };
-            }
-            let _ = line.write_str("\n");
-            line
-        });
+        let moments = moments.into_iter().map(|(name, m)| moments_line(name, m));
         let known = [("RATIO", self.ratio()), ("WPM", self.effective_wpm())]
             .into_iter()
             .filter_map(|(name, value)| Some(Text::format(format_args!("{name} {}\n", Hundredths(value?)))));

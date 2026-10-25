@@ -16,7 +16,9 @@ The tape draws time from left to right, 8 pixels per dot length.
 - Under the marks, each decoded character shows, and each gap between characters or words shows its length in units.
 - A gap inside a character that is off or bad gets an underline in its grade.
 
-### Histograms
+Under the tape, F3 switches between two views: MARKS, and HAND.
+
+### MARKS view
 
 | Histogram | Range | Dotted lines at |
 | - | - | - |
@@ -25,15 +27,35 @@ The tape draws time from left to right, 8 pixels per dot length.
 
 Each bar counts the marks or gaps of that length, in the color of the grade a mark or gap of that length gets.
 
-### Averages
-
 | Line | What it shows |
 | - | - |
 | DIT | Average dot length and its standard deviation (SD) in milliseconds, then RATIO: average dash over average dot. The ideal ratio is 3. |
 | DAH | Average dash length and its standard deviation in milliseconds, then the speed your timing works out to. |
 | GAP, CHR, WRD | Average gap inside characters, between characters and between words, in units. |
 
-The statistics collect your keying on every screen since the device was turned on, or since you last held F2 (CLEAR). The KEYER screen shows the same statistics.
+### HAND view
+
+The HAND view shows what your paddle or key does, not what the keyer sends. It shows the statistics for the MODE in use.
+
+In IAMBIC A and IAMBIC B, the keyer decides one dot after each element whether to send another. A paddle closed at that moment, or pressed during the element, sends one.
+
+| Item | What it shows |
+| - | - |
+| RELEASE BEFORE THE KEYER DECIDES | A histogram from 0 to 3 dots: at the end of each character, how long before the keyer's decision you let go. A bar under half a dot is red: a little later, and the keyer would have sent one more element. |
+| RELEASE | The average and standard deviation of that time, in dots. |
+| CLOSE | The percent of characters you let go less than half a dot before the decision, and how many characters it counts. |
+| LATE | The percent of gaps inside characters you started after the keyer's decision, how many gaps it counts, and how late they came on average, in dots. A late press makes a gap longer than one dot, which can split a character in two. |
+
+In STRAIGHT, for a straight key or a sideswiper:
+
+| Line | What it shows |
+| - | - |
+| TIP, RING | For each contact, the average length and standard deviation of the dots and dashes it keyed, in milliseconds. A mark counts for the contact that closed first. A straight key uses only the tip. |
+| WEIGHT | Each dot over the gap after it inside a character, on average, with its standard deviation. 1.00 is even; more is heavy, less is light. |
+
+Keying that `SEND` sends over USB counts in MARKS, but not in HAND.
+
+The statistics collect your keying on every screen since the device was turned on, or since you last held F2 (CLEAR). The KEYER screen shows the MARKS statistics.
 
 ## Controls
 
@@ -41,7 +63,7 @@ The statistics collect your keying on every screen since the device was turned o
 | - | - |
 | F1 (SET) | Opens the settings at the KEYER section. |
 | F2 hold (CLEAR) | Clears the statistics and the tape. |
-| F3 | Nothing. |
+| F3 (HAND or MARKS) | Switches the view under the tape. |
 | F4 (BACK) | Opens the [menu](menu.md), with TIMING selected. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |

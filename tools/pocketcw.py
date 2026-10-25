@@ -301,14 +301,17 @@ def save_progress(lines, path):
 
 
 def save_timing(lines, path):
-    """MARK and GAP lines, then a row per histogram bin, to CSV. Shows the ratio and speed."""
+    """Moment and count lines, then a row per histogram bin, to CSV. Shows the ratio and speed."""
     with open(path, 'w', newline='') as f:
         out = csv.writer(f)
         out.writerow(['what', 'name', 'count', 'mean', 'sd'])
         for line in lines:
             fields = line.split()
-            if fields[0] in ('MARK', 'GAP'):
+            if fields[0] in ('MARK', 'GAP', 'TIP', 'RING'):
                 out.writerow([fields[0].lower(), fields[1].lower(), *('' if v == '-' else v for v in fields[2:])])
+            elif fields[0] in ('RELEASE', 'LATE', 'WEIGHT', 'CLOSE', 'ON_TIME'):
+                values = ['' if v == '-' else v for v in fields[1:]]
+                out.writerow([fields[0].lower(), '', *values, *[''] * (3 - len(values))])
             elif fields[0] == 'BINS':
                 # The last bin also holds everything longer than the range.
                 what, range_units, counts = fields[1].lower(), int(fields[2]), fields[3:]

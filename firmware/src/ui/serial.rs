@@ -128,7 +128,8 @@ impl Ui {
                 s.seq, s.active_s, s.contacts, s.rx_chars, s.rx_right, s.sent_chars
             ))
         });
-        let timing = self.stats.report::<REPLY_LEN>().take(if kind == Stats::Timing { usize::MAX } else { 0 });
+        let timing = self.stats.report::<REPLY_LEN>().chain(self.hand.report::<REPLY_LEN>());
+        let timing = timing.take(if kind == Stats::Timing { usize::MAX } else { 0 });
         level.into_iter().chain(each_letter).chain(mixups).chain(sessions).chain(timing).chain([Text::format(format_args!("END\n"))])
     }
 }

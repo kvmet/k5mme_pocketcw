@@ -39,6 +39,7 @@ use pocketcw_logic::{
     qso::{Options, Program},
     settings::{Field, Pileup, Settings, Shortcut},
     ticks,
+    hand::Hand,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
 };
 
@@ -163,6 +164,9 @@ pub struct Ui {
     editing: bool,
     meter: Meter,
     stats: Stats,
+    hand: Hand,
+    /// TIMING shows the HAND view, not MARKS.
+    timing_hand: bool,
     tape: Tape,
     /// When each contact closed, while it is closed: tip, ring.
     contact_since: [Option<u32>; 2],
@@ -239,6 +243,8 @@ impl Ui {
             editing: false,
             meter: Meter::default(),
             stats: Stats::default(),
+            hand: Hand::default(),
+            timing_hand: false,
             tape: Tape::new(false),
             contact_since: [None; 2],
             stuck_shown: [false; 2],
@@ -362,6 +368,7 @@ impl Ui {
             }
             (1, Screen::Timing) => {
                 self.stats = Stats::default();
+                self.hand = Hand::default();
                 self.tape.new_page();
                 self.draw(lcd, s);
             }
@@ -468,6 +475,7 @@ impl Ui {
 
     /// A character read from the paddles.
     pub fn decoded(&mut self, lcd: &mut Lcd, s: &mut Settings, decoded: Decoded) {
+        self.hand.char_ended();
         let worst = self.meter.char_worst();
         let span = self.meter.char_span();
         self.decode.push(decoded, worst);
@@ -489,7 +497,7 @@ impl Ui {
                 if let Decoded::Char(c) = decoded {
                     self.tape.letter(lcd, &self.theme, c, span);
                 }
-                self.draw_timing_stats(lcd);
+                self.draw_timing_stats(lcd, s);
             }
             Screen::Qso => self.qso_decoded(lcd, decoded),
             Screen::Hunt => self.hunt_decoded(lcd, decoded),
@@ -518,6 +526,7 @@ impl Ui {
                     let paused = self.meter_paused(at_ms, dit);
                     self.tape.key_down(lcd, &self.theme, at_ms, dit, paused, lanes(s));
                 }
+                self.hand.key(down, at_ms, dit, s.mode != Mode::Straight);
                 if let Some(iv) = self.meter.edge(down, at_ms, dit) {
                     self.stats.add(&iv);
                     if on_tape {
@@ -534,6 +543,7 @@ impl Ui {
             }
             Line::Tip | Line::Ring => {
                 let i = (line == Line::Ring) as usize;
+                self.hand.contact(line, down, at_ms);
                 if down && self.screen == Screen::Home {
                     self.stop_sending(lcd);
                     if self.mem_row && !self.memories.stay_open {
