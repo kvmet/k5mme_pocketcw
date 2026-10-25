@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -45,6 +46,21 @@ PLAY_HZ = 48000
 PLAY_DELAY_MS = 150
 FILTERS = ("To review", "Bad", "All")
 COLUMNS = ("Text", "Clip", "Mark", "Says", "Note")
+# Keys under the phonemes field: the misaki phonemes a keyboard lacks or that differ from their
+# letter, each with a word it sounds in. Kokoro has no g; it takes ɡ.
+PHONEME_KEYS = {
+    "Stress and pitch, before the vowel": [("ˈ", "stress"), ("ˌ", "light stress"), ("↗", "pitch up"), ("↘", "pitch down"), ("…", "pause")],
+    "Vowels": [
+        ("i", "see"), ("ɪ", "sit"), ("A", "day"), ("ɛ", "bed"), ("æ", "cat"), ("ɑ", "father"),
+        ("ɔ", "law"), ("O", "go"), ("ʊ", "book"), ("u", "you"), ("ʌ", "cup"), ("ə", "about"),
+        ("ɜ", "her"), ("I", "my"), ("W", "how"), ("Y", "boy"), ("ᵊ", "button"), ("ᵻ", "roses"),
+    ],
+    "Consonants": [
+        ("ɡ", "get"), ("ŋ", "sing"), ("ɹ", "red"), ("j", "yes"), ("ʃ", "she"), ("ʒ", "vision"),
+        ("ʧ", "chin"), ("ʤ", "jam"), ("θ", "thin"), ("ð", "this"), ("T", "butter"),
+    ],
+}
+KEY_COLUMNS = 6
 
 
 @dataclass
@@ -238,6 +254,8 @@ class Window(QMainWindow):
         self.note.setPlaceholderText("what is wrong; Enter marks bad")
         self.respelling = QLineEdit()
         self.phonemes = QLineEdit()
+        # Stress marks are a few pixels wide at the default size.
+        self.phonemes.setFont(QFont(self.phonemes.font().family(), round(self.phonemes.font().pointSize() * 1.5)))
         # A tab or line break would break a row of fixes.txt or review.txt.
         for field in (self.note, self.respelling, self.phonemes):
             field.setValidator(QRegularExpressionValidator(f"[^{pack.BREAKS.pattern[1:-1]}]*", field))
@@ -257,7 +275,7 @@ class Window(QMainWindow):
             buttons.addWidget(button)
         form.addRow(buttons)
         right = QVBoxLayout()
-        for widget in (self.word, self.says, QLabel("Note"), self.note, fix, self.status):
+        for widget in (self.word, self.says, QLabel("Note"), self.note, fix, self.phoneme_keys(), self.status):
             right.addWidget(widget)
         right.addStretch()
         left = QVBoxLayout()
@@ -323,6 +341,27 @@ class Window(QMainWindow):
     def set_filter(self, name: str):
         self.model.set_filter(name)
         self.select(0)
+
+    def phoneme_keys(self) -> QGroupBox:
+        """A key for each of PHONEME_KEYS, which types it in the phonemes field."""
+        keys = QGroupBox("Phoneme keys")
+        grid = QGridLayout(keys)
+        at = 0
+        for group, phonemes in PHONEME_KEYS.items():
+            grid.addWidget(QLabel(group), at, 0, 1, KEY_COLUMNS)
+            at += 1
+            for i, (phoneme, example) in enumerate(phonemes):
+                key = QPushButton(f"{phoneme}  {example}")
+                # The phonemes field keeps its cursor while a key is clicked.
+                key.setFocusPolicy(Qt.NoFocus)
+                key.clicked.connect(lambda _=False, phoneme=phoneme: self.type_phoneme(phoneme))
+                grid.addWidget(key, at + i // KEY_COLUMNS, i % KEY_COLUMNS)
+            at += -(-len(phonemes) // KEY_COLUMNS)
+        return keys
+
+    def type_phoneme(self, phoneme: str):
+        self.phonemes.insert(phoneme)
+        self.phonemes.setFocus()
 
     def show_row(self, index, previous=None):
         self.trial = None
