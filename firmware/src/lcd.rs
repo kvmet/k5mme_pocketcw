@@ -10,6 +10,7 @@ use pocketcw_logic::panel::{IdRead, Panel};
 use crate::clock::{delay_ms, delay_us};
 use crate::gpio::{self, port_a, port_b};
 use crate::pins::{FLASH_CS, LCD_CS as CS, LCD_DC as DC, LCD_MISO as MISO, LCD_MOSI as MOSI, LCD_RESET as RESET, LCD_SCK as SCK};
+use crate::spi_flash::SpiFlash;
 
 pub const WIDTH: u32 = 320;
 pub const HEIGHT: u32 = 240;
@@ -143,6 +144,11 @@ impl Lcd {
         self.command(0x11, &[]);
         delay_ms(120);
         self.command(0x29, &[]);
+    }
+
+    /// The SPI flash, which shares SPI1 with the panel.
+    pub fn spi_flash(&mut self) -> SpiFlash<'_> {
+        SpiFlash::new(&self.spi)
     }
 
     fn send(&mut self, byte: u8) {

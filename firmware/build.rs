@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{env, fs, path::{Path, PathBuf}};
 
 fn main() {
     let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
@@ -13,7 +13,7 @@ fn main() {
 
 /// The voice probe's clips: `clips.rs` from the folder `VOICE_CLIPS` names, which
 /// `tools/voiceclips.py` writes, or no clips, so every other build needs no clips.
-fn voice_clips(out: &PathBuf) {
+fn voice_clips(out: &Path) {
     println!("cargo:rerun-if-env-changed=VOICE_CLIPS");
     let clips = match env::var_os("VOICE_CLIPS") {
         Some(folder) => {

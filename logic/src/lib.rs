@@ -30,6 +30,7 @@ pub mod rng;
 pub mod sender;
 pub mod serial;
 pub mod settings;
+pub mod sfdp;
 pub mod synth;
 pub mod text;
 pub mod ticks;

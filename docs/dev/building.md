@@ -122,6 +122,37 @@ Without `VOICE_CLIPS`, the image builds with no clips and says so.
 
 A rate passes at 19 of 20 right. Flash the app again after.
 
+## SPI flash probe
+
+`firmware/src/bin/flashprobe.rs` reads the 16 MB SPI flash beside the screen. At start it only reads: the JEDEC ID, the status registers and write protection, the SFDP table (size, page size, erase types and times), `F000400.bin` at 0x100000 at 18 MHz and at 4.5 MHz, and a scan of every 4 KB sector that lists the used ranges.
+
+It erases and programs only between 0x0C6000 and 0xE00000, the free space between the vendor files, and only sectors that read blank or that carry its own tags.
+
+| Control | Action |
+| - | - |
+| F1 | Erase and program test in two blank sectors from 0xD00000: erase times, page program time, a page written in 16 pieces, read back, then erased again. |
+| F2 | Writes a `PCWMARK` tag in each marker sector that reads blank: just past the end of the largest test file, 4 KB, 64 KB and 1 MB past it, and at each end of the planned log range. |
+| F3 | Shows whether each marker is still there, then scans again. |
+| F4, twice | Erases every sector that starts with a `PCWMARK` or `PCWTEST` tag. |
+| Hold the dial 1.5 s | Turns the device off. |
+
+The bootloader test shows what installing an F file erases past the file's end. `tools/flashtest.py` writes a 1022 cluster `F000400.bin`, the largest `pocketcw-flash` writes, with every 4 KB sector tagged `PCWTEST`:
+
+```bash
+python tools/flashtest.py --out firmware/target/flashtest
+```
+
+```bash
+sh tools/mkimage.sh flashprobe
+```
+
+1. Flash the probe. Read the scan, then press F1, then F2.
+2. Flash `firmware/target/flashtest/F000400.bin`.
+3. Turn the device on and press F3. The tags line counts the test sectors.
+4. Press F4 twice, then flash `dist/F000400.bin` from `tools/release.sh` and the app.
+
+To check that `pocketcw-flash` refuses a file one cluster larger, run `tools/flashtest.py --clusters 1023` and try to flash that file.
+
 ## Remote control and screenshots
 
 `tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys and plays text, shows what the device decodes and plays, reads and changes settings, saves the screen as a PNG, and saves the stats and the key timing as CSV. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.

@@ -18,6 +18,7 @@ pub mod lcd;
 pub mod link;
 pub mod pins;
 pub mod power;
+pub mod spi_flash;
 pub mod store;
 pub mod text;
 pub mod theme;
