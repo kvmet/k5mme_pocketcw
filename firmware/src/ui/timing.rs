@@ -10,7 +10,7 @@ use pocketcw_logic::{
 };
 
 use super::home::{number, units};
-use super::{Screen, Ui, lanes, mode_name, settings::KEYER_TAB};
+use super::{Ui, lanes, mode_name, settings::KEYER_TAB};
 use crate::gfx::{TINY_W, rect, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -105,7 +105,7 @@ impl Ui {
                 self.tape.new_page();
                 self.draw(lcd, s);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Home),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }

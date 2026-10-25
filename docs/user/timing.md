@@ -42,7 +42,7 @@ The statistics collect your keying on every screen since the device was turned o
 | F1 (SET) | Opens the settings at the KEYER tab. |
 | F2 (CLR) | Clears the statistics and the tape. |
 | F3 | Nothing. |
-| F4 (BACK) | Opens the KEYER screen. |
+| F4 (BACK) | Opens the [menu](menu.md), with TIMING selected. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

@@ -82,7 +82,7 @@ enum Screen {
 }
 const _: () = assert!(Screen::Radio as usize + 1 == SCREENS);
 
-/// The practice running on its screen, or on settings opened from it.
+/// The practice open on its screen, or paused while you are on another screen.
 // Without a heap the large variant can't be boxed; one union still costs less than four fields.
 #[allow(clippy::large_enum_variant)]
 enum Session {
@@ -99,6 +99,27 @@ impl Session {
             Session::Hunt(_) => Screen::Hunt,
             Session::Receive(_) => Screen::Receive,
             Session::Ragchew(_) => Screen::Ragchew,
+        }
+    }
+
+    /// The practice's title: the drill, program or ragchew.
+    fn name(&self) -> &'static str {
+        match self {
+            Session::Qso(q) => q.bot.program.name(),
+            Session::Hunt(_) => "HUNT",
+            Session::Receive(rx) => rx.kind().name(),
+            Session::Ragchew(c) if c.quiz => "QUIZ",
+            Session::Ragchew(_) => "CHEW",
+        }
+    }
+
+    /// Stops the practice where it stands: nothing plays or waits until it resumes.
+    fn pause(&mut self) {
+        match self {
+            Session::Qso(q) => q.pause(),
+            Session::Hunt(h) => h.pause(),
+            Session::Receive(rx) => rx.pause(),
+            Session::Ragchew(c) => c.pause(),
         }
     }
 }
@@ -128,7 +149,9 @@ pub struct Ui {
     dial_focus: [Option<Target>; SCREENS],
     key_guard: KeyGuard,
     decode: Decode,
-    menu: usize,
+    /// The menu list open, and the selected row of each list.
+    list: menu::List,
+    cursor: [usize; menu::LISTS],
     tab: usize,
     /// Selected settings row.
     row: usize,
@@ -203,7 +226,8 @@ impl Ui {
             dial_focus: [None; SCREENS],
             key_guard: KeyGuard::default(),
             decode: Decode::new(),
-            menu: 0,
+            list: menu::List::Top,
+            cursor: [0; menu::LISTS],
             tab: 0,
             row: 0,
             editing: false,
@@ -320,17 +344,40 @@ impl Ui {
         match key {
             0 => {
                 s.adjust(Field::KeyOut, 1);
-                match self.screen {
-                    Screen::Home => self.draw_home_value(lcd, s, Field::KeyOut),
-                    Screen::Settings => self.draw_settings(lcd, s),
-                    _ => {}
-                }
-                self.status(lcd, if s.key_out { "KEY OUT ON" } else { "KEY OUT OFF" });
+                self.key_out_changed(lcd, s);
+                let line = match (s.key_out, self.screen_keys_radio()) {
+                    (false, _) => "KEY OUT OFF",
+                    (true, true) => "KEY OUT ON",
+                    (true, false) => "KEY OUT ON: NOT IN PRACTICE",
+                };
+                self.status(lcd, line);
             }
             3 if self.screen != Screen::Home => self.open(lcd, s, Screen::Home),
             _ => return false,
         }
         true
+    }
+
+    /// Your key keys the radio on this screen when KEY OUT is ON. Practice and settings
+    /// never key it, so a drill or a memory you key in stays off the air.
+    pub fn screen_keys_radio(&self) -> bool {
+        matches!(self.screen, Screen::Home | Screen::Timing | Screen::Radio)
+    }
+
+    fn keys_radio(&self, s: &Settings) -> bool {
+        s.key_out && self.screen_keys_radio()
+    }
+
+    /// Shows a new KEY OUT value, and TX in the header of a screen that keys the radio.
+    fn key_out_changed(&mut self, lcd: &mut Lcd, s: &Settings) {
+        match self.screen {
+            Screen::Home => {
+                self.draw_home_value(lcd, s, Field::KeyOut);
+                self.draw_home_header(lcd, s);
+            }
+            Screen::Settings | Screen::Timing | Screen::Radio => self.draw(lcd, s),
+            _ => {}
+        }
     }
 
     /// The F key labels: `keys` for a press, and this screen's hold labels.
@@ -603,12 +650,12 @@ impl Ui {
     }
 
     fn open(&mut self, lcd: &mut Lcd, s: &Settings, screen: Screen) {
-        if matches!(self.screen, Screen::Qso | Screen::Hunt | Screen::Receive | Screen::Ragchew) && screen != self.screen {
+        if screen != self.screen
+            && let Some(session) = &mut self.session
+            && session.screen() == self.screen
+        {
+            session.pause();
             self.stop_players();
-        }
-        // A practice session stays alive while its settings are open.
-        if screen != Screen::Settings && self.session.as_ref().map(Session::screen) != Some(screen) {
-            self.session = None;
         }
         if screen != Screen::Settings {
             self.settings_from = None;
@@ -636,12 +683,20 @@ impl Ui {
 
     fn close_settings(&mut self, lcd: &mut Lcd, s: &Settings) {
         match self.settings_from.take() {
+            Some(screen) if self.session.as_ref().map(Session::screen) == Some(screen) => self.resume(lcd, s),
+            Some(Screen::Settings) | None => self.back(lcd, s),
+            Some(screen) => self.open(lcd, s, screen),
+        }
+    }
+
+    /// Opens the paused practice, which takes any new settings and goes on.
+    fn resume(&mut self, lcd: &mut Lcd, s: &Settings) {
+        match self.session.as_ref().map(Session::screen) {
             Some(Screen::Qso) => self.qso_resume(lcd, s),
             Some(Screen::Hunt) => self.hunt_resume(lcd, s),
             Some(Screen::Receive) => self.receive_resume(lcd, s),
             Some(Screen::Ragchew) => self.ragchew_resume(lcd, s),
-            Some(Screen::Settings) | None => self.open(lcd, s, Screen::Menu),
-            Some(screen) => self.open(lcd, s, screen),
+            _ => {}
         }
     }
 

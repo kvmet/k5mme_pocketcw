@@ -87,7 +87,7 @@ impl Ui {
                 self.board_command = Some(board::noise_reduction(self.board.noise_reduction));
                 self.draw_radio_info(lcd);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }

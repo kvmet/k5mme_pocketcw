@@ -344,12 +344,14 @@ def png(width, height, rgb):
 
 
 # Menu rows from the top. RADIO shows only with the decoder board on, so it is left out.
-MENU = ['KEYER', 'TIMING', 'RECEIVE', 'POTA', 'SOTA', 'HUNT', 'LETTERS', 'PROGRESS', 'SETTINGS', 'SYSTEM']
+# The menu lists, without the rows that show only sometimes: RESUME at the top of the top list,
+# while a practice is paused, and RADIO at the end of ON AIR, with the decoder board on.
+TOP = ['RECEIVE', 'ON AIR', 'TIMING', 'STATS', 'SETTINGS', 'SYSTEM']
+RECEIVE = ['KOCH', 'WORDS', 'CALLS', 'NINJA', 'HEAD']
+ON_AIR = ['POTA', 'SOTA', 'HUNT', 'CHEW', 'QUIZ']
+STATS = ['LETTERS', 'PROGRESS']
 SETTINGS_TABS = ['keyer', 'sound', 'recv', 'qso', 'theme', 'call', 'mem']
-# F2 on a drill opens the next one, in this order. The first three are answered; the ragchews
-# run until one over ends.
-ANSWERED = ['receive-koch', 'receive-words', 'receive-calls']
-RAGCHEWS = ['ragchew', 'ragchew-quiz']
+# Long enough for a ragchew over to end.
 OVER_S = 45
 # Long enough for a QSO to send its first text.
 QSO_S = 4
@@ -363,27 +365,21 @@ class Screens:
     def __init__(self, device, out_dir):
         self.d = device
         self.out_dir = out_dir
-        # The menu keeps its selection between visits; None until it is known.
-        self.row = None
 
     def shot(self, name):
         path = os.path.join(self.out_dir, name + '.png')
         self.d.shot(path)
         print(path, flush=True)
 
-    def top_of_menu(self):
-        self.d.press(*['LEFT'] * (len(MENU) - 1))
-        self.row = 0
-
-    def open(self, name):
-        """From the menu: opens row `name`."""
-        target = MENU.index(name)
-        if self.row is None:
-            self.top_of_menu()
-        move = target - self.row
+    def open(self, rows, name):
+        """From a menu list of `rows`: opens row `name`. The top list counts from its end, so
+        RESUME at its top does not move the count."""
         self.d.drain()
-        self.d.press(*(['RIGHT'] * move if move > 0 else ['LEFT'] * -move), 'CLICK')
-        self.row = target
+        if rows is TOP:
+            moves = ['RIGHT'] * len(rows) + ['LEFT'] * (len(rows) - 1 - rows.index(name))
+        else:
+            moves = ['LEFT'] * len(rows) + ['RIGHT'] * rows.index(name)
+        self.d.press(*moves, 'CLICK')
 
     def answer_group(self):
         """Keys back the next group the drill sends, once it has played."""
@@ -398,39 +394,43 @@ class Screens:
         d.press('F2')
         self.shot('keyer-mem')
         d.press('CLICK', 'F4')
-        self.top_of_menu()
         self.shot('menu')
 
-        self.open('TIMING')
+        self.open(TOP, 'TIMING')
         self.shot('timing')
-        # TIMING goes back to KEYER, and KEYER to the menu.
-        d.press('F4', 'F4')
-
-        self.open('RECEIVE')
-        for i, name in enumerate(ANSWERED):
-            if i:
-                d.drain()
-                d.press('F2')
-            self.answer_group()
-            self.shot(name)
-        for name in RAGCHEWS:
-            d.press('F2')
-            time.sleep(OVER_S)
-            self.shot(name)
         d.press('F4')
 
-        for name in ['POTA', 'SOTA', 'HUNT']:
-            self.open(name)
-            time.sleep(QSO_S)
+        # BACK on a practice opens its list; BACK on a list opens the top list.
+        self.open(TOP, 'RECEIVE')
+        self.shot('menu-receive')
+        for name in RECEIVE:
+            self.open(RECEIVE, name)
+            self.answer_group()
+            self.shot('receive-' + name.lower())
+            d.press('F4')
+        d.press('F4')
+
+        self.open(TOP, 'ON AIR')
+        self.shot('menu-on-air')
+        for name in ON_AIR:
+            self.open(ON_AIR, name)
+            time.sleep(OVER_S if name in ('CHEW', 'QUIZ') else QSO_S)
             self.shot(name.lower())
             d.press('F4')
+        d.press('F4')
 
-        for name in ['LETTERS', 'PROGRESS', 'SYSTEM']:
-            self.open(name)
+        self.open(TOP, 'STATS')
+        for name in STATS:
+            self.open(STATS, name)
             self.shot(name.lower())
             d.press('F4')
+        d.press('F4')
 
-        self.open('SETTINGS')
+        self.open(TOP, 'SYSTEM')
+        self.shot('system')
+        d.press('F4')
+
+        self.open(TOP, 'SETTINGS')
         for i, tab in enumerate(SETTINGS_TABS):
             if i:
                 d.press('F1')

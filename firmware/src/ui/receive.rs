@@ -107,19 +107,32 @@ impl Receive {
     pub(super) fn kind(&self) -> Kind {
         self.drill.kind
     }
+
+    pub(super) fn pause(&mut self) {
+        if self.state != State::NoPack {
+            self.state = State::Paused;
+        }
+        self.deadline = None;
+        self.copy.clear();
+    }
 }
 
 impl Ui {
     pub(super) fn draw_receive(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Receive(rx)) = &self.session else { return };
         let t = &self.theme;
-        self.header(lcd, s, "RECEIVE", &[rx.drill.kind.name()]);
-        let pause = if rx.state == State::Paused { "GO" } else { "STOP" };
-        self.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
+        self.header(lcd, s, rx.drill.kind.name(), &[]);
+        self.draw_receive_keys(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_receive_info(lcd);
         self.draw_receive_rows(lcd);
         self.draw_receive_now(lcd);
+    }
+
+    fn draw_receive_keys(&self, lcd: &mut Lcd) {
+        let Some(Session::Receive(rx)) = &self.session else { return };
+        let pause = if rx.state == State::Paused { "GO" } else { "STOP" };
+        self.softkeys(lcd, ["SET", "AGN", pause, "BACK"]);
     }
 
     /// Koch level and progress, and the character set colored by your accuracy.
@@ -295,6 +308,7 @@ impl Ui {
     pub(super) fn receive_resume(&mut self, lcd: &mut Lcd, s: &Settings) {
         self.open(lcd, s, Screen::Receive);
         self.play_group(lcd, s, false);
+        self.draw_receive_keys(lcd);
     }
 
     pub(super) fn receive_played(&mut self, lcd: &mut Lcd, now_ms: u32) {
@@ -413,33 +427,22 @@ impl Ui {
     pub(super) fn receive_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         match action {
-            Action::Soft(1) => {
-                let kind = rx.drill.kind;
+            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(1) if matches!(rx.state, State::Playing | State::Waiting | State::Copying) => {
                 self.stop_players();
-                match kind {
-                    Kind::Head => self.open_ragchew(lcd, s, false),
-                    kind => self.open_receive(lcd, s, kind.next()),
-                }
-            }
-            Action::Soft(0) => {
-                rx.state = State::Paused;
-                rx.deadline = None;
-                rx.copy.clear();
-                self.open_settings_at(lcd, s, RECEIVE_TAB);
+                self.play_group(lcd, s, true);
             }
             Action::Soft(2) if rx.state == State::NoPack => {}
             Action::Soft(2) => {
                 if rx.state == State::Paused {
                     self.play_group(lcd, s, false);
                 } else {
-                    rx.state = State::Paused;
-                    rx.deadline = None;
-                    rx.copy.clear();
+                    rx.pause();
                     self.stop_players();
                 }
                 self.draw(lcd, s);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }

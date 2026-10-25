@@ -67,6 +67,14 @@ pub(super) struct Qso {
 }
 
 impl Qso {
+    pub(super) fn pause(&mut self) {
+        self.queue = [None; QUEUE];
+        self.playing = false;
+        self.joining = false;
+        self.over.clear();
+        self.over_deadline = None;
+    }
+
     pub(super) fn new(program: Program, my_call: &str, seed: u32, options: Options) -> Qso {
         Qso {
             bot: Bot::new(program, my_call, seed, options),
@@ -147,7 +155,7 @@ impl Ui {
     pub(super) fn draw_qso(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Qso(q)) = &self.session else { return };
         let t = &self.theme;
-        self.header(lcd, s, "QSO", &[q.bot.program.name()]);
+        self.header(lcd, s, q.bot.program.name(), &[]);
         self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_qso_lines(lcd);
@@ -265,16 +273,7 @@ impl Ui {
 
     pub(super) fn qso_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => {
-                if let Some(Session::Qso(q)) = &mut self.session {
-                    q.queue = [None; QUEUE];
-                    q.playing = false;
-                    q.joining = false;
-                    q.over.clear();
-                    q.over_deadline = None;
-                }
-                self.open_settings_at(lcd, s, QSO_TAB);
-            }
+            Action::Soft(0) => self.open_settings_at(lcd, s, QSO_TAB),
             Action::Soft(1) => self.bot_answer(lcd, s, "QRS"),
             Action::Soft(2) => {
                 if let Some(Session::Qso(q)) = &mut self.session {
@@ -284,7 +283,7 @@ impl Ui {
                 self.draw_qso_state(lcd);
                 self.draw_over(lcd);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }

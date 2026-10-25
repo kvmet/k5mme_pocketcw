@@ -10,7 +10,7 @@ use pocketcw_logic::{
     settings::{Field, Settings},
 };
 
-use super::{COLS, Screen, Ui, dit_ms, lanes, mode_name, settings::KEYER_TAB};
+use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::KEYER_TAB};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, blocks, blocks_width, para, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -52,9 +52,13 @@ fn field(target: Target) -> (Field, Option<usize>) {
 pub(super) type Decode = DecodeLines<COLS, ROWS>;
 
 impl Ui {
+    pub(super) fn draw_home_header(&self, lcd: &mut Lcd, s: &Settings) {
+        self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
+    }
+
     pub(super) fn draw_home(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
+        self.draw_home_header(lcd, s);
         self.softkeys(lcd, KEYS);
         rect(lcd, DIGITS_X - 5, DIGITS_Y - 3, DIGITS_W + 10, DIGITS_H + 6, t.panel());
         tiny(lcd, DIGITS_X + DIGITS_W + 8, DIGITS_Y + DIGITS_H - 12, "WPM", t.muted, t.bg);
@@ -213,9 +217,9 @@ impl Ui {
             Action::Soft(1) => self.open_mem_row(lcd),
             Action::Soft(2) => {
                 s.adjust(Field::KeyOut, 1);
-                self.draw_home_value(lcd, s, Field::KeyOut);
+                self.key_out_changed(lcd, s);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.open_menu(lcd, s),
             _ => {}
         }
     }

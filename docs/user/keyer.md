@@ -9,7 +9,7 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 | Large digits | Your sending speed in WPM, 5 to 60. |
 | TONE | The sidetone pitch in Hz. |
 | VOL | The volume, 0 to 44. 0 is off. |
-| OUT | KEY OUT: ON when the func jack keys, OFF when it does not. |
+| OUT | KEY OUT: ON when your key keys the func jack, OFF when it does not. While it is ON, the header shows `TX`. |
 | DIT | The length of one dot at your speed, in milliseconds. |
 | Bar | Your speed between 5 and 60 WPM. |
 | Timing tape | Your keying drawn to scale. See below. |

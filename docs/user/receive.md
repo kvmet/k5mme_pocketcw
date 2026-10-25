@@ -2,9 +2,7 @@
 
 In a receive drill, the device sends a group of characters, and you key back what you copied. The device then shows the group with each character marked right or wrong.
 
-To start, open 03 RECEIVE in the [menu](menu.md). The Koch drill starts. F2 (KIND) moves to the next drill:
-
-KOCH, WORDS, CALLS, NINJA, HEAD, then the [ragchew](ragchew.md) CHEW and QUIZ, then KOCH again.
+To start, open RECEIVE in the [menu](menu.md), then the drill. The header shows the name of the drill. For a ragchew to copy, see [Ragchew](ragchew.md) in the ON AIR list.
 
 | Drill | What the device sends |
 | - | - |
@@ -87,9 +85,9 @@ The device keeps your level and your progress toward the next level while you us
 | Control | Action |
 | - | - |
 | F1 (SET) | Pauses the drill and opens the settings at the RECV tab. F4 (BACK) there returns, and the next group plays at the new settings. |
-| F2 (KIND) | Starts the next drill. |
+| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

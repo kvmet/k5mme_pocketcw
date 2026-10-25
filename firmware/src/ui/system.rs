@@ -229,7 +229,7 @@ impl Ui {
         if action == Action::Soft(0) {
             self.open_settings_at(lcd, s, THEME_TAB);
         } else if action == Action::Soft(3) {
-            self.open(lcd, s, Screen::Menu);
+            self.back(lcd, s);
         }
     }
 }

@@ -64,6 +64,14 @@ impl Hunting {
         }
     }
 
+    pub(super) fn pause(&mut self) {
+        self.queued = None;
+        self.playing = false;
+        self.over.clear();
+        self.over_deadline = None;
+        self.cq_deadline = None;
+    }
+
     fn queue(&mut self, tx: Tx) {
         self.queued = Some(tx);
         push_scrolling(&mut self.lines, Line { yours: false, text: tx.text, hidden: true });
@@ -94,7 +102,7 @@ impl Hunting {
 impl Ui {
     pub(super) fn draw_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        self.header(lcd, s, "HUNT", &[s.callsign()]);
+        self.header(lcd, s, "HUNT", &[]);
         self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_hunt_lines(lcd);
@@ -234,16 +242,7 @@ impl Ui {
 
     pub(super) fn hunt_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => {
-                if let Some(Session::Hunt(h)) = &mut self.session {
-                    h.queued = None;
-                    h.playing = false;
-                    h.over.clear();
-                    h.over_deadline = None;
-                    h.cq_deadline = None;
-                }
-                self.open_settings_at(lcd, s, QSO_TAB);
-            }
+            Action::Soft(0) => self.open_settings_at(lcd, s, QSO_TAB),
             Action::Soft(1) => {
                 self.hunt_answer("QRS");
                 self.draw_hunt_lines(lcd);
@@ -256,14 +255,14 @@ impl Ui {
                 self.draw_hunt_state(lcd);
                 self.draw_hunt_over(lcd);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }
 
     /// Back from settings: the activator takes the new options and sends its last over again.
     pub(super) fn hunt_resume(&mut self, lcd: &mut Lcd, s: &Settings) {
-        let Some(Session::Hunt(h)) = &mut self.session else { return self.open(lcd, s, Screen::Menu) };
+        let Some(Session::Hunt(h)) = &mut self.session else { return self.back(lcd, s) };
         h.bot.set_options(Self::qso_options(s), s.wpm);
         h.bot.set_call(s.callsign());
         let calling = h.bot.phase == Phase::Calling;

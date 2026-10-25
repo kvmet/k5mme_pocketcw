@@ -132,7 +132,7 @@ impl Ui {
     pub(super) fn progress_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
             Action::Soft(1) => self.open(lcd, s, Screen::Letters),
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }

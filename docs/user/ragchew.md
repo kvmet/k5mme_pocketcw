@@ -4,7 +4,7 @@ In a ragchew, two stations hold a full QSO for you to copy. One station calls CQ
 
 Each station has its own way to word its overs, such as `NAME` or `OP`, and `HW?` or `HW CPY?`. Most stations are in the US. Some are in Canada or other countries: these send temperatures in Celsius and antenna heights in meters, and a station outside the US and Canada sends a city with no state.
 
-Open the ragchew from the [receive drills](receive.md): press F2 (KIND) on the CALLS drill. There are two kinds:
+Open ON AIR in the [menu](menu.md), then CHEW or QUIZ. The header shows which one:
 
 | Kind | What you do |
 | - | - |
@@ -45,9 +45,9 @@ The footer shows your score for this session.
 | Control | Action |
 | - | - |
 | F1 (SET) | Pauses and opens the settings at the RECV tab. F4 (BACK) there returns, and the current over plays again at the new settings. |
-| F2 (KIND) | CHEW: starts QUIZ. QUIZ: starts the KOCH drill. |
+| F2 (AGN) | While an over plays or waits for your answer: sends the over again from its start. |
 | F3 (STOP or GO) | Pauses, or starts again from the start of the current over. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Pauses and opens the ON AIR list of the [menu](menu.md). Click CHEW or QUIZ, or RESUME, to go on from the start of the current over. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

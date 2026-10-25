@@ -6,13 +6,13 @@ All settings are on one screen with seven tabs: KEYER, SOUND, RECV, QSO, THEME, 
 
 | From | Press | Opens at tab |
 | - | - | - |
-| [Menu](menu.md), row 09 SETTINGS | Dial click | KEYER |
+| [Menu](menu.md), row SETTINGS | Dial click | KEYER |
 | Menu, KEYER, TIMING | F1 (SET) | KEYER |
 | Receive drills, ragchew, LETTERS, RADIO | F1 (SET) | RECV |
 | POTA, SOTA, HUNT | F1 (SET) | QSO |
 | SYSTEM | F1 (SET) | THEME |
 
-F4 (BACK) leaves the settings and returns to the screen you came from. A drill or a QSO you paused continues. From row 09 of the menu, F4 (BACK) returns to the menu.
+F4 (BACK) leaves the settings and returns to the screen you came from. A drill or a QSO you paused continues. From the SETTINGS row of the menu, F4 (BACK) returns to the menu.
 
 ## Controls
 
@@ -38,7 +38,7 @@ Numbers stop at their lowest and highest values. A choice of words goes around: 
 | MODE | IAMBIC A, IAMBIC B, STRAIGHT | IAMBIC B | Your key type. See [Keys and jacks](keys.md). |
 | PADDLES | NORMAL, REVERSED | NORMAL | NORMAL: dots on the tip contact. REVERSED: dots on the ring contact. STRAIGHT mode ignores this row. |
 | SPEED | 5 to 60 WPM | 20 WPM | Your sending speed. |
-| KEY OUT | ON, OFF | ON | Whether the func jack keys. |
+| KEY OUT | ON, OFF | ON | Whether your key keys the func jack on the KEYER, TIMING and RADIO screens. See [The func jack](keys.md#the-func-jack). |
 | OUT TYPE | STRAIGHT, PADDLE | STRAIGHT | STRAIGHT: one line keys, for a radio's straight key input. PADDLE: two lines follow your contacts, for the radio's own keyer. |
 | OUT LINES | TIP KEYS, RING KEYS (STRAIGHT); DIT ON TIP, DIT ON RING (PADDLE) | TIP KEYS or DIT ON TIP | Which lines of the func jack key. |
 | USB OUT | OFF, TEXT, VBAND, SERIAL, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. SERIAL is the serial port alone, for a logging program. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
@@ -63,7 +63,7 @@ The tab says `NOISE AND FADING: DRILLS, QSO, HUNT`: noise and fading play in the
 | FARNSWORTH | OFF, 5 to 40 WPM | OFF | Longer gaps between characters and words, so the text comes at this slower overall speed. It never goes above CHAR SPEED. |
 | CHEW SHOWS | WHOLE OVER, EACH LINE | WHOLE OVER | When the [ragchew](ragchew.md) CHEW shows its text. |
 | NINJA WORDS | 100 to 3000, in steps of 100 | 500 | How many words the [NINJA](receive.md#ninja) drill picks from: the ham words first, then the most common English words. |
-| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the menu shows row 11 RADIO. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
+| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the ON AIR list of the menu shows RADIO. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
 
 The tab says `SPEED OF WHAT YOU HEAR: BOTS, DRILLS`: CHAR SPEED and FARNSWORTH set the speed of every station the device sends you.
 

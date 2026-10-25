@@ -169,7 +169,7 @@ Deferred on 2026-10-25, after MIDI, Vail and the F key long presses: long presse
 
 Open questions for when it returns:
 
-- Note mode and the LOG screen need a place: the menu is full at 11 rows.
+- Note mode and the LOG screen need a place. The menu lists have room: LOG fits in STATS, and note mode fits as a menu row or an F1 hold.
 - A run ends after 4 s with no new text. Check this against real sending.
 - A memory is logged whole at the end of its playback, and only from STRAIGHT output with KEY OUT on.
 - On a Pro, check whether the decoder board hears your own sidetone. If it does, your keying logs twice, as YOU and as THEM.

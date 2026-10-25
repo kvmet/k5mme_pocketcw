@@ -148,6 +148,8 @@ mod app {
     /// Messages lost because the queue was full; shown on screen when nonzero.
     static DROPPED_EVENTS: AtomicU16 = AtomicU16::new(0);
     static KEY_OUT: AtomicBool = AtomicBool::new(true);
+    /// The screen open lets your key key the radio.
+    static SCREEN_KEYS: AtomicBool = AtomicBool::new(true);
     /// The radio jack takes paddle contacts instead of one keyed line; and tip and ring swapped.
     static OUT_PADDLE: AtomicBool = AtomicBool::new(false);
     static OUT_SWAP: AtomicBool = AtomicBool::new(false);
@@ -741,7 +743,8 @@ mod app {
         let output = if OUT_PADDLE.load(Ordering::Relaxed) { Output::Paddle } else { Output::Straight };
         let (dit, dah) = keying.paddles(mode.dit_on_ring(swap));
         let lines = output_lines(output, OUT_SWAP.load(Ordering::Relaxed), keyed, dit, dah);
-        let on = KEY_OUT.load(Ordering::Relaxed);
+        // A logging program keys the radio on every screen; your key only where the screen lets it.
+        let on = KEY_OUT.load(Ordering::Relaxed) && (SCREEN_KEYS.load(Ordering::Relaxed) || serial_active || serial.down);
         let key_out = (lines.0 && on, lines.1 && on);
         if key_out != *cx.local.key_out {
             *cx.local.key_out = key_out;
@@ -1020,6 +1023,7 @@ mod app {
                 cx.shared.link.lock(|link| link.send(command.as_str().as_bytes()));
             }
             LISTENING.store(ui.listening(), Ordering::Relaxed);
+            SCREEN_KEYS.store(ui.screen_keys_radio(), Ordering::Relaxed);
             let band = ui.band();
             cx.shared.audio.lock(|audio| {
                 audio.synth.set_band(band);

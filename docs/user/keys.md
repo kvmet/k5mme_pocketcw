@@ -42,13 +42,13 @@ The func jack keys a radio. It follows these settings on the KEYER tab:
 
 | Setting | Value | What the func jack does |
 | - | - | - |
-| KEY OUT | ON | The func jack keys, on every screen. This is the default. |
+| KEY OUT | ON | Your key keys the func jack on the KEYER, TIMING and RADIO screens. The header of these screens shows `TX`. This is the default. |
 | KEY OUT | OFF | The func jack never closes. |
 | OUT TYPE | STRAIGHT | One line closes while the keyer sends, for a radio's straight key input. OUT LINES picks TIP KEYS or RING KEYS. |
 | OUT TYPE | PADDLE | Tip and ring follow your dot contact and your dash contact, for the radio's own keyer. OUT LINES picks DIT ON TIP or DIT ON RING. |
 
 F3 (OUT) on the KEYER screen turns KEY OUT on and off.
 
-Only your own keying and your [memories](memories.md) key the func jack. The stations of the practice screens never key it. Memories key the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT.
+Only your own keying, your [memories](memories.md) and a logging program over the [serial port](usb.md) key the func jack. The practice screens and the settings never let your key key it, so a drill stays off the air. The stations of the practice screens never key it. A logging program keys it on every screen while KEY OUT is ON. Memories key the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT.
 
 The LED lights while the keyer sends and while a memory sends.

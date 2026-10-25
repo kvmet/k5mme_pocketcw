@@ -32,16 +32,6 @@ impl Kind {
             Kind::Head => "HEAD",
         }
     }
-
-    pub fn next(self) -> Kind {
-        match self {
-            Kind::Koch => Kind::Words,
-            Kind::Words => Kind::Calls,
-            Kind::Calls => Kind::Ninja,
-            Kind::Ninja => Kind::Head,
-            Kind::Head => Kind::Koch,
-        }
-    }
 }
 
 pub const GROUP_LEN: usize = 5;
@@ -330,12 +320,6 @@ mod tests {
         let score = align(b"KMRSE", b"KMRRSE");
         assert_eq!((score.right, score.extra), (5, 1));
         assert_eq!(marks("KMRSE", ""), [Missed; 5]);
-    }
-
-    #[test]
-    fn kind_goes_through_head_back_to_koch() {
-        let order: std::vec::Vec<Kind> = core::iter::successors(Some(Kind::Koch), |k| Some(k.next())).take(6).collect();
-        assert_eq!(order, [Kind::Koch, Kind::Words, Kind::Calls, Kind::Ninja, Kind::Head, Kind::Koch]);
     }
 
     #[test]

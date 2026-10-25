@@ -19,12 +19,12 @@ Two held buttons do the same thing on every screen:
 
 | Hold | Label | Action |
 | - | - | - |
-| F1 | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. |
-| F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in ends. |
+| F1 | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT IN PRACTICE`. See [The func jack](keys.md#the-func-jack). |
+| F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in pauses: RESUME in the [menu](menu.md) goes on with it. |
 
 While the MEM row is open on the KEYER screen, a held button sends its memory as a press does.
 
-On every screen, your key sounds the sidetone, keys the func jack when KEY OUT is ON, and types or keys VBand over USB when USB OUT is TEXT or VBAND. The Key row of each table lists what else the key does on that screen.
+On every screen, your key sounds the sidetone and types or keys VBand over USB when USB OUT is TEXT or VBAND. On the KEYER, TIMING and RADIO screens, it also keys the func jack when KEY OUT is ON. The Key row of each table lists what else the key does on that screen.
 
 ## Turn on
 
@@ -44,7 +44,7 @@ When the battery is empty, the device saves everything and turns off by itself. 
 
 ## The screen
 
-- The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end.
+- The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end. `TX` shows while your key keys the radio.
 - The column at the right edge, under the header, shows the labels of F1 to F4.
 - The status line at the bottom shows short messages. A message stays until the screen draws that area again. See [Status messages](status-messages.md).
 

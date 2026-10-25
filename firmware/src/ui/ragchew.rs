@@ -103,6 +103,11 @@ impl Chew {
         self.state != State::Paused
     }
 
+    pub(super) fn pause(&mut self) {
+        self.state = State::Paused;
+        self.deadline = None;
+    }
+
     /// Shows line `k` of the current over, or all of them with None.
     fn reveal(&mut self, k: Option<usize>) {
         let n = self.over.lines().len();
@@ -135,14 +140,19 @@ impl Ui {
     pub(super) fn draw_ragchew(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Ragchew(c)) = &self.session else { return };
         let t = &self.theme;
-        self.header(lcd, s, "RECEIVE", &[if c.quiz { "QUIZ" } else { "CHEW" }]);
-        let pause = if c.state == State::Paused { "GO" } else { "STOP" };
-        self.softkeys(lcd, ["SET", "KIND", pause, "BACK"]);
+        self.header(lcd, s, if c.quiz { "QUIZ" } else { "CHEW" }, &[]);
+        self.draw_ragchew_keys(lcd);
         if c.quiz {
             rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         }
         self.draw_ragchew_lines(lcd);
         self.draw_ragchew_now(lcd, s);
+    }
+
+    fn draw_ragchew_keys(&self, lcd: &mut Lcd) {
+        let Some(Session::Ragchew(c)) = &self.session else { return };
+        let pause = if c.state == State::Paused { "GO" } else { "STOP" };
+        self.softkeys(lcd, ["SET", "AGN", pause, "BACK"]);
     }
 
     fn draw_ragchew_lines(&self, lcd: &mut Lcd) {
@@ -320,30 +330,21 @@ impl Ui {
     pub(super) fn ragchew_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Ragchew(c)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => {
-                c.state = State::Paused;
-                c.deadline = None;
-                self.open_settings_at(lcd, s, RECEIVE_TAB);
-            }
-            Action::Soft(1) if c.quiz => {
+            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(1) if matches!(c.state, State::Playing | State::Asking | State::Answering) => {
                 self.stop_players();
-                self.open_receive(lcd, s, pocketcw_logic::drill::Kind::Koch);
-            }
-            Action::Soft(1) => {
-                self.stop_players();
-                self.open_ragchew(lcd, s, true);
+                self.start_over(lcd, s, 0);
             }
             Action::Soft(2) if c.state == State::Paused => {
                 self.start_over(lcd, s, OVER_GAP_MS);
                 self.draw(lcd, s);
             }
             Action::Soft(2) => {
-                c.state = State::Paused;
-                c.deadline = None;
+                c.pause();
                 self.stop_players();
                 self.draw(lcd, s);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }
@@ -352,5 +353,6 @@ impl Ui {
     pub(super) fn ragchew_resume(&mut self, lcd: &mut Lcd, s: &Settings) {
         self.open(lcd, s, Screen::Ragchew);
         self.start_over(lcd, s, OVER_GAP_MS);
+        self.draw_ragchew_keys(lcd);
     }
 }
