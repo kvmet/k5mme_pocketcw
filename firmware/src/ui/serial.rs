@@ -103,11 +103,12 @@ impl Ui {
 
     /// The stats lines, then `END`. Letters: `LEVEL n`, then `LETTER C TRIES PERCENT MASTERY`
     /// for each Koch character, then `MIXUP SENT COPIED COUNT`, most common first. Progress:
-    /// `SESSION SEQ ACTIVE_S CONTACTS RX_CHARS RX_RIGHT SENT_CHARS`, oldest first.
-    pub fn stats(&self, stats: Stats) -> impl Iterator<Item = Reply> + '_ {
+    /// `SESSION SEQ ACTIVE_S CONTACTS RX_CHARS RX_RIGHT SENT_CHARS`, oldest first. Timing: the
+    /// lines of `timing::Stats::report`.
+    pub fn stats(&self, kind: Stats) -> impl Iterator<Item = Reply> + '_ {
         let letters = &self.letters;
-        let level = (stats == Stats::Letters).then(|| Text::format(format_args!("LEVEL {}\n", letters.level)));
-        let each_letter = KOCH.iter().enumerate().filter(move |_| stats == Stats::Letters).map(move |(i, c)| {
+        let level = (kind == Stats::Letters).then(|| Text::format(format_args!("LEVEL {}\n", letters.level)));
+        let each_letter = KOCH.iter().enumerate().filter(move |_| kind == Stats::Letters).map(move |(i, c)| {
             let (percent, tries) = letters.accuracy(i).unwrap_or((0, 0));
             let mastery = match letters.mastery(i) {
                 None => "NEW",
@@ -117,16 +118,17 @@ impl Ui {
             };
             Text::format(format_args!("LETTER {} {tries} {percent} {mastery}\n", morse::text(c)))
         });
-        let mixups = letters.mixups().filter(move |_| stats == Stats::Letters).map(|m| {
+        let mixups = letters.mixups().filter(move |_| kind == Stats::Letters).map(|m| {
             Text::format(format_args!("MIXUP {} {} {}\n", morse::text(&m.sent), morse::text(&m.copied), m.count))
         });
         let (sessions, n) = self.history.sessions();
-        let sessions = sessions.into_iter().take(if stats == Stats::Progress { n } else { 0 }).map(|s| {
+        let sessions = sessions.into_iter().take(if kind == Stats::Progress { n } else { 0 }).map(|s| {
             Text::format(format_args!(
                 "SESSION {} {} {} {} {} {}\n",
                 s.seq, s.active_s, s.contacts, s.rx_chars, s.rx_right, s.sent_chars
             ))
         });
-        level.into_iter().chain(each_letter).chain(mixups).chain(sessions).chain([Text::format(format_args!("END\n"))])
+        let timing = self.stats.report::<REPLY_LEN>().take(if kind == Stats::Timing { usize::MAX } else { 0 });
+        level.into_iter().chain(each_letter).chain(mixups).chain(sessions).chain(timing).chain([Text::format(format_args!("END\n"))])
     }
 }

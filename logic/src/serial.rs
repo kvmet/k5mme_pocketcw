@@ -39,6 +39,7 @@ pub enum Command {
 pub enum Stats {
     Letters,
     Progress,
+    Timing,
 }
 
 const SET: &[u8] = b"SET ";
@@ -106,6 +107,7 @@ fn parse(line: &[u8]) -> Command {
         b"VBand Off" => Some(Command::Hotline(false)),
         b"STATS LETTERS" => Some(Command::Stats(Stats::Letters)),
         b"STATS PROGRESS" => Some(Command::Stats(Stats::Progress)),
+        b"STATS TIMING" => Some(Command::Stats(Stats::Timing)),
         _ => None,
     };
     if let Some(command) = command {
@@ -185,6 +187,7 @@ mod tests {
         assert_eq!(one("VBand Off\n"), Command::Hotline(false));
         assert_eq!(one("STATS LETTERS\n"), Command::Stats(Stats::Letters));
         assert_eq!(one("STATS PROGRESS\n"), Command::Stats(Stats::Progress));
+        assert_eq!(one("STATS TIMING\n"), Command::Stats(Stats::Timing));
     }
 
     #[test]

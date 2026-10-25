@@ -8,7 +8,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 4. Morse then voice, and the head-copy ladder
 5. Two-way ragchew bot: deferred
 6. In-line logger: raw transcripts on the device, QSO detection on the computer
-7. Stats export
+7. Stats export: built
 8. Later: send drill, keyer extras, games
 9. Revisit at the end: F key long presses, when the serial port is up
 
@@ -245,7 +245,7 @@ Flash cost: 4 to 5 KB (ring, `DUMP LOG`, note mode, LOG screen).
 
 ## 7. Stats export
 
-`DUMP STATS`: letter statistics and progress history from EEPROM, and timing statistics since boot, as CSV. Timing statistics are not saved today, and the EEPROM has 64 bytes left, so a saved version would go in the log as a new kind. Small, off the priority path.
+Built: `STATS LETTERS`, `STATS PROGRESS` and `STATS TIMING` on the serial port, and `pocketcw.py stats` saves each as CSV. See [Stats](serial.md#stats). Timing statistics are not saved across power off, and the EEPROM has 64 bytes left, so a saved version would go in the log as a new kind.
 
 Flash cost: about 1 KB.
 

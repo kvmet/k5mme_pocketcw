@@ -20,6 +20,7 @@ Steps run in order:
   stop                           stop what send and play started
   stats letters FILE.csv         save each letter's tries, accuracy and mastery
   stats progress FILE.csv        save each practice session
+  stats timing FILE.csv          save your keying timing since power on or CLR on TIMING
   edges MS FILE.csv              save each key and paddle line change for MS, with the keyer
                                  settings, and report lost lines
 
@@ -54,7 +55,7 @@ BUTTONS = ('F1', 'F2', 'F3', 'F4', 'LEFT', 'RIGHT', 'CLICK')
 # unfinished screenshot. EDGE ON also sends VALUE lines unasked.
 EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY', 'EDGE', 'VALUE')
 # Lines that answer a command.
-REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'END')
+REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'MARK', 'GAP', 'RATIO', 'WPM', 'BINS', 'END')
 # The longest SEND or PLAY text, from MAX_TEXT in logic/src/player.rs.
 MAX_SEND = 48
 SHOT_TIMEOUT_S = 3
@@ -161,7 +162,7 @@ class Device:
         return value(self._ask(f'SET {name} {new}', 'OK ')[-1])[1]
 
     def stats(self, kind):
-        """The lines of STATS LETTERS or STATS PROGRESS, without END."""
+        """The lines of STATS LETTERS, PROGRESS or TIMING, without END."""
         return self._ask(f'STATS {kind.upper()}', 'END$')[:-1]
 
     def edges(self, ms):
@@ -290,6 +291,29 @@ def save_progress(lines, path):
         out = csv.writer(f)
         out.writerow(['seq', 'active_s', 'contacts', 'rx_chars', 'rx_right', 'sent_chars'])
         out.writerows(line.split()[1:] for line in lines)
+
+
+def save_timing(lines, path):
+    """MARK and GAP lines, then a row per histogram bin, to CSV. Shows the ratio and speed."""
+    with open(path, 'w', newline='') as f:
+        out = csv.writer(f)
+        out.writerow(['what', 'name', 'count', 'mean', 'sd'])
+        for line in lines:
+            fields = line.split()
+            if fields[0] in ('MARK', 'GAP'):
+                out.writerow([fields[0].lower(), fields[1].lower(), *('' if v == '-' else v for v in fields[2:])])
+            elif fields[0] == 'BINS':
+                # The last bin also holds everything longer than the range.
+                what, range_units, counts = fields[1].lower(), int(fields[2]), fields[3:]
+                width = range_units / len(counts)
+                for i, count in enumerate(counts):
+                    name = f'{i * width:.2f}+' if i == len(counts) - 1 else f'{i * width:.2f}'
+                    out.writerow([f'bin_{what}', name, count, '', ''])
+            else:
+                print(f'{fields[0].lower()}: {fields[1]}')
+
+
+STATS_SAVERS = {'letters': save_letters, 'progress': save_progress, 'timing': save_timing}
 
 
 def find_port():
@@ -429,8 +453,8 @@ def steps(args):
             sys.exit(f'{word} takes milliseconds, not {values[0]}')
         if word in ('send', 'play') and len(values[0]) > MAX_SEND:
             sys.exit(f'{word} takes {MAX_SEND} characters at most, not {len(values[0])}')
-        if word == 'stats' and values[0] not in ('letters', 'progress'):
-            sys.exit(f'stats takes letters or progress, not {values[0]}')
+        if word == 'stats' and values[0] not in STATS_SAVERS:
+            sys.exit(f'stats takes letters, progress or timing, not {values[0]}')
         out.append((word, values))
     return out
 
@@ -471,7 +495,7 @@ def run(d, plan):
             d.stop()
         elif step == 'stats':
             lines = d.stats(value)
-            (save_letters if value == 'letters' else save_progress)(lines, values[1])
+            STATS_SAVERS[value](lines, values[1])
             print(values[1])
         else:
             rows = d.edges(int(value))

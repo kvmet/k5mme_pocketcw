@@ -103,6 +103,17 @@ impl<const N: usize> fmt::Write for Text<N> {
     }
 }
 
+/// A number with two decimals, rounded. It writes integers, so it needs no float formatting
+/// code. Negative numbers write as 0.00.
+pub struct Hundredths(pub f32);
+
+impl fmt::Display for Hundredths {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let hundredths = (self.0 * 100.0 + 0.5) as u32;
+        write!(f, "{}.{:02}", hundredths / 100, hundredths % 100)
+    }
+}
+
 /// Splits `s` into lines of at most `cols` characters, breaking at spaces. A word longer than a
 /// line is cut where the line ends.
 pub fn wrap(s: &str, cols: usize) -> impl Iterator<Item = &str> {

@@ -1,8 +1,11 @@
 //! Measures keying against a dot length: each mark and gap in dots, and statistics over a
 //! session.
 
+use core::fmt::Write;
+
 use crate::decoder::{CHAR_GAP_DOTS, DAH_DOTS, WORD_GAP_DOTS};
 use crate::math::sqrt;
+use crate::text::{Hundredths, Text};
 
 /// A keyed line: the keyer output, or one contact of the key jack.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -274,6 +277,42 @@ impl Stats {
     pub fn is_empty(&self) -> bool {
         self.total_ms == 0.0
     }
+
+    /// The lines of `STATS TIMING` (docs/dev/serial.md), each ending in `\n`.
+    pub fn report<const N: usize>(&self) -> impl Iterator<Item = Text<N>> + '_ {
+        // The longest line: "BINS MARK 4", then 24 counts of up to " 65535", then "\n".
+        const { assert!(N >= 11 + BINS * 6 + 1) };
+        let moments = [
+            ("MARK DIT", &self.dit),
+            ("MARK DAH", &self.dah),
+            ("GAP ELEMENT", &self.element_gap),
+            ("GAP CHAR", &self.char_gap),
+            ("GAP WORD", &self.word_gap),
+        ];
+        let moments = moments.into_iter().map(|(name, m)| {
+            let mut line = Text::format(format_args!("{name} {}", m.count));
+            for value in [m.mean(), m.sd()] {
+                let _ = match value {
+                    Some(v) => write!(line, " {}", Hundredths(v)),
+                    None => write!(line, " -"),
+                };
+            }
+            let _ = line.write_str("\n");
+            line
+        });
+        let known = [("RATIO", self.ratio()), ("WPM", self.effective_wpm())]
+            .into_iter()
+            .filter_map(|(name, value)| Some(Text::format(format_args!("{name} {}\n", Hundredths(value?)))));
+        let histograms = [("MARK", MARK_RANGE, &self.marks), ("GAP", GAP_RANGE, &self.gaps)].into_iter().map(|(name, range, bins)| {
+            let mut line = Text::format(format_args!("BINS {name} {}", range as u32));
+            for n in bins {
+                let _ = write!(line, " {n}");
+            }
+            let _ = line.write_str("\n");
+            line
+        });
+        moments.chain(known).chain(histograms)
+    }
 }
 
 #[cfg(test)]
@@ -292,6 +331,36 @@ mod tests {
             out.extend(meter.edge(i % 2 == 1, t, dit_ms));
         }
         out
+    }
+
+    #[test]
+    fn the_report_gives_each_moment_the_ratio_the_speed_and_both_histograms() {
+        let mut stats = Stats::default();
+        let interval = |kind, len_ms, units| Interval { kind, start_ms: 0, len_ms, dit_ms: 60, units };
+        stats.add(&interval(Kind::Dit, 60, 1.0));
+        stats.add(&interval(Kind::Dit, 66, 1.1));
+        stats.add(&interval(Kind::Dah, 189, 3.15));
+        stats.add(&interval(Kind::ElementGap, 60, 1.0));
+        let lines: Vec<std::string::String> = stats.report::<192>().map(|l| l.as_str().into()).collect();
+        let mut marks = [0u16; BINS];
+        marks[6] = 2;
+        marks[18] = 1;
+        let marks: std::string::String = marks.iter().map(|n| std::format!(" {n}")).collect();
+        let gaps: std::string::String = (0..BINS).map(|i| if i == 3 { " 1" } else { " 0" }).collect();
+        assert_eq!(
+            lines,
+            [
+                "MARK DIT 2 63.00 3.00\n".into(),
+                "MARK DAH 1 189.00 0.00\n".into(),
+                "GAP ELEMENT 1 1.00 0.00\n".into(),
+                "GAP CHAR 0 - -\n".into(),
+                "GAP WORD 0 - -\n".into(),
+                "RATIO 3.00\n".into(),
+                "WPM 19.20\n".into(),
+                std::format!("BINS MARK 4{marks}\n"),
+                std::format!("BINS GAP 8{gaps}\n"),
+            ]
+        );
     }
 
     #[test]

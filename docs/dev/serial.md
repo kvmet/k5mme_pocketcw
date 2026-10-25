@@ -29,7 +29,7 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `SET NAME VALUE` | Changes a setting or memory. See [Settings](#settings). |
 | `EDGE ON`, `EDGE OFF` | Starts or stops the key timing lines. See [Edges](#edges). |
 | `VBand On`, `VBand Off` | Starts or stops the CW Hotline lines, in this mixed case. See [VBand Hotline](#vband-hotline). No reply. |
-| `STATS LETTERS`, `STATS PROGRESS` | Sends the letter stats or the practice sessions. See [Stats](#stats). |
+| `STATS LETTERS`, `STATS PROGRESS`, `STATS TIMING` | Sends the letter stats, the practice sessions, or your keying timing. See [Stats](#stats). |
 
 Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 commands sent at once can fill the queue; the device then shows `n INPUTS LOST`.
 
@@ -121,6 +121,26 @@ SESSION 12 600 3 120 100 450
 ```
 
 The fields are the session number, the seconds of practice, the contacts logged, the characters sent in receive drills, how many of those you copied right, and the characters you keyed.
+
+`STATS TIMING` sends the timing of your keying since power on, or since CLR on the TIMING screen, then `END`:
+
+```
+MARK DIT 120 62.40 4.10
+MARK DAH 118 190.25 9.80
+GAP ELEMENT 210 1.02 0.15
+GAP CHAR 40 3.10 0.42
+GAP WORD 9 7.80 1.25
+RATIO 3.05
+WPM 19.60
+BINS MARK 4 0 0 0 1 12 ...
+BINS GAP 8 0 2 ...
+```
+
+- A `MARK` or `GAP` line gives the count, the mean and the standard deviation. Marks are in ms; gaps are in dots of the keyer speed at the time. The standard deviation divides by the count, so one sample gives 0. `-` stands for a value that needs at least one sample.
+- `RATIO` is the dah length over the dit length; 3 is standard. `WPM` is the speed your timing works out to. Each line comes only once its value is known.
+- A `BINS` line is a histogram: the range in dots, then the count in each of 24 equal bins from 0. The last bin also holds everything longer than the range.
+- Numbers have two decimals.
+- Marks in ms mix speeds when SPEED changes after a CLR. Text that `SEND` keys counts too, since it keys the same line.
 
 ## Events
 
