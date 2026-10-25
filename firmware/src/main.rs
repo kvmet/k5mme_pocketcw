@@ -52,12 +52,13 @@ mod app {
         store::{self, Saved},
         theme::{Theme, palette_stripes},
         text::Text,
-        ui::{Command, PanelFrom, SystemInfo, Ui},
+        ui::{Command, PanelFrom, Reply, SystemInfo, Ui},
         usb::{self, Port},
     };
     use pocketcw_logic::{
         battery::Gauge,
         buttons::{self, Button, Buttons, Event},
+        config::Name,
         decoder::{Decoded, KeyDecoder},
         input::{Action, Input},
         keyboard::{self, NO_KEYS, Typist},
@@ -66,7 +67,7 @@ mod app {
         keyer::{Contacts, Jack, Keyer, MAX_WPM, MIN_WPM, Mode, Output, output_lines},
         listen::Listener,
         morse,
-        player::{MAX_TEXT, Player},
+        player::Player,
         sender,
         serial::{Command as SerialCommand, CommandLine},
         settings::{Settings, UsbOut},
@@ -97,10 +98,8 @@ mod app {
         Board(board::Event),
         /// A character decoded from the decoder board's tone line, heard at `wpm`.
         Heard { decoded: Decoded, wpm: u16 },
-        /// The computer asked for the screen over USB serial.
-        Shot,
-        /// The computer sent text over USB serial to key.
-        Send(Text<MAX_TEXT>),
+        /// A command from the serial port other than PRESS, which comes as buttons.
+        Serial(SerialCommand),
         /// The serial key finished its text, a word gap ago.
         Sent,
         /// A WinKeyer host opened the serial port, or closed it.
@@ -480,12 +479,11 @@ mod app {
                     }
                     // Through the same queue as SHOT, so a screenshot after a press shows its result.
                     match cx.local.command_line.push(byte) {
-                        Some(SerialCommand::Shot) => send(Message::Shot),
-                        Some(SerialCommand::Send(text)) => send(Message::Send(text)),
                         Some(SerialCommand::Press(button)) => {
                             send(Message::Button(Event::Press(button)));
                             send(Message::Button(Event::Release(button)));
                         }
+                        Some(command) => send(Message::Serial(command)),
                         None => {}
                     }
                 }
@@ -844,18 +842,21 @@ mod app {
             };
             let before = settings;
             match received {
-                Ok(Ok(Message::Shot)) => {
+                Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
                     if !send_screen(&mut lcd, &mut chunks, readable).await {
                         ui.status(&mut lcd, "SCREENSHOT NOT SENT");
                     }
                 }
-                Ok(Ok(Message::Send(_))) if sending => emit(&mut chunks, "BUSY\n"),
-                Ok(Ok(Message::Send(text))) => match cx.shared.serial_key.lock(|s| s.push_text(text.as_str()).then(|| s.is_busy())) {
-                    Some(true) => sending = true,
-                    // Nothing to key.
-                    Some(false) => emit(&mut chunks, "SENT\n"),
-                    None => emit(&mut chunks, "BUSY\n"),
-                },
+                Ok(Ok(Message::Serial(SerialCommand::Send(_)))) if sending => emit(&mut chunks, "BUSY\n"),
+                Ok(Ok(Message::Serial(SerialCommand::Send(text)))) => {
+                    match cx.shared.serial_key.lock(|s| s.push_text(text.as_str()).then(|| s.is_busy())) {
+                        Some(true) => sending = true,
+                        // Nothing to key.
+                        Some(false) => emit(&mut chunks, "SENT\n"),
+                        None => emit(&mut chunks, "BUSY\n"),
+                    }
+                }
+                Ok(Ok(Message::Serial(command))) => answer(&mut ui, &mut lcd, &mut settings, &mut chunks, command).await,
                 Ok(Ok(message)) => {
                     sending &= !matches!(message, Message::Sent);
                     if let Some(line) = event_line(&message) {
@@ -973,8 +974,7 @@ mod app {
             Message::Played { .. } => {}
             Message::Board(event) => ui.board_event(lcd, event),
             Message::Heard { decoded, wpm } => ui.heard(lcd, decoded, wpm),
-            Message::Shot => unreachable!("the UI loop sends the screen, since that waits on USB"),
-            Message::Send(_) => unreachable!("the UI loop starts the serial key, since that needs its lock"),
+            Message::Serial(_) => unreachable!("the UI loop answers serial commands, since replies wait on USB"),
             Message::Sent => {}
             Message::Winkeyer(open) => ui.status(lcd, if open { "WINKEYER OPEN" } else { "WINKEYER CLOSED" }),
             Message::Speed(0) => {}
@@ -1004,6 +1004,38 @@ mod app {
             Decoded::Char(c) => line(morse::text(&c)),
             Decoded::Unknown => line("*"),
             Decoded::Space => line(" "),
+        }
+    }
+
+    /// Answers a serial command with reply lines. The UI waits for room for each, so a long
+    /// reply is never cut short by a full queue.
+    async fn answer(ui: &mut Ui, lcd: &mut Lcd, settings: &mut Settings, chunks: &mut Sender<'static, Chunk, CHUNKS>, command: SerialCommand) {
+        let end = || Text::format(format_args!("END\n"));
+        match command {
+            SerialCommand::Info => reply(chunks, [ui.info()]).await,
+            SerialCommand::Get(Some(name)) => reply(chunks, [ui.get(settings, name)]).await,
+            SerialCommand::Get(None) => reply(chunks, Name::all().map(|name| ui.get(settings, name)).chain([end()])).await,
+            SerialCommand::Set(name, value) => {
+                let line = ui.set(lcd, settings, name, value.as_str());
+                reply(chunks, [line]).await
+            }
+            SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
+            SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Press(_) => unreachable!("the UI loop handles these itself"),
+        }
+    }
+
+    /// Queues reply lines while the computer has the port open in text mode. Stops at the
+    /// first line USB took nothing of for SHOT_WAIT_MS, which counts in SERIAL_LINES_LOST.
+    async fn reply(chunks: &mut Sender<'static, Chunk, CHUNKS>, lines: impl IntoIterator<Item = Reply>) {
+        for line in lines {
+            if !SERIAL_OPEN.load(Ordering::Relaxed) || WK_OPEN.load(Ordering::Relaxed) {
+                return;
+            }
+            if !send_serial(chunks, line.as_str().as_bytes()).await {
+                SERIAL_LINES_LOST.fetch_add(1, Ordering::Relaxed);
+                return;
+            }
         }
     }
 

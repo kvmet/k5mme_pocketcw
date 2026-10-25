@@ -14,6 +14,7 @@ mod qso;
 mod radio;
 mod ragchew;
 mod receive;
+mod serial;
 mod settings;
 mod system;
 mod tape;
@@ -51,6 +52,7 @@ use ragchew::Chew;
 use receive::Receive;
 use tape::Tape;
 
+pub use serial::Reply;
 pub use system::{PanelFrom, SystemInfo};
 
 const COLS: usize = (MAIN / crate::gfx::CHAR_W) as usize;

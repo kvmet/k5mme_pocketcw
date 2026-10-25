@@ -6,6 +6,7 @@ use core::fmt::Write;
 
 use embedded_graphics::pixelcolor::Rgb565;
 use pocketcw_logic::{
+    config,
     decoder::Decoded,
     input::Action,
     keyer::Output,
@@ -280,7 +281,7 @@ fn swatch(lcd: &mut Lcd, t: &Theme, boot_count: u16, palette: u8, x: i32, y: i32
     }
 }
 
-fn value(s: &Settings, field: Field) -> Text<12> {
+pub(super) fn value(s: &Settings, field: Field) -> Text<{ config::SHOWN_LEN }> {
     let on_off = |on: bool| if on { "ON" } else { "OFF" };
     let mut t = Text::new();
     let _ = match field {
