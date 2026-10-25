@@ -57,10 +57,6 @@ pub const MAX_LEVEL: u8 = KOCH.len() as u8;
 const LEVEL_WINDOW: u16 = 50;
 const LEVEL_PERCENT: u16 = 90;
 
-/// NINJA picks among this many pack words from the first: the ham words, then the most common
-/// English words.
-pub const NINJA_WORDS: u16 = 500;
-
 /// What one HEAD item holds.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Item {
@@ -395,10 +391,11 @@ mod tests {
     #[test]
     fn ninja_words_come_from_the_first_of_the_pack_words() {
         let mut drill = Drill::new(Kind::Ninja, MIN_LEVEL, 9);
-        let picks: std::vec::Vec<u16> = (0..2000).map(|_| drill.pick_word(49, 2979, NINJA_WORDS)).collect();
-        assert!(picks.iter().all(|&i| (49..49 + NINJA_WORDS).contains(&i)));
-        assert!(picks.contains(&49) && picks.contains(&(48 + NINJA_WORDS)));
-        assert!((0..50).all(|_| drill.pick_word(1, 3, NINJA_WORDS) < 4));
+        let limit = 500;
+        let picks: std::vec::Vec<u16> = (0..2000).map(|_| drill.pick_word(49, 2979, limit)).collect();
+        assert!(picks.iter().all(|&i| (49..49 + limit).contains(&i)));
+        assert!(picks.contains(&49) && picks.contains(&(48 + limit)));
+        assert!((0..50).all(|_| drill.pick_word(1, 3, limit) < 4));
     }
 
     #[test]

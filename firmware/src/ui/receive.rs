@@ -7,7 +7,7 @@ use core::ops::RangeInclusive;
 use pocketcw_logic::{
     decoder::{Decoded, copy_end},
     dial::Target,
-    drill::{Drill, Item, Kind, MAX_COPY, MAX_GROUP, Mark, NINJA_WORDS, RUNGS},
+    drill::{Drill, Item, Kind, MAX_COPY, MAX_GROUP, Mark, RUNGS},
     input::Action,
     letters::{KOCH, Mastery},
     morse,
@@ -251,7 +251,7 @@ impl Ui {
         if !again {
             let pack = self.pack.as_ref().ok();
             let group = match (rx.drill.kind, rx.drill.item()) {
-                (Kind::Ninja, _) => pack.and_then(|pack| ninja_word(&mut rx.drill, pack, lcd)).map(|(word, group)| {
+                (Kind::Ninja, _) => pack.and_then(|pack| ninja_word(&mut rx.drill, pack, lcd, s.ninja_words)).map(|(word, group)| {
                     rx.word = word;
                     group
                 }),
@@ -445,11 +445,11 @@ impl Ui {
     }
 }
 
-/// A NINJA word: one with a clip that fits left of `COPY_X`, as the pack spells it for the voice
-/// and as the group to send.
-fn ninja_word(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
+/// A NINJA word among the first `limit`: one with a clip that fits left of `COPY_X`, as the pack
+/// spells it for the voice and as the group to send.
+fn ninja_word(drill: &mut Drill, pack: &Pack, lcd: &mut Lcd, limit: u16) -> Option<(Text<WORD_TEXT>, Text<MAX_GROUP>)> {
     let cells = |group: &Text<MAX_GROUP>| group.as_str().bytes().map(char_cells).sum::<usize>();
-    pack_word(drill, pack, lcd, NINJA_WORDS, |group, voiced| voiced && cells(group) <= SENT_CELLS)
+    pack_word(drill, pack, lcd, limit, |group, voiced| voiced && cells(group) <= SENT_CELLS)
 }
 
 /// `count` pack words of `len` characters each, between spaces.

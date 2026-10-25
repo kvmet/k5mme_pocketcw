@@ -52,10 +52,11 @@ const SOUND_ROWS: [(&str, Field); 5] = [
     ("NOISE", Field::Noise),
     ("FADING", Field::Fading),
 ];
-const RECEIVE_ROWS: [(&str, Field); 4] = [
+const RECEIVE_ROWS: [(&str, Field); 5] = [
     ("CHAR SPEED", Field::RxSpeed),
     ("FARNSWORTH", Field::RxEffective),
     ("CHEW SHOWS", Field::Reveal),
+    ("NINJA WORDS", Field::NinjaWords),
     ("DECODER BOARD", Field::DecoderBoard),
 ];
 const QSO_ROWS: [(&str, Field); 5] = [
@@ -322,6 +323,7 @@ pub(super) fn value(s: &Settings, field: Field) -> Text<{ config::SHOWN_LEN }> {
         Field::Reveal => write!(t, "{}", if s.reveal_lines { "EACH LINE" } else { "WHOLE OVER" }),
         Field::Wave => write!(t, "{}", if s.square { "SQUARE" } else { "SINE" }),
         Field::DecoderBoard => write!(t, "{}", on_off(s.decoder_board)),
+        Field::NinjaWords => write!(t, "{}", s.ninja_words),
         Field::UsbOut => write!(
             t,
             "{}",

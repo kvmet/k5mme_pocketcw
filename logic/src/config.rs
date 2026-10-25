@@ -17,7 +17,7 @@ pub const SHOWN_LEN: usize = 12;
 pub const REASON_LEN: usize = 160;
 
 /// Each setting's name: its settings row, with `_` for a space.
-const SETTINGS: [(&str, Field); 22] = [
+const SETTINGS: [(&str, Field); 23] = [
     ("MODE", Field::Mode),
     ("PADDLES", Field::Swap),
     ("SPEED", Field::Speed),
@@ -33,6 +33,7 @@ const SETTINGS: [(&str, Field); 22] = [
     ("CHAR_SPEED", Field::RxSpeed),
     ("FARNSWORTH", Field::RxEffective),
     ("CHEW_SHOWS", Field::Reveal),
+    ("NINJA_WORDS", Field::NinjaWords),
     ("DECODER_BOARD", Field::DecoderBoard),
     ("PILEUP", Field::Pileup),
     ("FIST", Field::Fist),
@@ -293,6 +294,7 @@ mod tests {
             Field::RxSpeed => Text::format(format_args!("{} WPM", s.rx_wpm)),
             Field::DecoderBoard => Text::format(format_args!("{}", on_off(s.decoder_board))),
             Field::UsbOut => Text::format(format_args!("{:?}", s.usb_out)),
+            Field::NinjaWords => Text::format(format_args!("{}", s.ninja_words)),
             _ => Text::new(),
         }
     }
@@ -339,6 +341,8 @@ mod tests {
         assert_eq!((s.wpm, s.tone_hz, s.mode, s.rx_wpm), (35, 650, Mode::Straight, 0));
         assert_eq!(setting(&mut s, "CHAR_SPEED", "12"), Ok(()));
         assert_eq!(s.rx_wpm, 12);
+        assert_eq!(setting(&mut s, "NINJA_WORDS", "1200"), Ok(()));
+        assert_eq!(s.ninja_words, 1200);
         let m = Memories::new("K5MME");
         assert_eq!(get(Name::Setting(Field::Tone), &s, &m, show).as_str(), "650");
     }
@@ -350,6 +354,7 @@ mod tests {
         assert_eq!(setting(&mut s, "MODE", "IAMBIC C"), reason("STRAIGHT, IAMBIC A, IAMBIC B"));
         assert_eq!(setting(&mut s, "CHAR_SPEED", "50"), reason("MATCH, 5 TO 40"));
         assert_eq!(setting(&mut s, "TONE", "655"), reason("300 TO 1200 BY 10"));
+        assert_eq!(setting(&mut s, "NINJA_WORDS", "150"), reason("100 TO 3000 BY 100"));
         assert_eq!(s, usb_on(), "nothing changed");
     }
 

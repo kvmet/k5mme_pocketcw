@@ -47,7 +47,7 @@ NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a
 4. If you do not key, the voice says the word, and the list shows it with no score.
 5. The next word starts about 1 second after the voice ends.
 
-The words are the ham words and abbreviations of the content pack, then the most common English words: 500 in all. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
+The words are the ham words and abbreviations of the content pack, then the most common English words: 500 by default. NINJA WORDS on the RECV tab of the [settings](settings.md) sets how many. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
 
 NINJA needs the content pack. Without it, the drill shows `CONTENT PACK MISSING: INSTALL IT` and sends nothing. [Install](install.md) again, with the [content pack](install.md#the-content-pack).
 

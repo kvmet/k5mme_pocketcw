@@ -62,6 +62,7 @@ The tab says `NOISE AND FADING: DRILLS, QSO, HUNT`: noise and fading play in the
 | CHAR SPEED | MATCH, 5 to 40 WPM | MATCH | The speed of each character the device sends you. MATCH uses your keyer SPEED. |
 | FARNSWORTH | OFF, 5 to 40 WPM | OFF | Longer gaps between characters and words, so the text comes at this slower overall speed. It never goes above CHAR SPEED. |
 | CHEW SHOWS | WHOLE OVER, EACH LINE | WHOLE OVER | When the [ragchew](ragchew.md) CHEW shows its text. |
+| NINJA WORDS | 100 to 3000, in steps of 100 | 500 | How many words the [NINJA](receive.md#ninja) drill picks from: the ham words first, then the most common English words. |
 | DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the menu shows row 11 RADIO. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
 
 The tab says `SPEED OF WHAT YOU HEAR: BOTS, DRILLS`: CHAR SPEED and FARNSWORTH set the speed of every station the device sends you.

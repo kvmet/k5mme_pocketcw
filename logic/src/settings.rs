@@ -81,6 +81,8 @@ pub struct Settings {
     /// A Pro decoder board is fitted: power it and show the RADIO screen.
     pub decoder_board: bool,
     pub usb_out: UsbOut,
+    /// NINJA picks among the first this many pack words, a multiple of `NINJA_WORDS_STEP`.
+    pub ninja_words: u16,
 }
 
 pub const MAX_VOLUME: u8 = volume::MAX_LEVEL;
@@ -95,6 +97,10 @@ pub const CALLSIGN_LEN: usize = 10;
 /// Above zero, so the screen can't be dimmed to black.
 pub const MIN_BRIGHTNESS: u8 = 1;
 pub const MAX_BRIGHTNESS: u8 = 10;
+pub const NINJA_WORDS_STEP: u16 = 100;
+pub const MIN_NINJA_WORDS: u16 = NINJA_WORDS_STEP;
+/// About the words in the content pack.
+pub const MAX_NINJA_WORDS: u16 = 3000;
 /// The amateur radio placeholder call, until the user enters theirs.
 const DEFAULT_CALLSIGN: &[u8] = b"N0CALL";
 const MODES: [Mode; 3] = [Mode::IambicA, Mode::IambicB, Mode::Straight];
@@ -124,6 +130,7 @@ pub enum Field {
     Fading,
     DecoderBoard,
     UsbOut,
+    NinjaWords,
 }
 
 impl Default for Settings {
@@ -135,7 +142,7 @@ impl Default for Settings {
             output_swap: false, boot_count: 0, style: 0,
             palette: 0, callsign, rx_wpm: 0, rx_effective: 0, pileup: Pileup::TakeTurns, human_fist: true,
             spread: true, reveal_lines: false, brightness: MAX_BRIGHTNESS, square: false, noise: 0, fading: 0,
-            decoder_board: false, usb_out: UsbOut::Off,
+            decoder_board: false, usb_out: UsbOut::Off, ninja_words: 500,
         }
     }
 }
@@ -158,9 +165,11 @@ const V4_BODY: usize = V3_BODY + 3;
 const V5_BODY: usize = V4_BODY + 1;
 const V6_BODY: usize = V5_BODY + 3;
 const BODY_LEN: usize = V6_BODY + 1;
-/// The save count follows the settings fields.
+/// The save count follows the fields of version 7. Later fields follow the count, so older
+/// firmware still finds its count.
 const COUNT_AT: usize = BODY_LEN;
-pub const RECORD_LEN: usize = COUNT_AT + 1 + record::OVERHEAD;
+const NINJA_AT: usize = COUNT_AT + 1;
+pub const RECORD_LEN: usize = NINJA_AT + 1 + record::OVERHEAD;
 /// Settings are kept in two copies and saved to them in turn, so a save cut off by power loss
 /// leaves the other copy whole. A save with count `n` goes to copy `n % COPIES`.
 pub const COPIES: usize = 2;
@@ -176,7 +185,7 @@ impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
     /// it once that exists), style, palette, callsign, receive speed, effective speed, QSO and
     /// ragchew flags, brightness, sound flags (bit 0 square), noise, fading, hardware flags, save
-    /// count.
+    /// count, NINJA words in hundreds.
     pub fn encode(&self, count: u8) -> [u8; RECORD_LEN] {
         let mode = match self.mode {
             Mode::IambicA => 0,
@@ -210,6 +219,7 @@ impl Settings {
             self.decoder_board as u8 | (self.usb_out as u8) << USB_OUT_SHIFT,
         ]);
         body[COUNT_AT] = count;
+        body[NINJA_AT] = (self.ninja_words / NINJA_WORDS_STEP) as u8;
         frame(&mut record, MAGIC, VERSION);
         record
     }
@@ -283,6 +293,10 @@ impl Settings {
         } else {
             (defaults.square as u8, defaults.noise, defaults.fading)
         };
+        // Clamped, so a value from later firmware keeps the rest of the record.
+        let ninja_words = body.get(NINJA_AT).map_or(defaults.ninja_words, |&hundreds| {
+            (hundreds as u16 * NINJA_WORDS_STEP).clamp(MIN_NINJA_WORDS, MAX_NINJA_WORDS)
+        });
         let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
         let stored = hardware >> USB_OUT_SHIFT & USB_OUT_MASK;
         // A value from later firmware turns USB off instead of dropping the whole record.
@@ -323,6 +337,7 @@ impl Settings {
             fading,
             decoder_board: hardware & 1 != 0,
             usb_out,
+            ninja_words,
         };
         let in_range = (MIN_WPM..=MAX_WPM).contains(&settings.wpm)
             && settings.volume <= MAX_VOLUME
@@ -393,6 +408,10 @@ impl Settings {
                 let offered = if self.decoder_board { USB_OUTS.len() } else { USB_OUTS.len() - 1 };
                 let i = USB_OUTS.iter().position(|&u| u == self.usb_out).unwrap_or(0);
                 self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(offered as i32) as usize];
+            }
+            Field::NinjaWords => {
+                let words = self.ninja_words as i32 + d * NINJA_WORDS_STEP as i32;
+                self.ninja_words = words.clamp(MIN_NINJA_WORDS as i32, MAX_NINJA_WORDS as i32) as u16;
             }
             Field::Brightness => {
                 self.brightness = (self.brightness as i32 + d).clamp(MIN_BRIGHTNESS as i32, MAX_BRIGHTNESS as i32) as u8
@@ -652,10 +671,33 @@ mod tests {
     fn a_frame_with_fields_from_later_firmware_reads_what_it_knows() {
         let s = Settings { wpm: 31, square: true, ..Settings::default() };
         let mut slot = [0xFF; 64];
-        let longer = &mut slot[..BODY_LEN + 3 + record::OVERHEAD];
-        body_mut(longer)[..BODY_LEN].copy_from_slice(&s.encode(0)[4..4 + BODY_LEN]);
+        let longer = &mut slot[..NINJA_AT + 1 + 3 + record::OVERHEAD];
+        body_mut(longer)[..NINJA_AT + 1].copy_from_slice(&s.encode(0)[4..4 + NINJA_AT + 1]);
         frame(longer, MAGIC, VERSION);
         assert_eq!(Settings::decode(&slot), Some(s));
+    }
+
+    #[test]
+    fn ninja_words_step_round_trip_and_follow_the_save_count() {
+        let mut s = Settings::default();
+        s.adjust(Field::NinjaWords, 3);
+        assert_eq!(s.ninja_words, 800);
+        s.adjust(Field::NinjaWords, -20);
+        assert_eq!(s.ninja_words, MIN_NINJA_WORDS);
+        s.adjust(Field::NinjaWords, 100);
+        assert_eq!(s.ninja_words, MAX_NINJA_WORDS);
+        let record = s.encode(9);
+        assert_eq!(Settings::decode(&record), Some(s));
+        assert_eq!(record[record::BODY_START + COUNT_AT], 9, "where older firmware reads the count");
+        let mut before = [0xFF; 64];
+        let older = &mut before[..NINJA_AT + record::OVERHEAD];
+        body_mut(older)[..NINJA_AT].copy_from_slice(&Settings::default().encode(0)[4..4 + NINJA_AT]);
+        frame(older, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&before).map(|s| s.ninja_words), Some(500), "a save from before the field");
+        let mut later = s.encode(0);
+        later[record::BODY_START + NINJA_AT] = 200;
+        frame(&mut later, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&later), Some(s), "a value past the range clamps");
     }
 
     #[test]
