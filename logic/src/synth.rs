@@ -1,7 +1,7 @@
 //! The sound the device makes, one sample at a time: your sidetone, the stations the players
 //! send, band noise and fading, and a spoken word, mixed into one signal for PA8's PWM.
 
-use crate::adpcm::{Clip, Upsample};
+use crate::adpcm::{Clips, Upsample};
 use crate::math::sqrt;
 
 /// The voice your own keying sounds on; voices after it carry the players.
@@ -199,8 +199,8 @@ pub struct Sound {
     pub tone_hz: u16,
 }
 
-/// A voice clip as the synth plays it: decoded and raised to the output rate.
-pub type Speech = Upsample<Clip<'static>>;
+/// Voice clips as the synth plays them: decoded and raised to the output rate.
+pub type Speech = Upsample<Clips<'static>>;
 
 pub struct Synth {
     sample_hz: f32,
@@ -371,7 +371,7 @@ mod tests {
     fn speech_plays_its_clip_then_lets_go() {
         static CLIP: [u8; 64] = [0x77; 64];
         let mut synth = Synth::new(RATE, SOUND);
-        synth.say(Some(Upsample::new(Clip::new(&CLIP), 3)));
+        synth.say(Some(Upsample::new(Clips::new(&CLIP, &[CLIP.len() as u16], 0), 3)));
         assert!(!synth.is_silent());
         let samples: std::vec::Vec<f32> = (0..3 * 2 * CLIP.len()).map(|_| synth.sample()).collect();
         assert!(samples.iter().any(|&s| s > 0.1), "speech never got loud");

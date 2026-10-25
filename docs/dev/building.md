@@ -96,12 +96,13 @@ The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flas
 
 ## Content pack
 
-The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart`. `logic/src/pack.rs` gives the format. The words come from two lists:
+The content pack is `F000400.bin`: the words for the drills, each with a clip of the Kokoro voice `af_heart`. `logic/src/pack.rs` gives the format. The entries come from three lists:
 
+- `tools/words/chars.txt`: every character Morse sends, so the device can spell a word the pack lacks.
 - `tools/words/ham.txt`: CW words, abbreviations, Q codes and prosigns, each with the text the voice says. Abbreviations are spelled, then given their meaning: `QTH` says "Q T H. location".
 - `tools/words/common.txt`: the 3000 most frequent English words, from wordfreq. `tools/wordlist.py` writes it, leaving out the words in `tools/words/blocklist.txt`. It needs the `wordfreq` package, and runs only when the list changes.
 
-`tools/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below), and takes about as long as Kokoro needs for 3131 words:
+`tools/pack.py` builds the pack. It needs what the voice probe needs for Kokoro (see below). It keeps each clip in `firmware/target/clip-cache`, under a key of the spoken text, the voice and how the clip is made, so a rebuild speaks only new or changed entries. The first build speaks all 3180:
 
 ```bash
 python tools/pack.py --models MODELS --out firmware/target/pack
@@ -116,7 +117,7 @@ tools/pocketcw-flash firmware/target/pack/F000400.bin
 ```
 
 ```bash
-python3 -I tools/pocketcw.py info say QTH say 73 say hello
+python3 -I tools/pocketcw.py info say QTH say "hello K5MME 73"
 ```
 
 `INFO` gives `PACK=` and the word count, or `NONE`, `OLD` or `BAD`. At startup the device checks the word list's CRC, and not the clips', which take too long to read.

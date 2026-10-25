@@ -53,6 +53,59 @@ impl Iterator for Clip<'_> {
     }
 }
 
+/// The most clips one `Clips` plays.
+pub const MAX_CLIPS: usize = 32;
+
+/// Clips one after another in one buffer, each decoded from a fresh start, with `gap` silent
+/// samples between them.
+pub struct Clips<'a> {
+    bytes: &'a [u8],
+    /// Where each clip ends in `bytes`.
+    ends: [u16; MAX_CLIPS],
+    count: usize,
+    index: usize,
+    clip: Clip<'a>,
+    gap: u16,
+    /// Silent samples left before the current clip starts.
+    silence: u16,
+}
+
+impl<'a> Clips<'a> {
+    /// The clips that end at `ends` in `bytes`, the first starting at 0. Ends past `MAX_CLIPS`
+    /// or past `bytes` are left out.
+    pub fn new(bytes: &'a [u8], ends: &[u16], gap: u16) -> Clips<'a> {
+        let mut kept = [0; MAX_CLIPS];
+        let mut count = 0;
+        for (slot, &end) in kept.iter_mut().zip(ends).take_while(|&(_, &end)| end as usize <= bytes.len()) {
+            *slot = end;
+            count += 1;
+        }
+        Clips { bytes, ends: kept, count, index: 0, clip: Clip::new(&bytes[..kept[0] as usize]), gap, silence: 0 }
+    }
+}
+
+impl Iterator for Clips<'_> {
+    type Item = i16;
+
+    fn next(&mut self) -> Option<i16> {
+        loop {
+            if self.silence > 0 {
+                self.silence -= 1;
+                return Some(0);
+            }
+            if let Some(sample) = self.clip.next() {
+                return Some(sample);
+            }
+            self.index += 1;
+            if self.index >= self.count {
+                return None;
+            }
+            self.clip = Clip::new(&self.bytes[self.ends[self.index - 1] as usize..self.ends[self.index] as usize]);
+            self.silence = self.gap;
+        }
+    }
+}
+
 /// `factor` samples for each sample of `samples`, on straight lines between them. Clips are
 /// stored at the output rate divided by a whole number, so no fractional resampler is needed.
 pub struct Upsample<I> {
@@ -102,6 +155,21 @@ mod tests {
             -18550, -16034, -11917, -5829, -156, 6474, 12714, 16766, 18975, 19644, 19036, 16269,
         ];
         assert!(Clip::new(&encoded).eq(decoded));
+    }
+
+    #[test]
+    fn clips_play_in_turn_from_a_fresh_start_with_gaps() {
+        let bytes = [0x77, 0x77, 0x07, 0x07];
+        let one: [i16; 4] = core::array::from_fn(|i| Clip::new(&bytes[..2]).nth(i).unwrap());
+        let mut both = Clips::new(&bytes, &[2, 4], 3);
+        assert!(both.by_ref().take(4).eq(one));
+        assert!(both.by_ref().take(3).eq([0, 0, 0]));
+        assert!(both.eq(Clip::new(&bytes[2..])));
+    }
+
+    #[test]
+    fn clips_leave_out_ends_past_the_bytes() {
+        assert_eq!(Clips::new(&[0x77; 2], &[1, 5], 0).count(), 2);
     }
 
     #[test]

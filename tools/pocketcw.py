@@ -16,7 +16,7 @@ Steps run in order:
   get NAME                       show a setting or memory; get all shows every one
   set NAME VALUE                 change a setting or memory, as the screen writes it
   play TEXT                      sound TEXT as a receive drill does and wait until it ends
-  say WORD                       speak WORD from the content pack
+  say TEXT                       speak TEXT from the content pack, spelling words it lacks
   stop                           stop what send and play started
   stats letters FILE.csv         save each letter's tries, accuracy and mastery
   stats progress FILE.csv        save each practice session
@@ -138,9 +138,9 @@ class Device:
         self._write(f'PLAY {text}\n')
         self.expect('PLAYED$', timeout)
 
-    def say(self, word):
-        """Speaks `word` from the content pack."""
-        self._ask(f'SAY {word}', 'OK ')
+    def say(self, text):
+        """Speaks `text` from the content pack, spelling the words it lacks."""
+        self._ask(f'SAY {text}', 'OK ')
 
     def stop(self):
         self._write('STOP\n')

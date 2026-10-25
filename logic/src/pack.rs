@@ -5,9 +5,11 @@
 //! per section (kind [u8; 4], offset u32 from the pack start, length u32, CRC-32 u32), then the
 //! CRC-32 of everything before it.
 //!
-//! `WORD`: word count u16, two zero bytes, then one `WORD_ENTRY` byte entry per word: text length
+//! `WORD`: entry count u16, two zero bytes, then one `WORD_ENTRY` byte entry each: text length
 //! u8, flags u8, text padded with zeros to `WORD_TEXT` bytes, clip offset u32 in `CLIP` or
-//! `NO_CLIP`. Ham words come first, then common words, each group most frequent first.
+//! `NO_CLIP`. The characters come first, for spelling, then ham words, then common words, each
+//! group of words most frequent first. A character's text can also be a word's: `K` is a letter
+//! and "over".
 //!
 //! `CLIP`: the output sample rate divided by the clips' rate u8, three zero bytes, then the
 //! clips. Each clip is its length u16, then IMA ADPCM bytes (`adpcm.rs`).
@@ -28,6 +30,7 @@ pub const WORD_TEXT: usize = 18;
 pub const WORD_ENTRY: usize = 2 + WORD_TEXT + 4;
 pub const NO_CLIP: u32 = u32::MAX;
 const FLAG_HAM: u8 = 1;
+const FLAG_CHAR: u8 = 2;
 /// Bytes before a clip's ADPCM data.
 pub const CLIP_START: u32 = 2;
 
@@ -100,6 +103,8 @@ pub struct Word {
     text: [u8; WORD_TEXT],
     len: u8,
     pub ham: bool,
+    /// A character for spelling, not a word.
+    pub char: bool,
     /// Where the clip sits in the `CLIP` section.
     pub clip: Option<u32>,
 }
@@ -110,7 +115,9 @@ impl Word {
         let len = entry[0];
         let text = entry[2..2 + WORD_TEXT].try_into().unwrap();
         let clip = u32_at(entry, 2 + WORD_TEXT);
-        ((len as usize) <= WORD_TEXT).then_some(Word { text, len, ham: entry[1] & FLAG_HAM != 0, clip: (clip != NO_CLIP).then_some(clip) })
+        let flags = entry[1];
+        let clip = (clip != NO_CLIP).then_some(clip);
+        ((len as usize) <= WORD_TEXT).then_some(Word { text, len, ham: flags & FLAG_HAM != 0, char: flags & FLAG_CHAR != 0, clip })
     }
 
     /// The text as sent in Morse: capitals, digits, and prosigns in angle brackets.
@@ -160,8 +167,9 @@ fn u32_at(bytes: &[u8], at: usize) -> u32 {
 mod tests {
     use super::*;
 
-    /// Built by `python tools/pack.py --fixture logic/fixtures/pack.bin`: the words `CQ` (ham,
-    /// clip bytes 1 2 3), `<BK>` (ham, no clip) and `THE` (clip bytes 9 8).
+    /// Built by `python tools/pack.py --fixture logic/fixtures/pack.bin`: the character `K` (clip
+    /// byte 5), the words `CQ` (ham, clip bytes 1 2 3), `<BK>` (ham, no clip) and `THE` (clip
+    /// bytes 9 8).
     const FIXTURE: &[u8] = include_bytes!("../fixtures/pack.bin");
 
     fn section(header: &Header, kind: [u8; 4]) -> &'static [u8] {
@@ -192,16 +200,19 @@ mod tests {
         let clips = section(&header, CLIPS);
         assert_eq!(crc32(words), header.section(WORDS).unwrap().crc);
         assert_eq!(crc32(clips), header.section(CLIPS).unwrap().crc);
-        assert_eq!(word_count(words[..4].try_into().unwrap()), 3);
+        assert_eq!(word_count(words[..4].try_into().unwrap()), 4);
         assert_eq!(clips[0], 3);
 
-        let cq = word(words, 0);
-        assert_eq!((cq.text(), cq.ham), (&b"CQ"[..], true));
+        let k = word(words, 0);
+        assert_eq!((k.text(), k.char, k.ham), (&b"K"[..], true, false));
+        assert_eq!(clip(clips, k.clip.unwrap()), [5]);
+        let cq = word(words, 1);
+        assert_eq!((cq.text(), cq.char, cq.ham), (&b"CQ"[..], false, true));
         assert_eq!(clip(clips, cq.clip.unwrap()), [1, 2, 3]);
-        let bk = word(words, 1);
+        let bk = word(words, 2);
         assert_eq!((bk.text(), bk.ham, bk.clip), (&b"<BK>"[..], true, None));
-        let the = word(words, 2);
-        assert_eq!((the.text(), the.ham), (&b"THE"[..], false));
+        let the = word(words, 3);
+        assert_eq!((the.text(), the.char, the.ham), (&b"THE"[..], false, false));
         assert_eq!(clip(clips, the.clip.unwrap()), [9, 8]);
     }
 

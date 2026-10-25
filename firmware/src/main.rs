@@ -927,11 +927,8 @@ mod app {
                 Ok(Ok(Message::Serial(SerialCommand::Say(text)))) => {
                     let said = match ui.pack() {
                         Err(_) => Err("NO PACK"),
-                        Ok(pack) => match pack.find(&mut lcd, text.as_str().as_bytes()) {
-                            None => Err("NOT IN PACK"),
-                            Some(word) if speech::say(&mut lcd, pack, &word, &mut cx.shared.audio) => Ok(()),
-                            Some(_) => Err("NO CLIP"),
-                        },
+                        Ok(pack) if speech::say(&mut lcd, pack, text.as_str().as_bytes(), &mut cx.shared.audio) > 0 => Ok(()),
+                        Ok(_) => Err("NOTHING TO SAY"),
                     };
                     let line: Reply = match said {
                         Ok(()) => Text::format(format_args!("OK SAY {}\n", text.as_str())),

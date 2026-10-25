@@ -1,0 +1,52 @@
+# Every character Morse sends, for spelling what the pack has no word for. Each line is the
+# character, a tab, and what the voice says. ( and + are the prosigns KN and AR.
+
+A	ay
+B	bee
+C	see
+D	dee
+E	ee
+F	ef
+G	jee
+H	aitch
+I	eye
+J	jay
+K	kay
+L	el
+M	em
+N	en
+O	oh
+P	pee
+Q	cue
+R	are
+S	ess
+T	tee
+U	you
+V	vee
+W	double you
+X	ex
+Y	why
+Z	zee
+0	zero
+1	one
+2	two
+3	three
+4	four
+5	five
+6	six
+7	seven
+8	eight
+9	nine
+/	slash
+?	question mark
+.	period
+,	comma
+=	equals
+:	colon
+'	apostrophe
+-	hyphen
+(	open parenthesis
+)	close parenthesis
+"	quote
+@	at
++	plus
