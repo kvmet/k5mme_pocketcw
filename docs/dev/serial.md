@@ -12,7 +12,7 @@ The port has two modes. It starts in text mode, which the sections below up to [
 
 ## Commands
 
-Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are upper case; text and values may be lower case. The device skips empty lines, answers a line it does not know with `ERROR UNKNOWN`, and answers a longer line, or text over 48 characters, with `ERROR TOO LONG`.
+Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are upper case, except the two that VBand sends; text and values may be lower case. The device skips empty lines, answers a line it does not know with `ERROR UNKNOWN`, and answers a longer line, or text over 48 characters, with `ERROR TOO LONG`.
 
 | Command | Device |
 | - | - |
@@ -27,6 +27,7 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `GET NAME`, `GET` | Sends a setting or memory, or all of them. See [Settings](#settings). |
 | `SET NAME VALUE` | Changes a setting or memory. See [Settings](#settings). |
 | `EDGE ON`, `EDGE OFF` | Starts or stops the key timing lines. See [Edges](#edges). |
+| `VBand On`, `VBand Off` | Starts or stops the CW Hotline lines, in this mixed case. See [VBand Hotline](#vband-hotline). No reply. |
 | `STATS LETTERS`, `STATS PROGRESS` | Sends the letter stats or the practice sessions. See [Stats](#stats). |
 
 Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 commands sent at once can fill the queue; the device then shows `n INPUTS LOST`.
@@ -88,6 +89,19 @@ VALUE PADDLES NORMAL
 VALUE SPEED 25
 ```
 
+## VBand Hotline
+
+VBand's page can read keying from a serial port, as it does from a CW Hotline. It opens the port at 115200 baud and writes `VBand On`; when its Disconnect button is clicked, it writes `VBand Off`. In between, the device sends one line for each mark of the signal that keys the radio: your keying, `SEND` text and memories.
+
+```
+SM,3000,60
+SM,60,180
+```
+
+The first field is the space before the mark and the second is the mark, both in ms and at most 3000. The first mark after `VBand On`, and any mark after a longer space, has a space of 3000, which VBand plays as the start of an over. A line comes when its mark ends. VBand skips every other line, so the event lines can go on beside these.
+
+While the Hotline is on, the device sends no keyboard reports. It ends on `VBand Off`, or when the computer closes the port.
+
 ## Stats
 
 `STATS LETTERS` sends `LEVEL n`, the number of Koch characters in play, then one line for each Koch character in Koch order, then the mixups, most common first, then `END`:
@@ -121,6 +135,7 @@ While the computer has the port open (holds DTR), the device sends a line for ea
 | `BUSY` | A `SEND` came before the last one finished. |
 | `EDGE LINE 1 MS SEQ` | A key or paddle line changed, after `EDGE ON`. See [Edges](#edges). |
 | `VALUE NAME VALUE` | After `EDGE ON`, a keyer setting at the start and when it changes. See [Edges](#edges). |
+| `SM,SPACE,MARK` | A mark ended, after `VBand On`. See [VBand Hotline](#vband-hotline). |
 
 `PLAY` gives a drill group before you hear it, so a script can answer it. Event lines never break into a screenshot: the screen sends them in turn with its other work. An event line that finds the serial queue full is lost, and the screen shows `n SERIAL LINES LOST`.
 
@@ -207,5 +222,6 @@ The text keys with perfect timing, at the WinKeyer speed. The paddles keep the d
 | The USB task, which reads commands and writes the queued bytes | `usb_events` in `firmware/src/main.rs` |
 | The serial key, merged with the keyer output | `tick` in `firmware/src/main.rs` |
 | Event lines, `EDGE` lines, `SEND` and `STOP` | `event_line`, `emit` and the `ui` task in `firmware/src/main.rs` |
+| Hotline marks and spaces | `logic/src/hotline.rs`, and `tick` in `firmware/src/main.rs` |
 | Pushbutton bytes | `tick` in `firmware/src/main.rs` |
 | The screenshot, row by row, from the UI task | `send_screen` in `firmware/src/main.rs`, `read_row` in `firmware/src/lcd.rs` |

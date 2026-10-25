@@ -49,6 +49,15 @@ These messages show while a logging program uses the device as a WinKeyer. See [
 | `WINKEYER n WPM` | The logging program set SPEED to `n` WPM. |
 | `n WINKEYER BYTES LOST` | The device dropped `n` bytes to or from the logging program, because its queue was full. |
 
+## VBand Hotline
+
+These messages show when VBand's page connects to the device as a CW Hotline. See [USB keyboard](usb.md#vband-cw-hotline).
+
+| Message | Meaning |
+| - | - |
+| `HOTLINE ON` | VBand took the serial port. The device sends your keying to it, and types nothing. |
+| `HOTLINE OFF` | VBand let the serial port go, or the browser closed it. |
+
 ## Memories
 
 These messages show on the KEYER screen. See [Memories](memories.md).

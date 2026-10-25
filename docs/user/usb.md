@@ -58,6 +58,23 @@ VBAND sends your keying the way the VBand USB adapter does. In VBand, set the ke
 | IAMBIC A, IAMBIC B | The dot lever holds Left Ctrl, and the dash lever holds Right Ctrl. PADDLES sets which lever is which. | An iambic paddle. VBand times the elements with its own keyer. |
 | STRAIGHT | Left Ctrl, held while the device keys. This works for a straight key and a sideswiper. | A straight key. |
 
+## VBand CW Hotline
+
+VBand's page can also take your keying over the serial port, as it does from a CW Hotline. VBand does not document this, so a change to VBand can stop it.
+
+1. Plug the device into a computer. USB OUT can be any setting but OFF.
+2. Open VBand in Chrome, Edge, or Firefox 151 or later. Safari cannot open a serial port.
+3. Click Connect to CW Hotline, and choose the PocketCW port.
+
+The screen shows `HOTLINE ON` when VBand connects, and `HOTLINE OFF` when it disconnects or the browser closes the port.
+
+- The device sends what keys the radio: your keying, `SEND` text from the serial port, and memories.
+- While VBand has the port, the device types nothing and sends no Ctrl keys, so VBand never gets your keying twice.
+- VBand sends nothing back. You hear the other stations from VBand, not from the device.
+- VBand passes your keying to a channel only while another station is in it. The Practice Channel and the Lobby do not pass it on.
+- A space longer than 3 seconds goes to VBand as 3 seconds. VBand takes that as the start of a new over.
+- If `HOTLINE ON` never shows, the browser has no serial port support, or VBand changed how it connects.
+
 ## WinKeyer
 
 A logging program can key through the device as if it were a K1EL WinKeyer. The program sends text, and the device keys it on the func jack and the sidetone. Every setting but OFF has the serial port, but SERIAL types nothing, so it is the one to use.

@@ -9,6 +9,7 @@ pub mod decode_lines;
 pub mod decoder;
 pub mod dial;
 pub mod drill;
+pub mod hotline;
 pub mod hunt;
 pub mod input;
 pub mod keyboard;

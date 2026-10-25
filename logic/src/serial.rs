@@ -25,6 +25,8 @@ pub enum Command {
     Stop,
     /// Send a line for each change on the key lines, or stop.
     Edge(bool),
+    /// VBand's page connected to us as a CW Hotline, or let go.
+    Hotline(bool),
     Stats(Stats),
     /// A line or text longer than a command takes.
     TooLong,
@@ -97,6 +99,9 @@ fn parse(line: &[u8]) -> Command {
         b"STOP" => Some(Command::Stop),
         b"EDGE ON" => Some(Command::Edge(true)),
         b"EDGE OFF" => Some(Command::Edge(false)),
+        // VBand writes these in mixed case.
+        b"VBand On" => Some(Command::Hotline(true)),
+        b"VBand Off" => Some(Command::Hotline(false)),
         b"STATS LETTERS" => Some(Command::Stats(Stats::Letters)),
         b"STATS PROGRESS" => Some(Command::Stats(Stats::Progress)),
         _ => None,
@@ -172,13 +177,15 @@ mod tests {
         assert_eq!(one("STOP\n"), Command::Stop);
         assert_eq!(one("EDGE ON\n"), Command::Edge(true));
         assert_eq!(one("EDGE OFF\n"), Command::Edge(false));
+        assert_eq!(one("VBand On\n"), Command::Hotline(true));
+        assert_eq!(one("VBand Off\n"), Command::Hotline(false));
         assert_eq!(one("STATS LETTERS\n"), Command::Stats(Stats::Letters));
         assert_eq!(one("STATS PROGRESS\n"), Command::Stats(Stats::Progress));
     }
 
     #[test]
     fn other_lines_are_unknown() {
-        for line in ["shot\n", "SHOTS\n", " SHOT\n", "EDGE\n", "EDGES ON\n", "STATS\n", "PRESS\n", "PRESS F5\n", "PRESS f1\n"] {
+        for line in ["shot\n", "SHOTS\n", " SHOT\n", "EDGE\n", "EDGES ON\n", "VBAND ON\n", "STATS\n", "PRESS\n", "PRESS F5\n", "PRESS f1\n"] {
             assert_eq!(one(line), Command::Unknown, "{line:?}");
         }
         for line in ["PRESS  F1\n", "SEND\n", "GET SPEEDY\n", "GET speed\n", "SET SPEED\n", "SET SPEEDY 20\n"] {

@@ -60,6 +60,7 @@ mod app {
         buttons::{self, Button, Buttons, Event},
         config::Name,
         decoder::{Decoded, KeyDecoder},
+        hotline::Marks,
         input::{Action, Input},
         keyboard::{self, NO_KEYS, Typist},
         panel::{self, Panel},
@@ -92,6 +93,8 @@ mod app {
         /// The keyer output or a paddle contact changed, at `at_ms` on the tick count. `dit_ms` is
         /// the dot length decoding uses then. `seq` counts every edge the tick made, sent or not.
         Edge { line: Line, down: bool, at_ms: u32, dit_ms: u16, seq: u32 },
+        /// A mark of the line that keys the radio ended, with the space before it, for the Hotline.
+        Mark { space_ms: u16, mark_ms: u16 },
         /// Every player has finished its text; `play` is the newest play started by then.
         Played { play: u32 },
         /// A frame from the Pro decoder board.
@@ -169,6 +172,8 @@ mod app {
     static SERIAL_ERRORS: AtomicU16 = AtomicU16::new(0);
     /// The computer has the serial port open, so event lines have somewhere to go.
     static SERIAL_OPEN: AtomicBool = AtomicBool::new(false);
+    /// VBand's page has the serial port as a CW Hotline: SM lines in place of keyboard keys.
+    static HOTLINE: AtomicBool = AtomicBool::new(false);
     /// Event lines the serial queue had no room for; shown on screen when nonzero.
     static SERIAL_LINES_LOST: AtomicU16 = AtomicU16::new(0);
     /// A WinKeyer host has the serial port, and which echoes it asked for.
@@ -611,6 +616,8 @@ mod app {
             listening: bool = false,
             key_down: bool = false, keyed: bool = false, key_out: (bool, bool) = (false, false), contacts: Contacts = Contacts { tip: false, ring: false },
             edge_seq: u32 = 0,
+            hotline: bool = false,
+            marks: Marks = Marks::new(),
             playing: bool = false,
         ],
     )]
@@ -717,6 +724,14 @@ mod app {
             *cx.local.keyed = keyed;
             gpio::set(port_b(), LED, keyed);
         }
+        let hotline = HOTLINE.load(Ordering::Relaxed);
+        if hotline && !core::mem::replace(cx.local.hotline, hotline) {
+            *cx.local.marks = Marks::new();
+        }
+        *cx.local.hotline = hotline;
+        if hotline && let Some((space_ms, mark_ms)) = cx.local.marks.tick(keyed) {
+            send(Message::Mark { space_ms, mark_ms });
+        }
         let output = if OUT_PADDLE.load(Ordering::Relaxed) { Output::Paddle } else { Output::Straight };
         let (dit, dah) = keying.paddles(mode.dit_on_ring(swap));
         let lines = output_lines(output, OUT_SWAP.load(Ordering::Relaxed), keyed, dit, dah);
@@ -746,7 +761,8 @@ mod app {
             }
             rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
         };
-        let usb_ready = USB_READY.load(Ordering::Relaxed);
+        // The Hotline carries the keying, so the keyboard sends none of it.
+        let typing = USB_READY.load(Ordering::Relaxed) && !hotline;
         if let Some(decoded) = cx.local.decoder.tick(down, dit_ms, mode == Mode::Straight) {
             send(Message::Decoded(decoded));
             let echo = match decoded {
@@ -761,12 +777,12 @@ mod app {
             {
                 to_host(byte);
             }
-            if out == UsbOut::Text && usb_ready {
+            if out == UsbOut::Text && typing {
                 type_out(decoded);
             }
         }
         if out == UsbOut::Vband {
-            let keys = keyboard::vband(mode, dit, dah, down);
+            let keys = if hotline { 0 } else { keyboard::vband(mode, dit, dah, down) };
             if VBAND_KEYS.swap(keys, Ordering::Relaxed) != keys {
                 rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
             }
@@ -779,7 +795,7 @@ mod app {
         *cx.local.listening = listening;
         if listening && let Some(decoded) = cx.local.listener.tick(high(b, DECODER_TONE)) {
             send(Message::Heard { decoded, wpm: cx.local.listener.wpm() });
-            if out == UsbOut::Radio && usb_ready {
+            if out == UsbOut::Radio && typing {
                 type_out(decoded);
             }
         }
@@ -860,6 +876,8 @@ mod app {
         let mut sending = false;
         // EDGE ON, until EDGE OFF or the port closes.
         let mut edges = false;
+        // VBand On, until VBand Off or the port closes.
+        let mut hotline = false;
         loop {
             let ui_at = ui.deadline().map(|at| Mono::now() + ticks::ms_until(TICKS.load(Ordering::Relaxed), at).millis());
             let wake_at = [save_at, ui_at, Some(poll_at)].into_iter().flatten().min();
@@ -871,6 +889,10 @@ mod app {
             // A speed the WinKeyer host set needs no speed pot byte back.
             let host_speed = matches!(received, Ok(Ok(Message::Speed(_))));
             edges &= SERIAL_OPEN.load(Ordering::Relaxed);
+            if hotline && !SERIAL_OPEN.load(Ordering::Relaxed) {
+                hotline = false;
+                show_hotline(&ui, &mut lcd, hotline);
+            }
             match received {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
                     if !send_screen(&mut lcd, &mut chunks, readable).await {
@@ -895,6 +917,10 @@ mod app {
                     if edges {
                         emit_keyer(&ui, &settings, &mut chunks);
                     }
+                }
+                Ok(Ok(Message::Serial(SerialCommand::Hotline(on)))) => {
+                    hotline = on;
+                    show_hotline(&ui, &mut lcd, hotline);
                 }
                 Ok(Ok(Message::Serial(command))) => answer(&mut ui, &mut lcd, &mut settings, &mut chunks, command).await,
                 Ok(Ok(message)) => {
@@ -1015,6 +1041,7 @@ mod app {
             },
             Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),
             Message::Edge { line, down, at_ms, dit_ms, .. } => ui.edge(lcd, settings, line, down, at_ms, dit_ms),
+            Message::Mark { .. } => {}
             // A play started after the tick sent this is still sounding.
             Message::Played { play } if play == PLAYS_STARTED.load(Ordering::Relaxed) => {
                 ui.played(lcd, settings, TICKS.load(Ordering::Relaxed))
@@ -1036,7 +1063,8 @@ mod app {
     }
 
     /// The serial event line for `message`: KEY or HEARD and one decoded character, SENT,
-    /// PLAYED for the Played message `handle` acts on, or with `edges` an EDGE line.
+    /// PLAYED for the Played message `handle` acts on, a Hotline SM line, or with `edges` an
+    /// EDGE line.
     fn event_line(message: &Message, edges: bool) -> Option<Text<CHUNK_LEN>> {
         let (name, decoded) = match message {
             Message::Edge { line, down, at_ms, seq, .. } if edges => {
@@ -1047,6 +1075,7 @@ mod app {
                 };
                 return Some(Text::format(format_args!("EDGE {line} {} {at_ms} {seq}\n", *down as u8)));
             }
+            Message::Mark { space_ms, mark_ms } => return Some(Text::format(format_args!("SM,{space_ms},{mark_ms}\n"))),
             Message::Decoded(decoded) => ("KEY", *decoded),
             Message::Heard { decoded, .. } => ("HEARD", *decoded),
             Message::Sent => return Some(Text::format(format_args!("SENT\n"))),
@@ -1079,7 +1108,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Press(_) => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }
@@ -1104,6 +1133,11 @@ mod app {
         for field in [Field::Mode, Field::Swap, Field::Speed] {
             emit(chunks, ui.get(settings, Name::Setting(field)).as_str());
         }
+    }
+
+    fn show_hotline(ui: &Ui, lcd: &mut Lcd, on: bool) {
+        HOTLINE.store(on, Ordering::Relaxed);
+        ui.status(lcd, if on { "HOTLINE ON" } else { "HOTLINE OFF" });
     }
 
     /// Queues an event line for the USB task while the computer has the port open in text mode.
