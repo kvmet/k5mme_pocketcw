@@ -285,7 +285,8 @@ impl Settings {
         };
         let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
         let stored = hardware >> USB_OUT_SHIFT & USB_OUT_MASK;
-        let usb_out = *USB_OUTS.iter().find(|&&u| u as u8 == stored)?;
+        // A value from later firmware turns USB off instead of dropping the whole record.
+        let usb_out = USB_OUTS.iter().copied().find(|&u| u as u8 == stored).unwrap_or(UsbOut::Off);
         let pileup = match (qso & 1 != 0, qso & OVERLAP_BIT != 0) {
             (false, _) => Pileup::Off,
             (true, false) => Pileup::TakeTurns,
@@ -685,6 +686,15 @@ mod tests {
             let mut record = s.encode(0);
             assert_eq!(crate::record::body_mut(&mut record)[V6_BODY], 1 | stored << USB_OUT_SHIFT);
         }
+    }
+
+    #[test]
+    fn an_unknown_usb_out_reads_as_off_and_keeps_the_rest() {
+        let s = Settings { wpm: 31, decoder_board: true, ..Settings::default() };
+        let mut record = s.encode(0);
+        body_mut(&mut record)[V6_BODY] = 1 | 7 << USB_OUT_SHIFT;
+        frame(&mut record, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&record), Some(Settings { usb_out: UsbOut::Off, ..s }));
     }
 
     #[test]
