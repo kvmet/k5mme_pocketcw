@@ -6,13 +6,13 @@
 CQ	C Q	calling any station
 DE	D E	from
 K	K	over
-<KN>	K N	prosign, over, to you only
-<BK>	B K	prosign, back to you
+<KN>	K N	pro-sign, over, to you only
+<BK>	B K	pro-sign, back to you
 BK	B K	back to you
-<SK>	S K	prosign, end of contact
-<AR>	A R	prosign, end of message
-<BT>	B T	prosign, break
-<AS>	A S	prosign, wait
+<SK>	S K	pro-sign, end of contact
+<AR>	A R	pro-sign, end of message
+<BT>	B T	pro-sign, break
+<AS>	A S	pro-sign, wait
 R	R	received
 RR	R R	all received
 QRZ	Q R Z	who is calling me
