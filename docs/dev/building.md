@@ -113,7 +113,7 @@ How each clip is made, in `tools/voiceclips.py` and `tools/pack.py`:
 - Kokoro gets phonemes in the form of misaki, the tool its training data went through. espeak-ng makes the phonemes, and a table from misaki's espeak fallback converts them. Without the table, vowels sound foreign: "bee" comes out like "beay".
 - A character ends in a period. Kokoro rushes a lone letter; as the end of a sentence it says it in full.
 - Before encoding, a treble boost undoes the loss of the device's straight-line upsampling, 6 dB at the top of the band.
-- Then the speech level is set to 7 dB under the sidetone's, from the power of its 20 ms frames without the pauses. A limiter keeps the peaks under 0.8 of full scale: ADPCM overshot dense peaks by up to 16% in a test. A clip scaled by its peak alone sounds about 12 dB under the sidetone, since speech has short peaks far above its level. The build prints the level of the clips against the sidetone's.
+- Then the speech level is set to 7 dB under the sidetone's, from the power of its 20 ms frames without the pauses. A limiter keeps the peaks under 0.8 of full scale: ADPCM overshot dense peaks by up to 16% in a test. The synth plays 0.8 at the sidetone's peak (`CLIP_CEILING` in `logic/src/synth.rs`). A clip scaled by its peak alone sounds about 11 dB under the sidetone, since speech has short peaks far above its level. The build prints the level of the clips against the sidetone's.
 
 `tools/listenpack.py` builds a small pack that compares ways of making clips, to judge them on the device speaker. Each test word is made each way, as words such as `QTHA` and `QTHB`. The ways at lower rates go through what the device does to them, so the pack plays at 17,578 Hz with any firmware.
 

@@ -158,14 +158,13 @@ class Voice:
 
 
 def report_levels(clips: list[bytes]):
-    """Prints the speech level of the clips next to the sidetone's, which the device plays at
-    -3 dB of a clip's full scale."""
+    """Prints the speech level of the clips next to the sidetone's."""
     import audioop
     import statistics
 
-    from voiceclips import OUTPUT_HZ, active_level
+    from voiceclips import OUTPUT_HZ, SIDETONE_DB, active_level
 
-    levels = [active_level(np.frombuffer(audioop.adpcm2lin(c, 2, None)[0], "<i2") / 32768, OUTPUT_HZ // FACTOR) + 3 for c in clips]
+    levels = [active_level(np.frombuffer(audioop.adpcm2lin(c, 2, None)[0], "<i2") / 32768, OUTPUT_HZ // FACTOR) - SIDETONE_DB for c in clips]
     low, *_, high = statistics.quantiles(levels, n=20)
     print(f"speech level against the sidetone: median {statistics.median(levels):+.1f} dB, 5% {low:+.1f}, 95% {high:+.1f}")
 

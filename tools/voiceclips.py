@@ -154,15 +154,17 @@ def undo_upsampling(samples: np.ndarray, factor: int) -> np.ndarray:
     return boosted * (np.abs(samples).max() / np.abs(boosted).max())
 
 
-# Speech level in dB of a clip's full scale. The synth plays a clip's full scale and the
-# sidetone's peak alike, so the sidetone's RMS is -3 dB: speech sits 7 dB under it.
-SPEECH_DB = -10.0
 FRAME_S = 0.02
 # 20 ms frames more than this far under the loudest one are pauses, not speech.
 ACTIVE_RANGE_DB = 30.0
 # The limiter's ceiling, under `PEAK`: ADPCM overshot dense peaks by up to 16% in a test of the
-# old clips, and with a ceiling of `PEAK` one leveled clip in 15 reached full scale.
+# old clips, and with a ceiling of `PEAK` one leveled clip in 15 reached full scale. The synth
+# plays this ceiling at the sidetone's peak, so `CLIP_CEILING` in logic/src/synth.rs matches it.
 LIMIT_PEAK = 0.8
+# The sine sidetone's RMS in dB of a clip's full scale. A square one is 0.9 dB louder.
+SIDETONE_DB = 20 * np.log10(LIMIT_PEAK / np.sqrt(2))
+# Speech level in dB of a clip's full scale.
+SPEECH_DB = SIDETONE_DB - 7.0
 # The level is set within this. 8 passes left one clip in five short of it; 40 left none.
 LEVEL_TOLERANCE_DB = 0.25
 LEVEL_PASSES = 40

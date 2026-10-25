@@ -14,12 +14,16 @@ pub const MAX_LEVEL: u8 = 10;
 /// One voice's peak, and the most all voices together reach: when stations overlap, the band's
 /// gain drops so their sum stays here.
 const VOICE_PEAK: f32 = 0.7;
-/// A clip's full scale. Clips peak under 0.95 of full scale, so speech peaks near a voice's peak.
-const SPEECH_PEAK: f32 = VOICE_PEAK;
+/// The ceiling of the pack's clips before ADPCM, `LIMIT_PEAK` in `tools/voiceclips.py`.
+const CLIP_CEILING: f32 = 0.8;
+/// The level a clip's full scale plays at, so a clip's ceiling sounds at a voice's peak. ADPCM
+/// overshoot took a clip to 0.925 of full scale at most in a test, 0.81 here, just past
+/// `LIMIT_KNEE`.
+const CLIP_FULL_SCALE: f32 = VOICE_PEAK / CLIP_CEILING;
 /// How long the band's gain takes to recover after an overlap ends, like a receiver's AGC. Much
 /// longer than a Morse element, so the gain holds through an over instead of pumping per element.
 const AGC_RELEASE_S: f32 = 0.5;
-/// Above this the limiter bends noise peaks down so the mix never clips.
+/// Above this the limiter bends peaks of noise and speech down so the mix never clips.
 const LIMIT_KNEE: f32 = 0.8;
 /// Key edges rise and fall over 5 ms on a raised cosine, so they don't click.
 const RAMP_S: f32 = 0.005;
@@ -328,7 +332,7 @@ impl Synth {
         }
         if let Some(speech) = &mut self.speech {
             match speech.next() {
-                Some(s) => mix += SPEECH_PEAK * s as f32 / -(i16::MIN as f32),
+                Some(s) => mix += CLIP_FULL_SCALE * s as f32 / -(i16::MIN as f32),
                 None => self.speech = None,
             }
         }
