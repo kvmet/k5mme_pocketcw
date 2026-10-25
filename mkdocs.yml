@@ -58,6 +58,7 @@ nav:
       - dev/building.md
       - dev/fonts.md
       - dev/release.md
+      - dev/roadmap.md
       - Hardware reference:
           - dev/hardware/index.md
           - dev/hardware/mcu.md

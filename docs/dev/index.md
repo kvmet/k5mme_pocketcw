@@ -9,6 +9,7 @@ These pages are for people who build PocketCW from source, change it, or want to
 - [Serial interface](serial.md): the USB serial commands that press buttons and read the screen.
 - [Fonts](fonts.md): how the screen fonts are made.
 - [Release](release.md): how to build and publish a release.
+- [Roadmap](roadmap.md): the planned work, its order, and the formats it fixes.
 - [Hardware reference](hardware/index.md): the MCU, pins, jacks, screen, audio, storage, battery, power, the decoder board, and the differences between boards.
 
 ## The repository
