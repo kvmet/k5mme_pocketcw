@@ -60,6 +60,7 @@ Done on 2026-10-25 with `firmware/src/bin/flashprobe.rs` and `tools/flashtest.py
 ### Vendor log
 
 - On a unit that has run stock firmware, scan 0x0C5080 to 0xDFFFFF for bytes that are not 0xFF. That shows where the vendor contact log lives, so the PocketCW log does not overlap it and a return to stock does not wipe it.
+- Deferred until a Pro unit is available. The 2.64 unit has no stock contact log, and its free area reads blank.
 
 ### Voice quality
 
@@ -84,9 +85,9 @@ Done on 2026-10-25 with `firmware/src/bin/voiceprobe.rs`. See [Voice probe](buil
 
 ### Layout
 
-Only the log is persisted user data, so only its location is fixed now. It goes at the top of the free area, for example 0xC00000 to 0xDFFFFF (2 MB), with a 64 KB guard below. The probes in step 1 decide the final addresses.
+Only the log is persisted user data, so only its location is fixed now: 0xC00000 to 0xDFFFFF (2 MB), the top of the free area. 0xBF0000 to 0xBFFFFF is a guard that nothing writes. The step 1 probes showed the range blank and untouched by installs.
 
-The packs grow up from 0x100000. Installs rewrite them and they ship with matching firmware, so each release can move or resize them. Each pack file is 8,372,224 bytes or less, at a 64 KB aligned offset (`F000400.bin` at 0x100000, `F000C00.bin` at 0x300000, and so on).
+The packs grow up from 0x100000 and end below the guard. Installs rewrite them and they ship with matching firmware, so each release can move or resize them. Each pack file is 8,372,224 bytes or less, at a 64 KB aligned offset (`F000400.bin` at 0x100000, `F000C00.bin` at 0x300000, and so on).
 
 The logic crate holds the layout and an `allowed(address, len)` check. The driver refuses any erase or program outside the log range. Host tests cover the check.
 
