@@ -30,6 +30,8 @@ pub enum Command {
     /// VBand's page connected to us as a CW Hotline, or let go.
     Hotline(bool),
     Stats(Stats),
+    /// Send every log record.
+    DumpLog,
     /// A line or text longer than a command takes.
     TooLong,
     Unknown,
@@ -108,6 +110,7 @@ fn parse(line: &[u8]) -> Command {
         b"STATS LETTERS" => Some(Command::Stats(Stats::Letters)),
         b"STATS PROGRESS" => Some(Command::Stats(Stats::Progress)),
         b"STATS TIMING" => Some(Command::Stats(Stats::Timing)),
+        b"DUMP LOG" => Some(Command::DumpLog),
         _ => None,
     };
     if let Some(command) = command {
@@ -188,6 +191,7 @@ mod tests {
         assert_eq!(one("STATS LETTERS\n"), Command::Stats(Stats::Letters));
         assert_eq!(one("STATS PROGRESS\n"), Command::Stats(Stats::Progress));
         assert_eq!(one("STATS TIMING\n"), Command::Stats(Stats::Timing));
+        assert_eq!(one("DUMP LOG\n"), Command::DumpLog);
     }
 
     #[test]

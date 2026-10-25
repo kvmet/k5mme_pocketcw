@@ -16,6 +16,7 @@ pub mod gpio;
 pub mod i2c;
 pub mod lcd;
 pub mod link;
+pub mod logger;
 pub mod pack;
 pub mod pins;
 pub mod power;

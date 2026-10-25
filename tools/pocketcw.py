@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Drive the device over the USB serial port: press buttons, key and play text, read what it
-decodes and plays, read and change settings, save screenshots, and export stats and timing.
+decodes and plays, read and change settings, save screenshots, and export stats, timing and the
+log.
 
 usage: python3 -I tools/pocketcw.py [--port PORT] STEP...
 
@@ -23,6 +24,7 @@ Steps run in order:
   stats timing FILE.csv          save your keying timing since power on or CLR on TIMING
   edges MS FILE.csv              save each key and paddle line change for MS, with the keyer
                                  settings, and report lost lines
+  log FILE.txt                   save the log as a transcript per session
 
 Event lines from the device show as they arrive, after "< ".
 
@@ -55,7 +57,7 @@ BUTTONS = ('F1', 'F2', 'F3', 'F4', 'LEFT', 'RIGHT', 'CLICK')
 # unfinished screenshot. EDGE ON also sends VALUE lines unasked.
 EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY', 'EDGE', 'VALUE')
 # Lines that answer a command.
-REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'MARK', 'GAP', 'RATIO', 'WPM', 'BINS', 'END')
+REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'MARK', 'GAP', 'RATIO', 'WPM', 'BINS', 'LOG', 'END')
 # The longest SEND or PLAY text, from MAX_TEXT in logic/src/player.rs.
 MAX_SEND = 48
 SHOT_TIMEOUT_S = 3
@@ -164,6 +166,24 @@ class Device:
     def stats(self, kind):
         """The lines of STATS LETTERS, PROGRESS or TIMING, without END."""
         return self._ask(f'STATS {kind.upper()}', 'END$')[:-1]
+
+    def log(self):
+        """The frames of DUMP LOG, oldest first, as bytes. A full log takes seconds, so the wait
+        starts over with each line."""
+        self.drain()
+        self._write('DUMP LOG\n')
+        frames = []
+        while True:
+            line = self._line(time.monotonic() + REPLY_TIMEOUT_S)
+            if line is None:
+                raise TimeoutError(f'DUMP LOG stopped after {len(frames)} records')
+            name, _, hex_frame = line.partition(' ')
+            if name == 'END':
+                return frames
+            if name == 'LOG':
+                frames.append(bytes.fromhex(hex_frame))
+            else:
+                self._event(line)
 
     def edges(self, ms):
         """The rows within `ms`: (line, down, ms, seq) for each key and paddle line change, and
@@ -313,6 +333,66 @@ def save_timing(lines, path):
                 print(f'{fields[0].lower()}: {fields[1]}')
 
 
+LOG_SOURCES = ('YOU', 'MEMORY', 'NOTE', 'THEM')
+
+
+def log_records(frames):
+    """(kind, fields) for each version 1 frame of a kind this tool knows, in order. The device
+    checked every CRC. Numbers are little-endian; see "Log format" in docs/dev/roadmap.md."""
+    for frame in frames:
+        magic, version, body = frame[:2], frame[2], frame[4:4 + frame[3]]
+        if version != 1:
+            continue
+        if magic == b'LH' and len(body) >= 8:
+            sequence, session = struct.unpack_from('<II', body)
+            yield 'header', {'session': session}
+        elif magic == b'LS' and len(body) >= 12 and len(body) >= 12 + body[11]:
+            session, start = struct.unpack_from('<II', body)
+            firmware = '.'.join(str(b) for b in body[8:11])
+            yield 'session', {'session': session, 'start': start, 'version': firmware, 'call': body[12:12 + body[11]].decode('ascii')}
+        elif magic == b'LT' and len(body) >= 13 and len(body) >= 13 + body[12] and body[0] < len(LOG_SOURCES):
+            run, part, start, end = struct.unpack_from('<HBII', body, 1)
+            text = body[13:13 + body[12]].decode('ascii')
+            yield 'run', {'source': LOG_SOURCES[body[0]], 'run': run, 'part': part & 0x7F, 'start': start, 'end': end, 'text': text}
+
+
+def log_sessions(frames):
+    """{session: (session start fields or None, [runs])}, each run with its parts joined. A run
+    whose part 0 is gone, since the ring wrapped past it, is dropped."""
+    sessions = {}
+    session = None
+    for kind, fields in log_records(frames):
+        if kind != 'run':
+            session = fields['session']
+            start, runs = sessions.get(session, (None, {}))
+            sessions[session] = (fields if kind == 'session' else start, runs)
+            continue
+        if session is None:
+            continue
+        runs = sessions[session][1]
+        key = (fields['source'], fields['run'])
+        if fields['part'] == 0:
+            runs[key] = dict(fields)
+        elif key in runs and fields['part'] == runs[key]['part'] + 1:
+            runs[key].update(part=fields['part'], end=fields['end'], text=runs[key]['text'] + fields['text'])
+    return {n: (start, sorted(runs.values(), key=lambda r: r['start'])) for n, (start, runs) in sessions.items()}
+
+
+def save_log(frames, path):
+    """A transcript per session: each run's start in seconds since power on, source and text."""
+    with open(path, 'w') as f:
+        for n, (start, runs) in sorted(log_sessions(frames).items()):
+            if not runs:
+                continue
+            if start:
+                f.write(f"SESSION {n}  {start['call']}  v{start['version']}\n")
+            else:
+                f.write(f'SESSION {n}\n')
+            for run in runs:
+                f.write(f"{run['start'] / 1000:9.1f}  {run['source']:<6}  {run['text']}\n")
+            f.write('\n')
+
+
 STATS_SAVERS = {'letters': save_letters, 'progress': save_progress, 'timing': save_timing}
 
 
@@ -434,7 +514,7 @@ class Screens:
 # How many values each step takes.
 STEP_VALUES = {
     'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
-    'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2,
+    'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2, 'log': 1,
 }
 
 
@@ -497,6 +577,10 @@ def run(d, plan):
             lines = d.stats(value)
             STATS_SAVERS[value](lines, values[1])
             print(values[1])
+        elif step == 'log':
+            frames = d.log()
+            save_log(frames, value)
+            print(f'{value}: {len(frames)} records')
         else:
             rows = d.edges(int(value))
             with open(values[1], 'w', newline='') as f:

@@ -81,6 +81,8 @@ pub struct Settings {
     /// A Pro decoder board is fitted: power it and show the RADIO screen.
     pub decoder_board: bool,
     pub usb_out: UsbOut,
+    /// Record what goes out on the air in the log ring.
+    pub log: bool,
 }
 
 pub const MAX_VOLUME: u8 = volume::MAX_LEVEL;
@@ -124,6 +126,7 @@ pub enum Field {
     Fading,
     DecoderBoard,
     UsbOut,
+    Log,
 }
 
 impl Default for Settings {
@@ -135,7 +138,7 @@ impl Default for Settings {
             output_swap: false, boot_count: 0, style: 0,
             palette: 0, callsign, rx_wpm: 0, rx_effective: 0, pileup: Pileup::TakeTurns, human_fist: true,
             spread: true, reveal_lines: false, brightness: MAX_BRIGHTNESS, square: false, noise: 0, fading: 0,
-            decoder_board: false, usb_out: UsbOut::Off,
+            decoder_board: false, usb_out: UsbOut::Off, log: false,
         }
     }
 }
@@ -167,10 +170,11 @@ pub const COPIES: usize = 2;
 /// QSO flags: bit 0 a pileup, then human fist, speed spread, ragchew line reveal, and bit 4 a
 /// pileup that overlaps.
 const OVERLAP_BIT: u8 = 1 << 4;
-/// Hardware flags: bit 0 the decoder board, bits 1 to 3 the USB OUT value. Bit 3 was always
-/// saved as 0 before SERIAL, so older saves read the same.
+/// Hardware flags: bit 0 the decoder board, bits 1 to 3 the USB OUT value, bit 4 LOG. Bit 3 was
+/// always saved as 0 before SERIAL, so older saves read the same. Older firmware ignores bit 4.
 const USB_OUT_SHIFT: u8 = 1;
 const USB_OUT_MASK: u8 = 0b111;
+const LOG_BIT: u8 = 1 << 4;
 
 impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
@@ -207,7 +211,7 @@ impl Settings {
             self.square as u8,
             self.noise,
             self.fading,
-            self.decoder_board as u8 | (self.usb_out as u8) << USB_OUT_SHIFT,
+            self.decoder_board as u8 | (self.usb_out as u8) << USB_OUT_SHIFT | if self.log { LOG_BIT } else { 0 },
         ]);
         body[COUNT_AT] = count;
         frame(&mut record, MAGIC, VERSION);
@@ -323,6 +327,7 @@ impl Settings {
             fading,
             decoder_board: hardware & 1 != 0,
             usb_out,
+            log: hardware & LOG_BIT != 0,
         };
         let in_range = (MIN_WPM..=MAX_WPM).contains(&settings.wpm)
             && settings.volume <= MAX_VOLUME
@@ -394,6 +399,7 @@ impl Settings {
                 let i = USB_OUTS.iter().position(|&u| u == self.usb_out).unwrap_or(0);
                 self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(offered as i32) as usize];
             }
+            Field::Log => self.log ^= d % 2 != 0,
             Field::Brightness => {
                 self.brightness = (self.brightness as i32 + d).clamp(MIN_BRIGHTNESS as i32, MAX_BRIGHTNESS as i32) as u8
             }
@@ -677,6 +683,19 @@ mod tests {
         }
         let v7 = legacy(&Settings { decoder_board: true, ..Settings::default() }, 7, BODY_LEN);
         assert_eq!(Settings::decode(&v7).map(|s| (s.decoder_board, s.usb_out)), Some((true, UsbOut::Off)));
+    }
+
+    #[test]
+    fn log_toggles_round_trips_and_keeps_usb_out() {
+        let mut s = Settings { usb_out: UsbOut::Serial, ..Settings::default() };
+        assert!(!s.log);
+        s.adjust(Field::Log, 1);
+        assert!(s.log);
+        assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+        let mut record = s.encode(0);
+        assert_eq!(body_mut(&mut record)[V6_BODY], 4 << USB_OUT_SHIFT | LOG_BIT);
+        let v7 = legacy(&Settings::default(), 7, BODY_LEN);
+        assert_eq!(Settings::decode(&v7).map(|s| s.log), Some(false));
     }
 
     #[test]

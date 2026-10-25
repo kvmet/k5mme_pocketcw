@@ -23,6 +23,7 @@ Each of these messages means a write to the memory chip failed. The device keeps
 | `LETTER STATS NOT SAVED` | Your [letter statistics](letters.md) and Koch level. |
 | `PROGRESS NOT SAVED` | This session in [Progress](progress.md). |
 | `BATTERY CALIBRATION NOT SAVED` | The full point of the battery gauge. |
+| `LOG WRITE REFUSED` | Part of the [log](log.md). The flash driver refused a write outside the log area. This is a bug: please report it. |
 
 When a save fails at power off, the device waits 3 seconds before it turns off, so you can read the message. If these messages come again and again, look at the EEPROM row on the [System](system.md) screen.
 
@@ -37,6 +38,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `n SERIAL ERRORS` | USB refused `n` reads or writes on the serial port. |
 | `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
+| `LOG NOT SENT` | The computer stopped taking the [log](log.md) for 0.5 s. |
 
 ## WinKeyer
 
