@@ -29,7 +29,7 @@ Z	char	good	b28781d71fe52404b8912d59
 3	char	good	023a7667e0f26194f1e91999
 4	char	good	c47a9481eb2106a0ae3ff3f9
 5	char	good	13d2b9384bc09ac27e12367c
-6	char	bad	172e0b7161b3fbb7220526ad	"sixuh"
+6	char	bad	before-cut	"sixuh"
 7	char	good	48e5894d79653ef9c22310c8
 8	char	good	800a49dad311f40c7fd7fe86
 9	char	good	573c96255d637af83b1d11f8
@@ -46,7 +46,7 @@ Z	char	good	b28781d71fe52404b8912d59
 @	char	good	23bf0152a022958b6a05adef
 +	char	bad	9d272097d312daada0ad4db8	"pluseh"
 CQ	meaning	good	41fc2724e36915f9bcf7aeb3
-DE	meaning	good	2098be13bd48a40e229ecf98
+DE	meaning	good	before-cut
 K	meaning	good	1e1e1ee8bb182f822c10ac78
 <KN>	meaning	good	a94c6aa147c941671983505e
 <BK>	meaning	good	6f3c9579817a2f3ef3f66a43
@@ -70,7 +70,7 @@ QSO	meaning	good	f9896bec7b0fd0375d022c0e
 QRS	meaning	good	2686e1963475248e69f1e556
 QRQ	meaning	good	19c0f3c5aec712cdc137e053
 QRM	meaning	good	3d5fe6babf52f6c624f22013
-QRN	meaning	good	9f6e7ad532039a637fee8d8e
+QRN	meaning	good	before-cut
 QSB	meaning	good	7f9d42bf9e34f390edf0a2a1
 QRP	meaning	good	85b84e02f24b5c7061023b1f
 QRO	meaning	good	997532ab072162de6c3ef81f
@@ -144,7 +144,7 @@ RETIRED	word	good	a1f24b8a9aad1709924de5ff
 BCNU	meaning	good	fb22bbfe871918aa7b74d6e0
 DX	meaning	good	6a85fc3c3f4caa9f0d08e777
 HAM	word	good	2bce9474578a51bf3cddbda7
-FIST	word	good	f892a435593070b197429b7e
+FIST	word	good	before-cut
 FIST	meaning	good	331a3bf2fffb34b8d1e71e52
 KEY	word	good	246e9b86af67cd45dc0a5328
 BUG	word	good	9809a9bd8a70eb41c17ec839
@@ -169,7 +169,7 @@ COAX	word	good	90052bd3d374f1f090975b1b
 TUNER	word	good	932698af2fd3aff6ed58f798
 EFHW	meaning	good	5a93c0f4d6bef111e57beeae
 TOWER	word	good	543f966f7651e7b80b9fd121
-FT	meaning	good	73b7d764a6b417a2313d95d1
+FT	meaning	good	before-cut
 BAND	word	good	0ffd0a62d64a6fd07a99c174
 BANDS	word	good	e2522348c522c5e8a7ed5f9e
 PORTABLE	word	good	52e91249951c3b81b52d1e8e
@@ -260,7 +260,7 @@ RICHMOND	word	good	5665cef672b983dfd4726a7b
 ROME	word	good	ef0190b971e81b266b7552e7
 SASKATOON	word	good	5fcca8017a2008a932e253a1
 SEATTLE	word	good	bcf9acd930ee77ababaaeece
-ST	word	good	b1b5f6ce304354a645ac46ba
+ST	word	good	before-cut
 TAMPA	word	good	df26c6da6fcc485ec1194549
 TOKYO	word	good	057c7b11a307e7eddd295063
 TOLEDO	word	good	ee84342412572f96aa19765c
@@ -352,7 +352,7 @@ THAN	word	good	ed4757cf11ae8ec9502c8a5a
 GOOD	word	good	d6a5ca808df94e9105961d9b
 ONLY	word	good	8fa74d9b9dca9cb911223a5d
 AFTER	word	good	5b57434814b9407b5254e1fb
-FIRST	word	good	1282b6161daef4cc227ca89b
+FIRST	word	good	before-cut
 HIM	word	good	9c146c659bb23332a0ff867c
 INTO	word	good	88a87383e6580d3467905375
 KNOW	word	good	efae1a1c95097216ada0000a
@@ -411,7 +411,7 @@ THROUGH	word	good	3c0b4029e4778903d604843e
 LAST	word	good	9018457ed1720cd0e5b96d02
 WHILE	word	good	7cdbd6ce8bd0f035b80f9345
 BEST	word	good	a4321d0e9f83e88779e8bd68
-SUCH	word	good	0a7f9630ab605a709b2718d4
+SUCH	word	good	before-cut
 LOVE	word	good	c31e78745972c351790c849f
 MAN	word	good	3c5c7a9d84509e7284b09207
 HOME	word	good	14b7f6379ff34274a7e73c7e
@@ -426,7 +426,7 @@ EVERY	word	good	9304db2fd8b64ed72daf79ab
 AM	word	good	e4b3c71f57fd045b290b40e8
 COME	word	good	597afc06456811b3d0d91840
 PART	word	good	51d4b21d35f9efe2289732d4
-STATE	word	good	57aa2b0d5ec0d69295b1f675
+STATE	word	good	before-cut
 THREE	word	good	7d3e7b0d2fc1a3f0e80f4edc
 AROUND	word	good	7819e13b7f1571fb6f39c614
 BETWEEN	word	good	da30363bd1b891f18aaaa474
@@ -437,7 +437,7 @@ HELP	word	good	a48e90a0fcda90eceb2bd8e4
 HIGH	word	good	024f283c758412702e26a99c
 LITTLE	word	good	bed12ff5c49a17995bf06f6e
 OLD	word	good	1f8223e50f56a3b29a944ec2
-SINCE	word	good	b140fa129c45a05e2e15c22f
+SINCE	word	good	before-cut
 ANOTHER	word	good	3b31aac508d77d7d96a9a3e8
 DOES	word	good	ebcbccef6187489b3de8dd6f
 OWN	word	good	dec1f625ddd40d53e33e7c5d
@@ -490,7 +490,7 @@ REAL	word	good	e6ecb9db45410a115e65c0d4
 CALLED	word	good	7447faa492d87fadbb8592ea
 DIFFERENT	word	good	d70d78884ee4a6297aa87688
 HAVING	word	good	0e72a8a5e13e12d17674dd33
-SET	word	bad	72673b26282e096f767985cf	the t seems too soft.
+SET	word	bad	before-cut	the t seems too soft.
 THOUGHT	word	good	53b07e40f3e27efa6a80bc5e
 DONE	word	good	ce523afe8a169f582508bec9
 GETTING	word	good	5ffaffe0339e7e9bfce0c15c
@@ -502,7 +502,7 @@ WOMEN	word	good	b86b499367e4c2f8963a0851
 BUSINESS	word	good	fb42f82981e29643a8ed5a9a
 CARE	word	good	cd9e95fe351f825211a23cfd
 START	word	good	ecfdbe477980739f7e626609
-SYSTEM	word	good	208c8760830183093e63fe61
+SYSTEM	word	good	before-cut
 TIMES	word	good	fee43bcd9e467e7d1a21ce77
 WEEK	word	good	22857c79e24517d37d750a00
 ALREADY	word	good	d6d8f97a8218da8bfe02a047
@@ -531,8 +531,8 @@ TELL	word	good	49a1798387da5853f2a12bee
 MUSIC	word	good	3540406b5e77feabf7c908d5
 POWER	word	good	a01998b905557bed168e9c4a
 SEEN	word	good	21e5b6f25b8a815f7fe6c09a
-STATES	word	good	5d06087b8a14b46ffe0939f4
-STOP	word	good	ed5931fc9a23cd8a659af856
+STATES	word	good	before-cut
+STOP	word	good	before-cut
 WATER	word	good	74b2d4128b8d678786a211e5
 BELIEVE	word	good	37637002a0e399c868d5e090
 HEAD	word	good	45eadba5da7f009246ed0158
@@ -556,8 +556,8 @@ LESS	word	good	c426318b760ba6c08ec8758b
 LINE	word	good	ed632cc878ca87819144b2cb
 ORDER	word	good	da2aeaaf68f98409fbdc40e9
 RUN	word	good	7fa60301a44e473c33f9ec85
-SAYS	word	good	2e11bd598d1888ea9900eb8f
-SERVICE	word	good	3cb0c2adcf8ea7caea55d79f
+SAYS	word	good	before-cut
+SERVICE	word	good	before-cut
 COUNTRY	word	good	4c40f3ad7966fc0d20c19a75
 OPEN	word	good	e10998eb6d5b82916b813061
 SEASON	word	good	3b00a2b2854a43d06f146cf9
@@ -603,7 +603,7 @@ YOUNG	word	good	e57fb1d63572fca7be8707dc
 AGO	word	good	07df130d9df813448ba57d33
 OTHERS	word	good	8c1abf59f6aa66052b2650a3
 TALK	word	good	c8b7ad50f328dfc23dee1e77
-FACT	word	good	1613a2240cbb2c24fc2ea3a5
+FACT	word	good	before-cut
 GUYS	word	good	720a016003db978a85be0002
 HALF	word	good	942059225e5aaa254b9cad7a
 HAND	word	good	db89335ea415ba8fc79efd22
@@ -621,7 +621,7 @@ HOURS	word	good	42505dce8ae3868316f47cff
 OFFICE	word	good	31cd7a70aa35911d334055d4
 PAY	word	good	bb6f2853c6fceb0c7df21d03
 PROBLEM	word	good	db97b7f98d9151cdc0e3b68d
-SOUTH	word	good	258134267ba2e4c2a937f3af
+SOUTH	word	good	before-cut
 TRUE	word	good	68de6a545006f502350c3e54
 ALMOST	word	good	214c891e0891255b4eadc02d
 HISTORY	word	good	86b4b41ba0b3e0f5a9e59254
@@ -679,7 +679,7 @@ LATE	word	good	1a200fda0f12e5f4c78c08cc
 LEAVE	word	good	1f3896a6fea8238f96ad590e
 NORTH	word	good	51f3a84266bdbf67e1fd3258
 SAW	word	good	4dda6158545c1880d390a395
-SPECIAL	word	good	512f79c68e7748d365e9daf4
+SPECIAL	word	good	before-cut
 WATCH	word	good	df34b9b491c085324ad2e26f
 EITHER	word	good	d4a0c59322632b0a55b05c40
 FUTURE	word	good	085e00c3365c9f90378e7cb6
@@ -720,19 +720,19 @@ EASY	word	good	f9770658631c7faa3dfd44e5
 NEAR	word	good	a99cddcaaf104dc8b88663b5
 PLAN	word	good	bfdd1ef83203e8bd5cf4dbb1
 QUITE	word	good	b0b760dbe40187104a125c5b
-SIX	word	bad	b1512114750850b0e8801ce5	sixuh
+SIX	word	bad	before-cut	sixuh
 TALKING	word	good	d4e541fbed52c4089353caac
 WEST	word	good	0fb55f2e68977dfb7c644595
 WORKS	word	good	2d7fcd545032f703d30f49fb
 AVAILABLE	word	good	26134cce558c1ba1f66b3cf4
 FINAL	word	good	9915e616943c05e5bdd57432
-FRONT	word	good	2f925ce735f0ab9402798e8e
+FRONT	word	good	before-cut
 KIDS	word	good	1416e978db9c5a31de5f9a00
 LIST	word	good	d4da5911713d569cc98a0bcb
 READY	word	good	0e4de3ea78d2fb42609eb3b2
 SOMETIMES	word	good	7d7fe41dffda21a6d2391381
 SON	word	good	0d06b20b64a267de5a0f6ed9
-STREET	word	good	76d4548e9ba36bdee47f8037
+STREET	word	good	before-cut
 BRING	word	good	b48484923203337e8558f835
 COLLEGE	word	good	14fd7ce80c583b4a4a05c960
 CURRENT	word	good	9852d816cbcfb0c70d5c5609
@@ -756,7 +756,7 @@ GETS	word	good	6948f48dfa5eb62eb4d8efe3
 HIMSELF	word	good	909a074bf4967d9b563cc667
 MONTH	word	good	fc34a847bdfe84fdb5db3348
 OUTSIDE	word	good	6f94d0f6d9ee5bea87eef3df
-STUDENTS	word	good	1ceb6953e326baa249026929
+STUDENTS	word	good	before-cut
 WORDS	word	good	ebbd13af40d2643552b49d9a
 COST	word	good	239d3eda6877e19d47f1ccb1
 CUT	word	good	e123c1c61b4fbb7592af1748
@@ -774,7 +774,7 @@ WANTS	word	good	0b8e1e4fd927d8d2e972a927
 DEPARTMENT	word	good	08a7475d394743b34568f515
 FIGHT	word	good	1d8f1409ec17d3672cc92703
 FINE	word	good	27def253047000e1c87e8eee
-FORCE	word	good	78cc7ae2e136b5b403ad76ab
+FORCE	word	good	before-cut
 HEAR	word	good	417ad699539aa6d9f045832b
 PLAYED	word	good	97a965cd033aff0aa522760b
 POINTS	word	good	6c6852bce88450f4294aaad5
@@ -782,7 +782,7 @@ PRICE	word	good	66bbc46422e18ac744d0996a
 REST	word	good	b2b607ef7f041ff38d731766
 RUNNING	word	good	e23233f43f17546899284a3e
 SHOWS	word	good	029957558a06613a6d4224d9
-SPACE	word	good	789dea14f5f5ec522635a50b
+SPACE	word	good	before-cut
 SUMMER	word	good	6c9fed33532b78399847c379
 WIFE	word	good	60c13f709f0e64651b150c11
 AMERICA	word	good	5247fc75c94613526dcb61ed
@@ -793,7 +793,7 @@ LAND	word	good	72e7a9a5af97de6eccf10e08
 MISS	word	good	958819b234faf84d2525f58b
 PROJECT	word	good	5b25e2946b13b194e55af07d
 SHOT	word	good	ba947b307c8b2629a6b0cc96
-SITE	word	good	0e080e8e069ce6b3f4660f03
+SITE	word	good	before-cut
 STRONG	word	good	3ae6c2c13e68a2ebdc4bcbf3
 EYES	word	good	3330fca963d0ced2d5318ce3
 JUNE	word	good	a688091f0d8cd32449748c88
@@ -825,7 +825,7 @@ ONLINE	word	good	570c13175858a41f09b7ca48
 PLAYER	word	good	8c22e2bbbb85f1316efa15a9
 PROBLEMS	word	good	c6875c365d9b7fdc5cbb3744
 RETURN	word	good	37d9b664aab5a35c4e0c2c15
-SENSE	word	good	efba81c9f42f57c430b9a6c1
+SENSE	word	good	before-cut
 STAR	word	good	a921a17a35a7bd49597f622c
 VIEW	word	good	c12cba36dde5b3eca50b2d01
 WEEKS	word	good	11eec2f31b0bef315ba6629f
@@ -868,7 +868,7 @@ MEDICAL	word	good	3de8210fa8c1859fb52a6414
 MOVIE	word	good	1b6245a36d7efe702c1f6027
 ORIGINAL	word	good	93530314ed563a70dc648b52
 RECEIVED	word	good	bba7f61bc9ee199013a55685
-SENT	word	good	f4698d511ce3f345d978c779
+SENT	word	good	before-cut
 TRIED	word	good	978ec27835c48876f14bb9d4
 WORKED	word	good	922df1dcb234bed439eed88c
 WORTH	word	good	ac350acb4854e2e92cdf47cf
@@ -885,7 +885,7 @@ MEETING	word	good	5512370fa2ac4a46cb2099b3
 QUESTIONS	word	good	6dc2a3c45cd6884c692c22e5
 SEPTEMBER	word	good	ad211145c989a25a19dca613
 SOUND	word	good	d8eb654cb1a226f8e41cb43c
-SOURCE	word	good	cd3fac043fbdf6a4379a7188
+SOURCE	word	good	before-cut
 USUALLY	word	good	e867bc012bc2b6312fb6712a
 VALUE	word	good	f4221871f0301492266ff906
 FOLLOW	word	good	500188e1ecbd0b1da24c76fe
@@ -896,7 +896,7 @@ READING	word	good	91fe535717fc92426e68d08b
 ROUND	word	good	7cef359b76c03e960fdac2a6
 SAVE	word	good	d3f8273c0c3dbd2c03c0ebcf
 STAND	word	good	92e2a3ac3fb57a3e25b8c7a3
-STUFF	word	good	d571e080330dde04f801340b
+STUFF	word	good	before-cut
 TAX	word	good	3e808db64467b4d40f45946e
 WHATEVER	word	good	9629b821e63fa6e322030e6b
 AMOUNT	word	good	3d52c3e12f556aa97178456d
@@ -906,9 +906,9 @@ DAVID	word	good	5a66a698f6d6472c4a883bc1
 DRIVE	word	good	ac36d8f85fdbfbdcceb2cda1
 EAT	word	good	8bc3150a51a5b0c88ddf7a5c
 FALL	word	good	450fd017e8b8a530833416a5
-FAST	word	bad	a39d4cb0212d48f446c40265	vast?
+FAST	word	bad	before-cut	vast?
 FEELING	word	good	c4fbb5bc51acea9213245b42
-FELT	word	good	055195f946751a9969a3f947
+FELT	word	good	before-cut
 GREEN	word	good	1c76ac6dd95d2fb23674151b
 MATCH	word	good	cf9463d98e540b8dc5957318
 MODEL	word	good	c698716c6b5808785dcf7c74
@@ -925,7 +925,7 @@ HEY	word	good	5c4a70ac5a4cf370a3aadfc9
 MOM	word	good	a697e59f71ae9411e68f8a63
 PAID	word	good	10ed5701a65a52a07ed1e6f5
 RANGE	word	good	933f8383a9ccb537d51ac48c
-SCIENCE	word	good	1bf1d7b29973e81f2269a4fc
+SCIENCE	word	good	before-cut
 BROTHER	word	good	f77feb424a92425046cf0c3d
 CANNOT	word	good	03d9cf80f913b046faab620d
 FOOTBALL	word	good	fbe7f7f9727b635a381b00fc
@@ -947,13 +947,13 @@ DOG	word	good	9b696c33afee4953eed8e44f
 LANGUAGE	word	good	fee628b0f75d334c952eaaa5
 NOVEMBER	word	good	c96c8eddb00e0f84ec190a6b
 OIL	word	good	e3be1892b80605468dc40265
-SERIOUS	word	good	3cf90a828cd0e196412d941f
+SERIOUS	word	good	before-cut
 ADD	word	good	ad68a56fbaeba571648e3dcc
 ARTICLE	word	good	1e08ce87e9cc359a1ba911fc
 BORN	word	good	4ea9b8dc89af71ca4617472e
 DECIDED	word	good	f1f60466b38e1d55fde39c7d
 ENJOY	word	good	7cf0f565d34905cffbeef37c
-FRENCH	word	good	3bf5e5286bc2e5f3c0878389
+FRENCH	word	good	before-cut
 JANUARY	word	good	08fffa4ed69428f29b9b7775
 MET	word	good	58a3706281aa0d9ecb9c95d4
 PERHAPS	word	good	6434926e446c373b3544e386
@@ -975,7 +975,7 @@ LEGAL	word	good	40daf0ce04b0152e8ebd93fd
 LOSE	word	good	2584f996b1908495ebce6dcb
 MICHAEL	word	good	b7c6219a17806308ec08caf6
 PICK	word	good	595926d134e423b0e7f9c689
-SEEM	word	good	156850740da6fd5082afd3ac
+SEEM	word	good	before-cut
 SEVEN	word	good	9f02d968759b513c28f909af
 SIGN	word	good	3dcd2e36e3c85775c446bb6b
 SIMPLE	word	good	d4aab5bfd081d21ab948ee33
@@ -1001,9 +1001,9 @@ MODERN	word	good	90750d41a19e35948493e3f1
 ONES	word	good	fee770c69dff5cac9ecedfae
 PAPER	word	good	1b9dc1c5acb6a1aa8e4195da
 PARTS	word	good	df2a510e7ae005ca94fb186a
-SAFE	word	good	7645ea3894dda6289b8ee969
+SAFE	word	good	before-cut
 STARTING	word	good	b7029a7a48b6b8eb3b75104c
-SYSTEMS	word	good	afd91336de908f186d288aaa
+SYSTEMS	word	good	before-cut
 VERSION	word	good	f0667921c874553a77c5cb2e
 VOICE	word	good	b44c783e56bfa2607576d781
 WHOSE	word	good	33572ba95204df47e9f069ac
@@ -1032,7 +1032,7 @@ MARK	word	good	bee576a800764d8266be48c5
 MISSING	word	good	086c7267fde7df5bc32702a3
 OFFER	word	good	49772c95c3810cbeafd22b0c
 PASS	word	good	5ff0d3757ca0bc39e2b1819a
-SCHOOLS	word	bad	6ef90a11e94238ae8e0364c8	eskulz
+SCHOOLS	word	bad	before-cut	eskulz
 SLEEP	word	good	901214f235421fbd7f35d33e
 TABLE	word	good	3449960604759904b512899a
 TEN	word	good	68a17082f5b200dcac40b1c7
@@ -1084,7 +1084,7 @@ MOVING	word	good	0a688c050a416cbb7a76b011
 NETWORK	word	good	3a7b50489dd7a00eb7f43565
 PEACE	word	good	dd8380acf22ad213bf3a5331
 RECENTLY	word	good	65dfd250cfba62d958f8281e
-SPENT	word	good	0fbb74de91ed6a59840a0dd7
+SPENT	word	good	before-cut
 STORE	word	good	6f8d24aad75b1eff6a092277
 STUDENT	word	good	8607c1976f1b9b8f75edeac2
 TOMORROW	word	good	00ffb359ee6552bd2470cbd6
@@ -1136,7 +1136,7 @@ CONSIDER	word	good	1556ef182c7c31d1acdcc413
 CONTACT	word	good	b5793d8a7f65b3326ec9abb2
 DROP	word	good	9788ebf3ba3e47a729e2b429
 FAIR	word	good	dad886e46974cca16ffcbbdc
-FEET	word	good	a0d25fdefcdeeb90f872ddb1
+FEET	word	good	before-cut
 KID	word	good	df45f513f523e22a2ddc8984
 LINK	word	good	9fa21ea8282d400dbc4356db
 POSITIVE	word	good	a5c8629d78f030455551bb68
@@ -1169,7 +1169,7 @@ PHOTO	word	good	4ae199ec933d7b201c86b602
 SAFETY	word	good	fe0144e62c02b287fbe1a72c
 SAN	word	good	6ecc5da6d7c043459998c1cd
 SOLD	word	good	19a6dd5caca12da612f664b5
-SOUNDS	word	good	aca19eaae383310f6cab4bbe
+SOUNDS	word	good	before-cut
 SPEND	word	good	13b60e36b6714df72729b442
 SUN	word	good	0d06b20b64a267de5a0f6ed9
 TEAMS	word	good	91cba165c5ac10764710c896
@@ -1191,7 +1191,7 @@ AUTHOR	word	good	5964d20e96d5e3b3d593c416
 DAD	word	good	fbf19d1fc075fc5a8ab64215
 DEVELOPED	word	good	40f731f75d4708c9b01a9cba
 FEAR	word	good	1aa79db05c247523ccc6ce44
-FIT	word	good	ec81d4e16dfe82216bdefabc
+FIT	word	good	before-cut
 GENERALLY	word	good	667bb17e49b1e452bda01362
 GERMAN	word	good	d59be85710418ac94bc5805e
 HOTEL	word	good	476bf5dc31539818979764ae
@@ -1204,7 +1204,7 @@ NOBODY	word	good	c3b007c3357e752d9f9e9030
 PLUS	word	good	5a48ad07a12a344100cd3728
 REGULAR	word	good	e370b44514b1162069c04768
 SECRETARY	word	good	8e93faa35b322fae734f0039
-SISTER	word	good	2ca64bee0b05ec73e23036af
+SISTER	word	good	before-cut
 STORIES	word	good	5009da9e9476753126203819
 UNIT	word	good	8b4f0057d8c82f70989b4fb3
 ANNUAL	word	good	c544e413d5a837d81b0deb6a
@@ -1213,10 +1213,10 @@ BAR	word	good	8ac0dacb4dbc5de579b08960
 BRAIN	word	good	56da4feb0959538c1d596451
 DEGREE	word	good	4c7a876a6c41dd812e20924e
 FAMILIES	word	good	1c37728862e779cfa67a5bd3
-FEATURES	word	good	71dff8c883a7f94479cfe470
-FINISHED	word	good	f6ef00482cefb1943991ea75
+FEATURES	word	good	before-cut
+FINISHED	word	good	before-cut
 FLOOR	word	good	77e2fa5e188009f6c51576c6
-FRANCE	word	good	92e490d24aa4b690483759f4
+FRANCE	word	good	before-cut
 GROWING	word	good	7c961569bee227374c51d5ca
 HURT	word	good	2aed10b46503dc096976fcd4
 INSURANCE	word	good	16840a91562571cdd0712fd9
@@ -1226,7 +1226,7 @@ OPINION	word	good	05972db20edc75f61e456ca9
 REACH	word	good	28d43eacaecb9045c3d83395
 RULE	word	good	3b2823266ebc3963529f44d8
 SERIOUSLY	word	good	f49c6c0093256a06ac6898a3
-SPORTS	word	bad	a55aff0b325fd5568377c9f8	esports
+SPORTS	word	bad	before-cut	esports
 STUPID	word	good	43792fd7ff09c99ff1b65457
 ACTIVE	word	good	c4ed7adaeec13c04f19bc383
 AUSTRALIAN	word	good	c6d78956b3bb61fd055bc7bb
@@ -1239,7 +1239,7 @@ NONE	word	good	08dc07fd4c20fa49d758aee5
 REASONS	word	good	c272d29c83655bcffb990f37
 RUSSIA	word	good	9932f7450e24940885ccce63
 SHIP	word	good	b9e7c89e8debca7b86341518
-STOCK	word	good	486bd44cfed25f49f9e48209
+STOCK	word	good	before-cut
 WEEKEND	word	good	92218e343d6ea94eec2c62c9
 WONDER	word	good	c03ae2253c2790b54e0b4fdf
 WORST	word	good	cc0a9b6976dd4aff1a672bbb
