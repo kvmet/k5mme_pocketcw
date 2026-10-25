@@ -1,4 +1,4 @@
-//! The content pack, `F000400.bin` at SPI flash 0x100000, built by `tools/pack.py`. All numbers
+//! The content pack, `F000400.bin` at SPI flash 0x100000, built by `tools/pack/pack.py`. All numbers
 //! are little endian.
 //!
 //! Header: `PocketCW`, format u8, section count u8, two zero bytes, then one 16 byte table entry
@@ -170,7 +170,7 @@ fn u32_at(bytes: &[u8], at: usize) -> u32 {
 mod tests {
     use super::*;
 
-    /// Built by `python tools/pack.py --fixture logic/fixtures/pack.bin`: the character `K` (clip
+    /// Built by `python tools/pack/pack.py --fixture logic/fixtures/pack.bin`: the character `K` (clip
     /// byte 5), the words `CQ` (ham, clip bytes 1 2 3, with its meaning 4 4), `<BK>` (ham, no
     /// clip) and `THE` (clip bytes 9 8).
     const FIXTURE: &[u8] = include_bytes!("../fixtures/pack.bin");

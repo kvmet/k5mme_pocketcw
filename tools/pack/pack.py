@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Builds the content pack F000400.bin (format in `logic/src/pack.rs`): the characters in
-tools/words/chars.txt and the words in tools/words/ham.txt and tools/words/common.txt, each with
+tools/pack/words/chars.txt and the words in tools/pack/words/ham.txt and tools/pack/words/common.txt, each with
 a clip of the Kokoro voice af_heart at 8789 Hz. A ham word with a meaning gets a second clip
 that says the word, then its meaning. The least common words are left out until the pack fits
 in one update file.
@@ -9,12 +9,12 @@ The cache folder keeps what Kokoro says for each text, and each finished clip un
 it is made. A rebuild speaks only new or changed words, and a change to how clips are made redoes
 the clips in minutes without speaking again.
 
-Needs what tools/voiceclips.py needs for Kokoro: Python 3.12, numpy, soundfile, ffmpeg,
+Needs what tools/pack/voiceclips.py needs for Kokoro: Python 3.12, numpy, soundfile, ffmpeg,
 espeak-ng, kokoro-onnx, kokoro-v1.0.onnx and voices-v1.0.bin.
 
-    python tools/pack.py --models MODELS --out firmware/target/pack
-    python tools/pack.py --no-voice --out firmware/target/pack
-    python tools/pack.py --fixture logic/fixtures/pack.bin
+    python tools/pack/pack.py --models MODELS --out firmware/target/pack
+    python tools/pack/pack.py --no-voice --out firmware/target/pack
+    python tools/pack/pack.py --fixture logic/fixtures/pack.bin
 """
 
 import argparse
@@ -45,7 +45,7 @@ WORD_ENTRY = 28
 CLIP_START = 2
 # Change when what Kokoro is given changes, such as the phonemes, so every text is spoken again.
 SPEECH_RECIPE = 1
-# Change when this file's making of clips from speech changes. A change to tools/voiceclips.py
+# Change when this file's making of clips from speech changes. A change to tools/pack/voiceclips.py
 # makes clips again by itself.
 CLIP_RECIPE = 3
 WORDS = Path(__file__).parent / "words"

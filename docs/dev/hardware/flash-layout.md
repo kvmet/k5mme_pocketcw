@@ -15,7 +15,7 @@ The vendor ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every othe
 
 PocketCW runs from the MCU app area and reads the content pack from the SPI flash.
 
-`tools/pack.py` builds `F000400.bin`; `logic/src/pack.rs` gives the format. `tools/release.sh` builds it into each release.
+`tools/pack/pack.py` builds `F000400.bin`; `logic/src/pack.rs` gives the format. `tools/release.sh` builds it into each release.
 
 `firmware/memory.x` gives the app 236 KB from 0x08005000, and `cortex-m-rt` sets VTOR from its `set-vtor` feature.
 

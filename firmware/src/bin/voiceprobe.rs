@@ -1,6 +1,6 @@
 //! Voice probe: plays one voice's word clips through PA8 so you can score by ear whether speech
 //! is clear enough, at two sample rates. Also times the synth's worst case against the sample
-//! period. Build the clips with `tools/voiceclips.py`, then:
+//! period. Build the clips with `tools/pack/voiceclips.py`, then:
 //! `VOICE_CLIPS=firmware/target/voice-kokoro sh tools/mkimage.sh voiceprobe`.
 #![no_std]
 #![no_main]

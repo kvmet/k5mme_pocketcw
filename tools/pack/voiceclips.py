@@ -7,7 +7,7 @@ Needs Python 3.12 (for `audioop`), numpy, soundfile, ffmpeg, espeak-ng on the pa
 the neural voices piper-tts with en_US-ljspeech-high, or kokoro-onnx with kokoro-v1.0.onnx
 and voices-v1.0.bin.
 
-    python tools/voiceclips.py kokoro --models DIR --out firmware/target/voice
+    python tools/pack/voiceclips.py kokoro --models DIR --out firmware/target/voice
     VOICE_CLIPS=firmware/target/voice sh tools/mkimage.sh voiceprobe
 """
 

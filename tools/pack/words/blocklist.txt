@@ -1,4 +1,4 @@
-# Words tools/wordlist.py leaves out of common.txt, one per line.
+# Words tools/pack/wordlist.py leaves out of common.txt, one per line.
 
 # Profanity, sexual words, slurs and words about self-harm.
 ass

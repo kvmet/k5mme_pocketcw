@@ -10,9 +10,9 @@ way's letter.
 All at the device's 17,578 Hz. A way at a lower rate first goes through what the device does
 at that rate: IMA ADPCM, then straight lines between samples up to 17,578 Hz.
 
-Needs what tools/pack.py needs for Kokoro.
+Needs what tools/pack/pack.py needs for Kokoro.
 
-    python tools/listenpack.py --models MODELS --out firmware/target/listen
+    python tools/pack/listenpack.py --models MODELS --out firmware/target/listen
 """
 
 import argparse

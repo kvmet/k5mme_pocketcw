@@ -1,5 +1,5 @@
 # English words from the top 3177 of wordfreq 3.1.1 by Robyn Speer, most frequent first.
-# Data license: CC BY-SA 4.0. Built by tools/wordlist.py.
+# Data license: CC BY-SA 4.0. Built by tools/pack/wordlist.py.
 THE
 TO
 AND

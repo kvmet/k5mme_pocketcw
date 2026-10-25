@@ -71,7 +71,7 @@ Done on 2026-10-25 with `firmware/src/bin/voiceprobe.rs`. See [Voice probe](buil
 - Kokoro was clear. Piper had a better tone but cut off word endings ("egg" sounded like "ek"). espeak-ng sounded least human.
 - On the speaker, 8789 Hz and 5859 Hz sounded the same. Headphones are not checked yet.
 - Result: Kokoro `af_heart` at 5859 Hz.
-- Then, with the content pack on the speaker, 5859 Hz lost the ends of letters: QTH sounded like QT8. A listening pack (`tools/listenpack.py`) compared 5859, 8789 and 17,578 Hz. 8789 Hz with a treble boost was clear, and 17,578 Hz best. The pack moved to 8789 Hz for every clip, since one rate for letters and another for words would be jarring. The same tests found foreign vowels from the phoneme form, and rushed lone letters; see [Content pack](building.md#content-pack).
+- Then, with the content pack on the speaker, 5859 Hz lost the ends of letters: QTH sounded like QT8. A listening pack (`tools/pack/listenpack.py`) compared 5859, 8789 and 17,578 Hz. 8789 Hz with a treble boost was clear, and 17,578 Hz best. The pack moved to 8789 Hz for every clip, since one rate for letters and another for words would be jarring. The same tests found foreign vowels from the phoneme form, and rushed lone letters; see [Content pack](building.md#content-pack).
 
 ## 2. SPI flash driver and log location
 
@@ -119,7 +119,7 @@ Flash cost: about 1 KB.
 
 ### Voice clips
 
-- Voice: Kokoro-82M `af_heart`, built on a computer with `tools/voiceclips.py`. The probe picked it among three, each with a license that allows redistribution of its output:
+- Voice: Kokoro-82M `af_heart`, built on a computer with `tools/pack/voiceclips.py`. The probe picked it among three, each with a license that allows redistribution of its output:
 
   | Voice | License |
   | - | - |
@@ -127,17 +127,17 @@ Flash cost: about 1 KB.
   | Piper LJSpeech | Public domain dataset. Other Piper voices carry their own licenses and are not candidates. |
   | espeak-ng | GPL-3.0. Robotic, but formant speech can stay clear at low sample rates. |
 
-- `tools/release.sh` appends the content pack's credits, `tools/pack-notice.txt`, to `THIRD-PARTY.txt`.
+- `tools/release.sh` appends the content pack's credits, `tools/pack/pack-notice.txt`, to `THIRD-PARTY.txt`.
 - Format: 4-bit IMA ADPCM at 8789 Hz (17578 / 2), about 4.4 KB a second. Playback draws two output samples per input on straight lines (`logic/src/adpcm.rs`), so no fractional resampler is needed. The pack header gives the rate, so a pack at another rate needs no firmware change.
-- Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack.py` leaves out the least common words until the pack fits. An 8.37 MB pack installed and played its first and last clips.
-- Planned: a computer tool that plays every clip of a built pack, so a listener can mark the bad ones without the device. The marks feed `tools/words/blocklist.txt` or a new spelling for the voice.
+- Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack/pack.py` leaves out the least common words until the pack fits. An 8.37 MB pack installed and played its first and last clips.
+- Planned: a computer tool that plays every clip of a built pack, so a listener can mark the bad ones without the device. The marks feed `tools/pack/words/blocklist.txt` or a new spelling for the voice.
 
 ### Playback
 
 - The `ui` task reads a whole clip into a `ui`-owned 16 KB buffer, outside every lock. 16 KB holds about 3.7 s at 8789 Hz. The clip builder fails any clip longer than the buffer, so the limit is checked at build time.
 - It hands the buffer to the `sample` task through a single-producer, single-consumer index: no copy under the `audio` lock.
 - The `sample` task decodes ADPCM and plays it as one more voice in `synth`. The cost is tens of cycles a sample against 4096 available.
-- Built: `SAY` on the serial port speaks text. Words in the pack play their clip; one abbreviation on its own also gets its meaning. Other words are spelled from character clips (`tools/words/chars.txt`), up to 32 clips in the 16 KB buffer. Clips play in turn with 120 ms between them.
+- Built: `SAY` on the serial port speaks text. Words in the pack play their clip; one abbreviation on its own also gets its meaning. Other words are spelled from character clips (`tools/pack/words/chars.txt`), up to 32 clips in the 16 KB buffer. Clips play in turn with 120 ms between them.
 
 Flash cost: about 4 KB.
 

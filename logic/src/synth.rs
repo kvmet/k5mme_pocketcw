@@ -14,7 +14,7 @@ pub const MAX_LEVEL: u8 = 10;
 /// One voice's peak, and the most all voices together reach: when stations overlap, the band's
 /// gain drops so their sum stays here.
 const VOICE_PEAK: f32 = 0.7;
-/// The ceiling of the pack's clips before ADPCM, `LIMIT_PEAK` in `tools/voiceclips.py`.
+/// The ceiling of the pack's clips before ADPCM, `LIMIT_PEAK` in `tools/pack/voiceclips.py`.
 const CLIP_CEILING: f32 = 0.8;
 /// The level a clip's full scale plays at, so a clip's ceiling sounds at a voice's peak. ADPCM
 /// overshoot took a clip to 0.925 of full scale at most in a test, 0.81 here, just past

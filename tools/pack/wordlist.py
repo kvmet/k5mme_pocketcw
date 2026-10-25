@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Writes tools/words/common.txt: the English words in the top RANKS of wordfreq, letters only,
-without single letters other than A and I, and without the words in tools/words/blocklist.txt.
+"""Writes tools/pack/words/common.txt: the English words in the top RANKS of wordfreq, letters only,
+without single letters other than A and I, and without the words in tools/pack/words/blocklist.txt.
 Needs the wordfreq package.
 
-    python tools/wordlist.py
+    python tools/pack/wordlist.py
 """
 
 import importlib.metadata
@@ -28,7 +28,7 @@ def main():
     version = importlib.metadata.version("wordfreq")
     header = (
         f"# English words from the top {RANKS} of wordfreq {version} by Robyn Speer, most frequent first.\n"
-        "# Data license: CC BY-SA 4.0. Built by tools/wordlist.py.\n"
+        "# Data license: CC BY-SA 4.0. Built by tools/pack/wordlist.py.\n"
     )
     (WORDS / "common.txt").write_text(header + "\n".join(kept) + "\n")
     print(f"{WORDS / 'common.txt'}: {len(kept)} words")
