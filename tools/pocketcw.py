@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Drive the device over the USB serial port: press buttons, key text, read what it decodes and
-plays, and save screenshots.
+"""Drive the device over the USB serial port: press buttons, key and play text, read what it
+decodes and plays, read and change settings, save screenshots, and export stats and timing.
 
 usage: python3 -I tools/pocketcw.py [--port PORT] STEP...
 
@@ -12,12 +12,21 @@ Steps run in order:
   expect REGEX                   wait up to 60 s for an event line that matches
   listen MS                      show event lines for MS
   shots DIR                      save every screen into DIR; start on KEYER
+  info                           show the firmware version, screen and panel
+  get NAME                       show a setting or memory; get all shows every one
+  set NAME VALUE                 change a setting or memory, as the screen writes it
+  play TEXT                      sound TEXT as a receive drill does and wait until it ends
+  stop                           stop what send and play started
+  stats letters FILE.csv         save each letter's tries, accuracy and mastery
+  stats progress FILE.csv        save each practice session
+  edges MS FILE.csv              save each key and paddle line change for MS
 
 Event lines from the device show as they arrive, after "< ".
 
 examples:
   python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
   python3 -I tools/pocketcw.py send "CQ CQ DE K5MME K" listen 5000
+  python3 -I tools/pocketcw.py set SPEED 25 set MODE "IAMBIC A" get all
 
 USB OUT must not be OFF, so the device is on USB. PORT defaults to the only
 /dev/cu.usbmodem* (macOS) or /dev/ttyACM* (Linux) port.
@@ -26,6 +35,7 @@ As a module, Device does the same from Python:
   d = Device(); d.press('F4'); d.send('CQ'); d.shot('cq.png'); d.close()
 """
 import collections
+import csv
 import glob
 import os
 import re
@@ -40,10 +50,13 @@ import zlib
 BUTTONS = ('F1', 'F2', 'F3', 'F4', 'LEFT', 'RIGHT', 'CLICK')
 # Lines the device sends unasked; anything else before a screenshot header is left over from an
 # unfinished screenshot.
-EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY')
-# The longest SEND text, from MAX_TEXT in logic/src/player.rs.
+EVENTS = ('KEY', 'HEARD', 'PLAY', 'PLAYED', 'SENT', 'BUSY', 'EDGE')
+# Lines that answer a command.
+REPLIES = ('INFO', 'VALUE', 'OK', 'ERROR', 'LEVEL', 'LETTER', 'MIXUP', 'SESSION', 'END')
+# The longest SEND or PLAY text, from MAX_TEXT in logic/src/player.rs.
 MAX_SEND = 48
 SHOT_TIMEOUT_S = 3
+REPLY_TIMEOUT_S = 3
 EXPECT_TIMEOUT_S = 60
 
 
@@ -115,6 +128,44 @@ class Device:
             raise RuntimeError('the device is still sending')
         return copy(self.taken)
 
+    def play(self, text, timeout=EXPECT_TIMEOUT_S):
+        """Sounds `text` at CHAR SPEED, FARNSWORTH and TONE, and waits until it ends."""
+        if len(text) > MAX_SEND:
+            raise ValueError(f'play takes {MAX_SEND} characters at most, not {len(text)}')
+        self.drain()
+        self._write(f'PLAY {text}\n')
+        self.expect('PLAYED$', timeout)
+
+    def stop(self):
+        self._write('STOP\n')
+
+    def info(self):
+        """{'VERSION': '0.2.0', 'SCREEN': 'KEYER', 'PANEL': 'IPS'}"""
+        line = self._ask('INFO', 'INFO ')[-1]
+        return dict(field.split('=', 1) for field in line.split()[1:])
+
+    def get(self, name=None):
+        """The value of setting or memory `name`, or of every one as a dict."""
+        if name:
+            return value(self._ask(f'GET {name}', 'VALUE ')[-1])[1]
+        return dict(value(line) for line in self._ask('GET', 'END$')[:-1])
+
+    def set(self, name, new):
+        """Sets `name` to `new`, written as the screen writes it; the value the device kept."""
+        return value(self._ask(f'SET {name} {new}', 'OK ')[-1])[1]
+
+    def stats(self, kind):
+        """The lines of STATS LETTERS or STATS PROGRESS, without END."""
+        return self._ask(f'STATS {kind.upper()}', 'END$')[:-1]
+
+    def edges(self, ms):
+        """(line, down, ms) for each key and paddle line change within `ms`."""
+        self.drain()
+        self._write('EDGES ON\n')
+        events = self.listen(ms)
+        self._write('EDGES OFF\n')
+        return [(e.text.split()[0], int(e.text.split()[1]), int(e.text.split()[2])) for e in events if e.name == 'EDGE']
+
     def expect(self, pattern, timeout=EXPECT_TIMEOUT_S):
         """The first event line that matches `pattern` from its start. The lines before it are
         dropped, and kept in `taken`."""
@@ -146,6 +197,26 @@ class Device:
         self.events.clear()
         return events
 
+    def _ask(self, command, last):
+        """Sends `command`; its reply lines up to the one that matches `last`. Event lines
+        between them are kept as events."""
+        self._write(command + '\n')
+        deadline = time.monotonic() + REPLY_TIMEOUT_S
+        lines = []
+        while True:
+            line = self._line(deadline)
+            if line is None:
+                raise TimeoutError(f'no answer to {command} in {REPLY_TIMEOUT_S} s')
+            name = line.partition(' ')[0]
+            if name == 'ERROR':
+                raise RuntimeError(f'{command}: {line}')
+            if name not in REPLIES:
+                self._event(line)
+                continue
+            lines.append(line)
+            if re.match(last, line):
+                return lines
+
     def _write(self, line):
         os.write(self.fd, line.encode('ascii'))
 
@@ -176,6 +247,34 @@ class Device:
 def copy(events):
     """The text that KEY lines spell, one space for each word gap."""
     return ''.join(e.text for e in events if e.name == 'KEY').strip()
+
+
+def value(line):
+    """(name, value) from VALUE SPEED 25 or OK MODE IAMBIC A."""
+    _, name, new = (line + ' ').split(' ', 2)
+    return name, new[:-1]
+
+
+def save_letters(lines, path):
+    """LETTER lines to CSV; LEVEL says how many Koch characters are in play. Shows the mixups."""
+    level = next(int(line.split()[1]) for line in lines if line.startswith('LEVEL '))
+    letters = [line.split()[1:] for line in lines if line.startswith('LETTER ')]
+    with open(path, 'w', newline='') as f:
+        out = csv.writer(f)
+        out.writerow(['char', 'tries', 'percent', 'mastery', 'in_play'])
+        for i, (char, tries, percent, mastery) in enumerate(letters):
+            out.writerow([char, tries, percent, mastery, int(i < level)])
+    for line in lines:
+        if line.startswith('MIXUP '):
+            _, sent, copied, count = line.split()
+            print(f'mixup: sent {sent}, copied {copied}, {count} times')
+
+
+def save_progress(lines, path):
+    with open(path, 'w', newline='') as f:
+        out = csv.writer(f)
+        out.writerow(['seq', 'active_s', 'contacts', 'rx_chars', 'rx_right', 'sent_chars'])
+        out.writerows(line.split()[1:] for line in lines)
 
 
 def find_port():
@@ -293,30 +392,37 @@ class Screens:
         d.press('F4', 'F4')
 
 
-STEPS_WITH_VALUE = ('shot', 'wait', 'send', 'expect', 'listen', 'shots')
+# How many values each step takes.
+STEP_VALUES = {
+    'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
+    'info': 0, 'get': 1, 'set': 2, 'play': 1, 'stop': 0, 'stats': 2, 'edges': 2,
+}
 
 
 def steps(args):
-    """(step, value) for each step, checked before anything is sent."""
+    """(step, values) for each step, checked before anything is sent."""
     out = []
     while args:
         word = args.pop(0)
         if word in BUTTONS:
-            out.append((word, None))
-        elif word in STEPS_WITH_VALUE and args:
-            value = args.pop(0)
-            if word in ('wait', 'listen') and not value.isdigit():
-                sys.exit(f'{word} takes milliseconds, not {value}')
-            if word == 'send' and len(value) > MAX_SEND:
-                sys.exit(f'send takes {MAX_SEND} characters at most, not {len(value)}')
-            out.append((word, value))
-        else:
+            out.append((word, []))
+            continue
+        if word not in STEP_VALUES or len(args) < STEP_VALUES[word]:
             sys.exit(f'unknown step {word}\n\n{__doc__}')
+        values = [args.pop(0) for _ in range(STEP_VALUES[word])]
+        if word in ('wait', 'listen', 'edges') and not values[0].isdigit():
+            sys.exit(f'{word} takes milliseconds, not {values[0]}')
+        if word in ('send', 'play') and len(values[0]) > MAX_SEND:
+            sys.exit(f'{word} takes {MAX_SEND} characters at most, not {len(values[0])}')
+        if word == 'stats' and values[0] not in ('letters', 'progress'):
+            sys.exit(f'stats takes letters or progress, not {values[0]}')
+        out.append((word, values))
     return out
 
 
 def run(d, plan):
-    for step, value in plan:
+    for step, values in plan:
+        value = values[0] if values else None
         if step in BUTTONS:
             d.press(step)
         elif step == 'shot':
@@ -330,9 +436,33 @@ def run(d, plan):
             d.expect(value)
         elif step == 'listen':
             d.listen(int(value))
-        else:
+        elif step == 'shots':
             os.makedirs(value, exist_ok=True)
             Screens(d, value).run()
+        elif step == 'info':
+            print(' '.join(f'{k}={v}' for k, v in d.info().items()))
+        elif step == 'get' and value == 'all':
+            for name, new in d.get().items():
+                print(f'{name} {new}')
+        elif step == 'get':
+            print(f'{value} {d.get(value)}')
+        elif step == 'set':
+            print(f'{value} {d.set(value, values[1])}')
+        elif step == 'play':
+            d.play(value)
+        elif step == 'stop':
+            d.stop()
+        elif step == 'stats':
+            lines = d.stats(value)
+            (save_letters if value == 'letters' else save_progress)(lines, values[1])
+            print(values[1])
+        else:
+            changes = d.edges(int(value))
+            with open(values[1], 'w', newline='') as f:
+                out = csv.writer(f)
+                out.writerow(['line', 'down', 'ms'])
+                out.writerows(changes)
+            print(f'{values[1]}: {len(changes)} changes')
 
 
 def main():

@@ -1,6 +1,6 @@
 # Serial interface
 
-PocketCW has a USB serial port that a computer uses to press the buttons, key text, read what the device decodes and plays, and read the screen. [Remote control and screenshots](building.md#remote-control-and-screenshots) covers the harness that uses it.
+PocketCW has a USB serial port that a computer uses to press the buttons, key and play text, read what the device decodes and plays, read and change the settings, read the stats and the key timing, and read the screen. [Remote control and screenshots](building.md#remote-control-and-screenshots) covers the harness that uses it.
 
 ## The port
 
@@ -12,7 +12,7 @@ The port has two modes. It starts in text mode, which the sections below up to [
 
 ## Commands
 
-Each command is one line of up to 53 bytes, ended by `\n` or `\r`. Commands are upper case. The device ignores a line it does not know and a longer line, with no reply.
+Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are upper case; text and values may be lower case. The device skips empty lines, answers a line it does not know with `ERROR UNKNOWN`, and answers a longer line, or text over 48 characters, with `ERROR TOO LONG`.
 
 | Command | Device |
 | - | - |
@@ -20,9 +20,18 @@ Each command is one line of up to 53 bytes, ended by `\n` or `\r`. Commands are 
 | `PRESS LEFT`, `PRESS RIGHT` | Turns the dial one step. No reply. |
 | `PRESS CLICK` | Presses and releases the dial. No reply. |
 | `SEND TEXT` | Keys up to 48 characters of text. See [Send](#send). |
+| `PLAY TEXT` | Sounds up to 48 characters of text. See [Play](#play). |
+| `STOP` | Stops the text of `SEND` and `PLAY`, and anything else the device is sounding. No reply. |
 | `SHOT` | Sends the screen. See [Screenshot](#screenshot). |
+| `INFO` | Answers `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS`: the firmware version, the screen, and the panel, `IPS` or `ILI9341`. |
+| `GET NAME`, `GET` | Sends a setting or memory, or all of them. See [Settings](#settings). |
+| `SET NAME VALUE` | Changes a setting or memory. See [Settings](#settings). |
+| `EDGES ON`, `EDGES OFF` | Starts or stops the key timing lines. See [Edges](#edges). No reply. |
+| `STATS LETTERS`, `STATS PROGRESS` | Sends the letter stats or the practice sessions. See [Stats](#stats). |
 
-Presses, `SEND` and `SHOT` go to the screen through one queue, in the order they came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 presses sent at once can fill the queue; the device then shows `n INPUTS LOST`.
+Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 commands sent at once can fill the queue; the device then shows `n INPUTS LOST`.
+
+The screen waits for room in the serial queue for each reply line, for up to 0.5 s; a line that waits longer is lost, with the rest of its reply, and counts in `n SERIAL LINES LOST`. Event lines can come between the lines of a reply.
 
 ## Send
 
@@ -31,6 +40,62 @@ Presses, `SEND` and `SHOT` go to the screen through one queue, in the order they
 The keying takes the same path as the paddle: the decoder, the screen, the sidetone and the LED. Every screen sees it as your keying, so it answers drills and works QSOs. KEY OUT keys the radio when it is ON and OUT TYPE is STRAIGHT. Touching the key stops the text.
 
 One word gap after the text ends, the device sends `SENT`. By then the decoder has sent the last character and the word gap as `KEY` lines. A `SEND` before the `SENT` of the one before gets `BUSY` and is not keyed.
+
+## Play
+
+`PLAY` sounds its text as the receive drills do: at CHAR SPEED and FARNSWORTH, on TONE, with NOISE and FADING on every screen while it sounds. Lower case counts as upper case, and a prosign is written in angle brackets. It does not key the radio, and the decoder does not hear it. The `PLAY` event line comes when it starts, and `PLAYED` when everything the device is sounding has finished. A `PLAY` while a drill sounds plays beside it on a free voice.
+
+## Settings
+
+A name is a settings row with `_` for each space: `MODE`, `PADDLES`, `SPEED`, `KEY_OUT`, `OUT_TYPE`, `OUT_LINES`, `USB_OUT`, `TONE`, `VOLUME`, `WAVE`, `NOISE`, `FADING`, `CHAR_SPEED`, `FARNSWORTH`, `CHEW_SHOWS`, `DECODER_BOARD`, `PILEUP`, `FIST`, `SPEED_SPREAD`, `STYLE`, `PALETTE` and `BRIGHTNESS`. A value is what the row shows, without `WPM`, `HZ` or `%`: `IAMBIC B`, `ON`, `25`, `MATCH`.
+
+The memories have their own names:
+
+| Name | Value |
+| - | - |
+| `CALL` | Your callsign: up to 10 of A to Z, 0 to 9 and `/`. |
+| `M1` to `M4` | A memory's text, up to 48 characters, with a prosign written as `<AR>`. Repeated spaces drop out. |
+| `M1_REPEAT` to `M4_REPEAT` | `ON` or `OFF`. |
+| `MEM_EVERY` | Seconds between repeats, 2 to 30. |
+| `MEM_STAY_OPEN` | `ON` or `OFF`. |
+
+| Command | Reply |
+| - | - |
+| `GET SPEED` | `VALUE SPEED 25` |
+| `GET` | A `VALUE` line for every name, then `END`. |
+| `SET SPEED 25` | `OK SPEED 25`. The device redraws the screen and saves the change as it does from the dial. |
+| `SET SPEED 70` | `ERROR SPEED: 5 TO 60`. Nothing changes. The reason lists the values the setting takes. |
+
+`SET` cannot turn USB off: `SET USB_OUT OFF`, and `SET DECODER_BOARD OFF` while USB OUT is RADIO, answer an error. Set them on the device.
+
+## Edges
+
+After `EDGES ON`, the device sends a line for each change on the key and paddle lines, until `EDGES OFF` or the computer closes the port:
+
+```
+EDGE KEY 1 123456
+```
+
+The line is `KEY` for the keyed signal, from the paddles or a `SEND`, and `TIP` and `RING` for the paddle contacts. `1` is closed or down and `0` open or up. The last field is the time on the device's millisecond count. An edge line that finds the serial queue full is lost, and counts in `n SERIAL LINES LOST`.
+
+## Stats
+
+`STATS LETTERS` sends `LEVEL n`, the number of Koch characters in play, then one line for each Koch character in Koch order, then the mixups, most common first, then `END`:
+
+```
+LETTER K 15 80 KNOWN
+MIXUP A N 3
+```
+
+A `LETTER` line gives the character, its tries, the percent copied right, and `KNOWN`, `UNSURE`, `WEAK`, or `NEW` for a character not yet sent. A `MIXUP` line gives the character sent, the one copied, and how often.
+
+`STATS PROGRESS` sends one line for each practice session, oldest first, then `END`:
+
+```
+SESSION 12 600 3 120 100 450
+```
+
+The fields are the session number, the seconds of practice, the contacts logged, the characters sent in receive drills, how many of those you copied right, and the characters you keyed.
 
 ## Events
 
@@ -44,6 +109,7 @@ While the computer has the port open (holds DTR), the device sends a line for ea
 | `PLAYED` | Everything the device was sounding has finished. |
 | `SENT` | The text of a `SEND` has finished. |
 | `BUSY` | A `SEND` came before the last one finished. |
+| `EDGE LINE 1 MS` | A key or paddle line changed, after `EDGES ON`. See [Edges](#edges). |
 
 `PLAY` gives a drill group before you hear it, so a script can answer it. Event lines never break into a screenshot: the screen sends them in turn with its other work. An event line that finds the serial queue full is lost, and the screen shows `n SERIAL LINES LOST`.
 
@@ -79,6 +145,8 @@ Text bytes go to the same sender as `SEND`, which keys them in the same path. A 
 | `00 04 nn` echo test | Sends back `nn`. |
 | `00 05`, `00 06`, `00 07`, `00 15`, `00 18` | Sends back 0. |
 | `00 09` firmware major revision | Sends back 23. |
+| `00 0A` set WK1 mode | Stops the pushbutton bytes. |
+| `00 0B` set WK2 mode | Starts the pushbutton bytes. |
 | `00 17` firmware minor revision | Sends back 0. |
 | `02 nn` speed | Sets SPEED to `nn` WPM, clamped to 5 to 60, and saves it; 0 keeps it. |
 | `05 min range x` speed pot setup | Sets the lowest speed of the pot reply. |
@@ -101,6 +169,8 @@ The device reads the parameter bytes of every other command and ignores them, so
 | Byte | When |
 | - | - |
 | Status, `0xC0` with flags | On request, and on each change. Bit 2 BUSY: the queue is keying or holds text. Bit 1 BREAKIN: the paddles keyed within a word gap. Bit 0 XOFF: the queue is over 2/3 full. |
+| Speed pot, `0x80` plus SPEED less the pot's lowest speed | On request, and when SPEED changes on the device. A speed the host set sends none. |
+| Pushbutton, `0xC8` with a bit for the button down | In WK2 mode, when F1 to F4 go down and up: bit 0 for F1, 1 for F2, 2 for F3, 4 for F4. The screen does not see them then. |
 | Serial echo | Each text byte, once its last mark ends, while serial echo is on. A prosign sign such as `<` echoes itself; a `1B` merge echoes nothing. |
 | Paddle echo | Each character the decoder reads from the paddles, and a space for a word gap, while paddle echo is on. A prosign with a WinKeyer sign echoes the sign, such as `+` for AR; one with no sign echoes nothing. |
 
@@ -117,11 +187,14 @@ The text keys with perfect timing, at the WinKeyer speed. The paddles keep the d
 | Part | File |
 | - | - |
 | Command lines and their parse | `logic/src/serial.rs` |
+| Settings and memories by name, for `GET` and `SET` | `logic/src/config.rs` |
+| Replies to `INFO`, `GET`, `SET`, `PLAY` and `STATS` | `firmware/src/ui/serial.rs`, and `answer` in `firmware/src/main.rs` |
 | The sender that keys `SEND` and WinKeyer text | `logic/src/sender.rs` |
 | The WinKeyer parser | `logic/src/winkeyer.rs` |
 | WinKeyer actions, and the bytes to the host | `winkeyer_act` and `wk_chunk` in `firmware/src/main.rs` |
 | The USB device, keyboard and serial port | `firmware/src/usb.rs` |
 | The USB task, which reads commands and writes the queued bytes | `usb_events` in `firmware/src/main.rs` |
 | The serial key, merged with the keyer output | `tick` in `firmware/src/main.rs` |
-| Event lines and `SEND` | `event_line`, `emit` and the `ui` task in `firmware/src/main.rs` |
+| Event lines, `EDGE` lines, `SEND` and `STOP` | `event_line`, `emit` and the `ui` task in `firmware/src/main.rs` |
+| Pushbutton bytes | `tick` in `firmware/src/main.rs` |
 | The screenshot, row by row, from the UI task | `send_screen` in `firmware/src/main.rs`, `read_row` in `firmware/src/lcd.rs` |

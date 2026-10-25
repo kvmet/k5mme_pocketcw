@@ -73,6 +73,8 @@ The screen shows `WINKEYER OPEN` when the program takes the port, and `WINKEYER 
 - Touch your key to stop the program's text. Your keying goes to the radio as usual, and the device tells the program you broke in.
 - The device sends back each character it keys, and each character you key, when the program asks for that.
 - Tune from the program holds the key down.
+- When you change SPEED on the device, the program sees the new speed, as from a WinKeyer's speed knob.
+- If the program asks for WinKeyer pushbuttons, F1 to F4 are the WinKeyer's four buttons, which the program can map to its macros. Until the program lets go, the screen does not see F1 to F4; the dial still works.
 - Your MODE, PADDLES, TONE and VOLUME settings stay in force. The device ignores the program's settings for these, and for weight, PTT, lead-in, Farnsworth and the WinKeyer's own message memories.
 
 ## Status message

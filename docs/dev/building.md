@@ -96,7 +96,7 @@ The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flas
 
 ## Remote control and screenshots
 
-`tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys text, shows what the device decodes and plays, and saves the screen as a PNG. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.
+`tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys and plays text, shows what the device decodes and plays, reads and changes settings, saves the screen as a PNG, and saves the stats and the key timing as CSV. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.
 
 1. Set USB OUT to SERIAL, so the device is on USB and types nothing.
 2. Plug the device into the computer.
@@ -115,10 +115,18 @@ python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
 | `expect REGEX` | Waits up to 60 s for an event line that matches from its start, such as `expect "PLAY "`. |
 | `listen MS` | Shows the event lines that arrive in that time. |
 | `shots DIR` | Saves every screen into the folder. See [Every screen](#every-screen). |
+| `info` | Shows the firmware version, the screen and the panel. |
+| `get NAME` | Shows a setting or memory, such as `get SPEED`. `get all` shows every one. |
+| `set NAME VALUE` | Changes a setting or memory, written as the screen writes it, such as `set MODE "IAMBIC A"`. |
+| `play TEXT` | Sounds the text as a receive drill does, and waits until it ends. |
+| `stop` | Stops what `send` and `play` started. |
+| `stats letters FILE.csv` | Saves each Koch character's tries, percent right, mastery, and whether it is in play. Shows the mixups. |
+| `stats progress FILE.csv` | Saves each practice session. |
+| `edges MS FILE.csv` | Saves each change on the key and paddle lines in that time, with its time in ms. |
 
 Event lines show as they arrive, after `< `. The script finds the serial port by itself when there is only one; else give it with `--port PORT` before the steps.
 
-A Python script can load the file and use its `Device` class: `press`, `shot`, `send`, `expect`, `listen` and `drain` do what the steps do.
+A Python script can load the file and use its `Device` class: `press`, `shot`, `send`, `play`, `stop`, `info`, `get`, `set`, `stats`, `edges`, `expect`, `listen` and `drain` do what the steps do. A command the device answers with `ERROR` raises `RuntimeError`.
 
 ### Every screen
 
