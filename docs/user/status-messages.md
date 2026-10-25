@@ -38,6 +38,17 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
 
+## WinKeyer
+
+These messages show while a logging program uses the device as a WinKeyer. See [USB keyboard](usb.md#winkeyer).
+
+| Message | Meaning |
+| - | - |
+| `WINKEYER OPEN` | A logging program took the serial port as a WinKeyer. |
+| `WINKEYER CLOSED` | The logging program let the serial port go, or the computer closed it. Text it had not sent yet is dropped. |
+| `WINKEYER n WPM` | The logging program set SPEED to `n` WPM. |
+| `n WINKEYER BYTES LOST` | The device dropped `n` bytes to or from the logging program, because its queue was full. |
+
 ## Memories
 
 These messages show on the KEYER screen. See [Memories](memories.md).

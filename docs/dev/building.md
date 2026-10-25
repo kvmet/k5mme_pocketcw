@@ -98,7 +98,7 @@ The image goes to `firmware/target/A000014.bin`. Flash it the same way, and flas
 
 `tools/pocketcw.py` drives the device over USB serial. It presses the buttons, keys text, shows what the device decodes and plays, and saves the screen as a PNG. It needs Python 3 on macOS or Linux, with no other packages. [Serial interface](serial.md) describes the commands and the event lines.
 
-1. Set USB OUT to TEXT, VBAND or RADIO, so the device is on USB.
+1. Set USB OUT to SERIAL, so the device is on USB and types nothing.
 2. Plug the device into the computer.
 3. Run the steps, such as:
 

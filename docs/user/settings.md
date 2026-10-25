@@ -41,7 +41,7 @@ Numbers stop at their lowest and highest values. A choice of words goes around: 
 | KEY OUT | ON, OFF | ON | Whether the func jack keys. |
 | OUT TYPE | STRAIGHT, PADDLE | STRAIGHT | STRAIGHT: one line keys, for a radio's straight key input. PADDLE: two lines follow your contacts, for the radio's own keyer. |
 | OUT LINES | TIP KEYS, RING KEYS (STRAIGHT); DIT ON TIP, DIT ON RING (PADDLE) | TIP KEYS or DIT ON TIP | Which lines of the func jack key. |
-| USB OUT | OFF, TEXT, VBAND, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
+| USB OUT | OFF, TEXT, VBAND, SERIAL, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. SERIAL is the serial port alone, for a logging program. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
 
 ## SOUND tab
 

@@ -34,6 +34,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `record` | The EEPROM record frame and its CRC. |
 | `battery`, `panel`, `board` | The battery gauge, the choice of screen type and its memory read framing, and the decoder board protocol. |
 | `serial` | Commands from the computer on the USB serial port. |
+| `sender`, `winkeyer` | The sender that keys text from the serial port, and the WinKeyer host protocol. |
 | `buttons`, `input`, `ticks`, `rng`, `math` | Button debounce and events, button actions, tick arithmetic, random numbers, and math helpers. |
 
 ## firmware modules
