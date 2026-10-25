@@ -350,7 +350,7 @@ TOP = ['RECEIVE', 'ON AIR', 'TIMING', 'STATS', 'SETTINGS', 'SYSTEM']
 RECEIVE = ['KOCH', 'WORDS', 'CALLS', 'NINJA', 'HEAD']
 ON_AIR = ['POTA', 'SOTA', 'HUNT', 'CHEW', 'QUIZ']
 STATS = ['LETTERS', 'PROGRESS']
-SETTINGS_TABS = ['keyer', 'sound', 'recv', 'qso', 'theme', 'call', 'mem']
+SETTINGS_SECTIONS = ['keyer', 'sound', 'hear', 'drills', 'qso', 'memories', 'callsign', 'device', 'theme']
 # Long enough for a ragchew over to end.
 OVER_S = 45
 # Long enough for a QSO to send its first text.
@@ -431,10 +431,11 @@ class Screens:
         d.press('F4')
 
         self.open(TOP, 'SETTINGS')
-        for i, tab in enumerate(SETTINGS_TABS):
+        # F3 (NEXT) opens each section in turn.
+        for i, section in enumerate(SETTINGS_SECTIONS):
             if i:
-                d.press('F1')
-            self.shot('settings-' + tab)
+                d.press('F3')
+            self.shot('settings-' + section)
         d.press('F4', 'F4')
 
 

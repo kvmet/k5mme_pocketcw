@@ -50,7 +50,7 @@ One word gap after the text ends, the device sends `SENT`. By then the decoder h
 
 ## Settings
 
-A name is a settings row with `_` for each space: `MODE`, `PADDLES`, `SPEED`, `KEY_OUT`, `OUT_TYPE`, `OUT_LINES`, `USB_OUT`, `TONE`, `VOLUME`, `WAVE`, `NOISE`, `FADING`, `CHAR_SPEED`, `FARNSWORTH`, `CHEW_SHOWS`, `DECODER_BOARD`, `PILEUP`, `FIST`, `SPEED_SPREAD`, `STYLE`, `PALETTE` and `BRIGHTNESS`. A value is what the row shows, without `WPM`, `HZ` or `%`: `IAMBIC B`, `ON`, `25`, `MATCH`.
+A name is a settings row with `_` for each space: `MODE`, `PADDLES`, `SPEED`, `KEY_OUT`, `OUT_TYPE`, `OUT_LINES`, `USB_OUT`, `TONE`, `VOLUME`, `WAVE`, `NOISE`, `FADING`, `CHAR_SPEED`, `FARNSWORTH`, `CHEW_SHOWS`, `NINJA_WORDS`, `DECODER_BOARD`, `PILEUP`, `FIST`, `SPEED_SPREAD`, `STYLE`, `PALETTE`, `BRIGHTNESS` and `F1_HOLD`. A value is what the row shows, without `WPM`, `HZ` or `%`: `IAMBIC B`, `ON`, `25`, `MATCH`.
 
 The memories have their own names:
 
@@ -58,8 +58,7 @@ The memories have their own names:
 | - | - |
 | `CALL` | Your callsign: up to 10 of A to Z, 0 to 9 and `/`. |
 | `M1` to `M4` | A memory's text, up to 48 characters, with a prosign written as `<AR>`. Repeated spaces drop out. |
-| `M1_REPEAT` to `M4_REPEAT` | `ON` or `OFF`. |
-| `MEM_EVERY` | Seconds between repeats, 2 to 30. |
+| `MEM_EVERY` | Seconds between repeats of a held memory, 2 to 30. |
 | `MEM_STAY_OPEN` | `ON` or `OFF`. |
 
 | Command | Reply |
@@ -123,7 +122,7 @@ SESSION 12 600 3 120 100 450
 
 The fields are the session number, the seconds of practice, the contacts logged, the characters sent in receive drills, how many of those you copied right, and the characters you keyed.
 
-`STATS TIMING` sends the timing of your keying since power on, or since CLR on the TIMING screen, then `END`:
+`STATS TIMING` sends the timing of your keying since power on, or since you last cleared the TIMING screen, then `END`:
 
 ```
 MARK DIT 120 62.40 4.10
@@ -141,7 +140,7 @@ BINS GAP 8 0 2 ...
 - `RATIO` is the dah length over the dit length; 3 is standard. `WPM` is the speed your timing works out to. Each line comes only once its value is known.
 - A `BINS` line is a histogram: the range in dots, then the count in each of 24 equal bins from 0. The last bin also holds everything longer than the range.
 - Numbers have two decimals.
-- Marks in ms mix speeds when SPEED changes after a CLR. Text that `SEND` keys counts too, since it keys the same line.
+- Marks in ms mix speeds when SPEED changes after a clear. Text that `SEND` keys counts too, since it keys the same line.
 
 ## Events
 

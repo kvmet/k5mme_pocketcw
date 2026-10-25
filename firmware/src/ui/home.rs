@@ -10,7 +10,7 @@ use pocketcw_logic::{
     settings::{Field, Settings},
 };
 
-use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::KEYER_TAB};
+use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, blocks, blocks_width, para, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -187,12 +187,7 @@ impl Ui {
     pub(super) fn home_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
         if self.mem_row {
             match action {
-                Action::Soft(slot) => {
-                    if !self.memories.stay_open {
-                        self.close_mem_row(lcd);
-                    }
-                    return self.send_memory(lcd, s, slot as usize);
-                }
+                Action::Soft(slot) => return self.memory_key(lcd, s, slot as usize, false),
                 Action::Click if self.sending.is_none() => return self.close_mem_row(lcd),
                 _ => {}
             }
@@ -213,7 +208,7 @@ impl Ui {
                 self.focus_next();
                 self.focus_mark(lcd, self.focus_index(), true);
             }
-            Action::Soft(0) => self.open_settings_at(lcd, s, KEYER_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Keyer),
             Action::Soft(1) => self.open_mem_row(lcd),
             Action::Soft(2) => {
                 s.adjust(Field::KeyOut, 1);

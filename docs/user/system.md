@@ -52,7 +52,7 @@ When the battery goes below 3.4 V, the status line says `BATTERY LOW: PLUG IN US
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the THEME tab. F4 (BACK) there returns to this screen. |
+| F1 (SET) | Opens the settings at the THEME section. F4 (BACK) there returns to this screen. |
 | F2, F3 | Nothing. |
 | F4 (BACK) | Opens the [menu](menu.md), with SYSTEM selected. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |

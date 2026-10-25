@@ -6,11 +6,11 @@ use core::fmt::Write;
 use pocketcw_logic::{
     input::Action,
     settings::Settings,
-    timing::{BINS, GAP_RANGE, Kind, MARK_RANGE, Quality, Stats},
+    timing::{BINS, GAP_RANGE, Kind, MARK_RANGE, Quality},
 };
 
 use super::home::{number, units};
-use super::{Ui, lanes, mode_name, settings::KEYER_TAB};
+use super::{Ui, lanes, mode_name, settings::Section};
 use crate::gfx::{TINY_W, rect, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -25,7 +25,7 @@ const LINE_STEP: i32 = 18;
 impl Ui {
     pub(super) fn draw_timing(&mut self, lcd: &mut Lcd, s: &Settings) {
         self.header(lcd, s, "TIMING", &[mode_name(s.mode)]);
-        self.softkeys(lcd, ["SET", "CLR", "", "BACK"]);
+        self.softkeys(lcd, ["SET", "", "", "BACK"]);
         self.tape.clear(lcd, &self.theme, lanes(s));
         rect(lcd, 0, 108, MAIN, 1, self.theme.rule());
         self.draw_timing_stats(lcd);
@@ -99,12 +99,7 @@ impl Ui {
 
     pub(super) fn timing_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, KEYER_TAB),
-            Action::Soft(1) => {
-                self.stats = Stats::default();
-                self.tape.new_page();
-                self.draw(lcd, s);
-            }
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Keyer),
             Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }

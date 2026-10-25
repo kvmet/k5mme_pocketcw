@@ -39,6 +39,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
 | `KEY OUT ON`, `KEY OUT OFF` | You held F1 and turned KEY OUT on or off. See [Controls](controls.md#held-buttons). |
 | `KEY OUT ON: NOT IN PRACTICE` | You held F1 and turned KEY OUT on, on a screen where your key does not key the radio. It keys the radio on the KEYER, TIMING and RADIO screens. |
+| `NOTHING PAUSED` | You held F1 with F1 HOLD set to RESUME, and no drill or QSO is paused. |
 
 ## WinKeyer
 
@@ -66,20 +67,18 @@ These messages show on the KEYER screen. See [Memories](memories.md).
 
 | Message | Meaning |
 | - | - |
-| `CLICK CLOSES` | The memory row is open. A dial click closes it. |
-| `LIT M REPEATS  CLICK CLOSES` | The memory row is open, and a lit label marks a memory that repeats. |
+| `HOLD REPEATS  CLICK CLOSES` | The memory row is open. Hold an F button to send its memory again and again. A dial click closes the row. |
 | `SENDING Mn  KEY TO STOP` | Memory n is sending. Touch your key to stop it. |
 | `Mn AGAIN IN nS  KEY TO STOP` | Memory n repeats after the time shown. |
 | `Mn TONE ONLY: OUT IS PADDLE` | Memory n plays as a tone and does not key the func jack, because OUT TYPE is PADDLE. |
-| `Mn IS EMPTY (SETTINGS, MEM)` | Memory n holds no message. Key one in on the MEM tab of the settings. |
-| `MEMORY FULL` | On the MEM tab: the memory has no room for the last character you keyed. A memory holds up to 48 characters, and a prosign such as `<AR>` takes 4. |
+| `Mn IS EMPTY (SETTINGS)` | Memory n holds no message. Key one in, in the MEMORIES section of the settings. |
+| `MEMORY FULL` | In the settings: the memory has no room for the last character you keyed. A memory holds up to 48 characters, and a prosign such as `<AR>` takes 4. |
 
 ## Practice
 
 | Message | Meaning |
 | - | - |
 | `LEVEL UP: ADDED X` | You moved up a Koch level, and the drill now sends character X too. See [Receive drills](receive.md). |
-| `CLR AGAIN TO ERASE STATS` | On the LETTERS screen: press F2 (CLR) again to erase your letter statistics. See [Letters](letters.md). |
 
 ## The red error screen
 

@@ -27,8 +27,8 @@ Under the tiles, MIXUPS lists the six most common mixups, such as `S/H 4X`: the 
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the RECV tab. F4 (BACK) there returns to this screen. |
-| F2 (CLR) | Press once: the status line says `CLR AGAIN TO ERASE STATS`. Press again to erase all counts and mixups. Your Koch level stays. Any other control cancels the erase. |
+| F1 (SET) | Opens the settings at the HEAR section. F4 (BACK) there returns to this screen. |
+| F2 hold (CLEAR) | Erases all counts and mixups. Your Koch level stays. |
 | F3 (DRIL) | Starts the KOCH drill. |
 | F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |

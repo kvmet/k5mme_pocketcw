@@ -15,14 +15,30 @@ Each screen page in this manual has a table of what these controls do on that sc
 
 ## Held buttons
 
-Two held buttons do the same thing on every screen:
+Two held buttons work on every screen:
 
 | Hold | Label | Action |
 | - | - | - |
-| F1 | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT IN PRACTICE`. See [The func jack](keys.md#the-func-jack). |
+| F1 | Set by F1 HOLD | Does what F1 HOLD in the DEVICE section of the [settings](settings.md#device) sets. The default is KEY OUT. |
 | F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in pauses: RESUME in the [menu](menu.md) goes on with it. |
 
-While the MEM row is open on the KEYER screen, a held button sends its memory as a press does.
+F1 HOLD has four values:
+
+| F1 HOLD | Label | Action |
+| - | - | - |
+| KEY OUT | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT IN PRACTICE`. See [The func jack](keys.md#the-func-jack). |
+| RESUME | `RESUME` | Goes on with the drill or QSO you paused. With nothing paused, the status line shows `NOTHING PAUSED`. |
+| MEM ROW | `MEM` | Opens the KEYER screen with the [memory](memories.md) row open. |
+| TIMING | `TIMING` | Opens the [TIMING](timing.md) screen. |
+
+Some screens have more held buttons:
+
+| Screen | Hold | Label | Action |
+| - | - | - | - |
+| KEYER, memory row open | F1 to F4 | `REPEAT` | Sends that memory again and again. See [Memories](memories.md). |
+| LETTERS | F2 | `CLEAR` | Erases your letter statistics. See [Letters](letters.md). |
+| TIMING | F2 | `CLEAR` | Clears the statistics and the tape. See [Timing](timing.md). |
+| Settings, editing a memory or your callsign | F3 | `CLEAR` | Clears the text. |
 
 On every screen, your key sounds the sidetone and types or keys VBand over USB when USB OUT is TEXT or VBAND. On the KEYER, TIMING and RADIO screens, it also keys the func jack when KEY OUT is ON. The Key row of each table lists what else the key does on that screen.
 
@@ -54,15 +70,15 @@ On every screen except KEYER, MENU and SETTINGS, the dial sets values that show 
 
 | Value | What it is | Setting |
 | - | - | - |
-| `VOL 23` | The volume. | VOLUME on the SOUND tab |
-| `SND 20` | Your keyer speed, in WPM. | SPEED on the KEYER tab |
-| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH on the RECV tab |
+| `VOL 23` | The volume. | VOLUME in the SOUND section |
+| `SND 20` | Your keyer speed, in WPM. | SPEED in the KEYER section |
+| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH in the HEAR section |
 
 - A dial click moves the focus to the next value. The focused number shows inverted. On RECEIVE KOCH, the focus also reaches `LEVEL` under the header.
 - A dial turn changes the focused value.
 - A dial turn does nothing while you key, and for one word gap after you stop. A brushed dial cannot change a value in the middle of your over.
 - Each screen keeps its own focus while the device is on. A screen starts on RCV where it shows, on SND on TIMING, and on VOL on the others.
-- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the RECV tab.
+- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the HEAR section of the settings.
 - Turn the second RCV number down for Farnsworth spacing. Turn it up to the first number to stop the spacing.
 - On QSO and HUNT, a new RCV speed moves every station by the same amount: each keeps its offset from RCV and its fist. Any QRS ends.
 

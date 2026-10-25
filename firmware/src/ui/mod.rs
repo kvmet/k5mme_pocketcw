@@ -36,7 +36,7 @@ use pocketcw_logic::{
     keyer::{self, Mode},
     player::{Keying, MAX_TEXT},
     qso::{Options, Program},
-    settings::{Field, Pileup, Settings},
+    settings::{Field, Pileup, Settings, Shortcut},
     ticks,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
 };
@@ -149,11 +149,13 @@ pub struct Ui {
     dial_focus: [Option<Target>; SCREENS],
     key_guard: KeyGuard,
     decode: Decode,
+    /// What holding F1 does, as the settings last drawn had it, for its label.
+    shortcut: Shortcut,
     /// The menu list open, and the selected row of each list.
     list: menu::List,
     cursor: [usize; menu::LISTS],
-    tab: usize,
-    /// Selected settings row.
+    /// The settings row at the top of the list, and the selected row.
+    scroll: usize,
     row: usize,
     /// The dial sets the selected row's value instead of moving the selection.
     editing: bool,
@@ -181,8 +183,6 @@ pub struct Ui {
     /// Each F key's press or hold already acted, so its release does nothing.
     spent: [bool; 4],
     sending: Option<memory::Sending>,
-    /// CLR on the Letters screen was pressed once.
-    confirm_clear: bool,
     /// Every player stops before anything else plays.
     stop: bool,
     /// A transmission to start, after any stop.
@@ -226,9 +226,10 @@ impl Ui {
             dial_focus: [None; SCREENS],
             key_guard: KeyGuard::default(),
             decode: Decode::new(),
+            shortcut: settings.shortcut,
             list: menu::List::Top,
             cursor: [0; menu::LISTS],
-            tab: 0,
+            scroll: 0,
             row: 0,
             editing: false,
             meter: Meter::default(),
@@ -247,7 +248,6 @@ impl Ui {
             mem_row: false,
             spent: [false; 4],
             sending: None,
-            confirm_clear: false,
             stop: false,
             play: None,
             say: None,
@@ -272,6 +272,7 @@ impl Ui {
 
     /// Redraws the whole current screen.
     pub fn draw(&mut self, lcd: &mut Lcd, s: &Settings) {
+        self.shortcut = s.shortcut;
         self.theme.frame(lcd);
         match self.screen {
             Screen::Home => self.draw_home(lcd, s),
@@ -299,6 +300,8 @@ impl Ui {
                 self.spent[key as usize] = self.soft_down(lcd);
                 return;
             }
+            // A key whose press stopped a memory does nothing more.
+            Action::SoftHold(key) if self.spent[key as usize] => return,
             Action::SoftHold(key) => {
                 self.spent[key as usize] = self.hold_act(lcd, s, key);
                 return;
@@ -335,14 +338,35 @@ impl Ui {
         true
     }
 
-    /// The second action of a held F key: F1 turns KEY OUT on or off and F4 opens KEYER, on
-    /// every screen. True when the key has one here.
+    /// The second action of a held F key: F1 does the F1 HOLD setting and F4 opens KEYER, on
+    /// every screen; F2 or F3 clears what the screen holds. On the MEM row each key sends its
+    /// memory again and again. True when the key has one here.
     fn hold_act(&mut self, lcd: &mut Lcd, s: &mut Settings, key: u8) -> bool {
         if self.mem_row {
-            return false;
+            self.memory_key(lcd, s, key as usize, true);
+            return true;
         }
-        match key {
-            0 => {
+        match (key, self.screen) {
+            (0, _) => self.shortcut_act(lcd, s),
+            (1, Screen::Letters) => {
+                self.letters.clear_stats();
+                self.draw(lcd, s);
+            }
+            (1, Screen::Timing) => {
+                self.stats = Stats::default();
+                self.tape.new_page();
+                self.draw(lcd, s);
+            }
+            (2, Screen::Settings) if self.editing_text() => self.clear_text(lcd, s),
+            (3, screen) if screen != Screen::Home => self.open(lcd, s, Screen::Home),
+            _ => return false,
+        }
+        true
+    }
+
+    fn shortcut_act(&mut self, lcd: &mut Lcd, s: &mut Settings) {
+        match s.shortcut {
+            Shortcut::KeyOut => {
                 s.adjust(Field::KeyOut, 1);
                 self.key_out_changed(lcd, s);
                 let line = match (s.key_out, self.screen_keys_radio()) {
@@ -352,10 +376,20 @@ impl Ui {
                 };
                 self.status(lcd, line);
             }
-            3 if self.screen != Screen::Home => self.open(lcd, s, Screen::Home),
-            _ => return false,
+            Shortcut::Resume => match self.session.as_ref().map(Session::screen) {
+                None => self.status(lcd, "NOTHING PAUSED"),
+                Some(screen) if screen == self.screen => {}
+                Some(_) => self.resume(lcd, s),
+            },
+            Shortcut::Mem => {
+                if self.screen != Screen::Home {
+                    self.open(lcd, s, Screen::Home);
+                }
+                self.open_mem_row(lcd);
+            }
+            Shortcut::Timing if self.screen == Screen::Timing => {}
+            Shortcut::Timing => self.open(lcd, s, Screen::Timing),
         }
-        true
     }
 
     /// Your key keys the radio on this screen when KEY OUT is ON. Practice and settings
@@ -382,10 +416,18 @@ impl Ui {
 
     /// The F key labels: `keys` for a press, and this screen's hold labels.
     fn softkeys(&self, lcd: &mut Lcd, keys: [&str; 4]) {
+        let f1 = match self.shortcut {
+            Shortcut::KeyOut => "KEYOUT",
+            Shortcut::Resume => "RESUME",
+            Shortcut::Mem => "MEM",
+            Shortcut::Timing => "TIMING",
+        };
         let holds = match (self.mem_row, self.screen) {
-            (true, _) => [""; 4],
-            (false, Screen::Home) => ["KEYOUT", "", "", ""],
-            (false, _) => ["KEYOUT", "", "", "HOME"],
+            (true, _) => ["REPEAT"; 4],
+            (false, Screen::Home) => [f1, "", "", ""],
+            (false, Screen::Letters | Screen::Timing) => [f1, "CLEAR", "", "HOME"],
+            (false, Screen::Settings) if self.editing_text() => [f1, "", "CLEAR", "HOME"],
+            (false, _) => [f1, "", "", "HOME"],
         };
         self.theme.softkeys(lcd, keys, holds);
     }
@@ -572,7 +614,7 @@ impl Ui {
             (Screen::Qso | Screen::Hunt, _) => true,
             (Screen::Receive, Some(Session::Receive(rx))) => rx.running(),
             (Screen::Ragchew, Some(Session::Ragchew(c))) => c.running(),
-            (Screen::Settings, _) => self.tab == settings::SOUND_TAB,
+            (Screen::Settings, _) => self.sound_selected(),
             _ => false,
         };
         screen || self.serial_play
@@ -665,19 +707,16 @@ impl Ui {
             self.stop_players();
         }
         self.mem_row = false;
-        self.confirm_clear = false;
         self.screen = screen;
-        self.row = 0;
         self.editing = false;
         self.tape = Tape::new(screen == Screen::Timing);
         self.draw(lcd, s);
     }
 
-    /// Opens settings at `tab`; BACK returns to this screen, with a practice session still
-    /// running.
-    fn open_settings_at(&mut self, lcd: &mut Lcd, s: &Settings, tab: usize) {
+    /// Opens settings at `section`; BACK returns to this screen, and a paused practice goes on.
+    fn open_settings_at(&mut self, lcd: &mut Lcd, s: &Settings, section: settings::Section) {
         self.settings_from = Some(self.screen);
-        self.tab = tab;
+        self.select_section(section);
         self.open(lcd, s, Screen::Settings);
     }
 

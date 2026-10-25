@@ -2,7 +2,7 @@
 
 On this screen you are the hunter. An activator calls CQ from a park (POTA) or a summit (SOTA), you work the activator, and then you log the QSO. About two activators in three are on a park. An activator on a summit signs with `/P` after the callsign.
 
-Open ON AIR in the [menu](menu.md), then HUNT. The header shows HUNT and the RCV, SND and VOL values. Set your callsign first on the CALL tab of the [settings](settings.md).
+Open ON AIR in the [menu](menu.md), then HUNT. The header shows HUNT and the RCV, SND and VOL values. Set your callsign first in the CALLSIGN section of the [settings](settings.md#callsign).
 
 ## Work a QSO
 
@@ -48,17 +48,17 @@ During a QSO, only HINT shows the values of the items. `...` marks an item with 
 
 Under the items, your over shows as you key it. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
-Band noise and fading play on this screen when you set them on the SOUND tab.
+Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 
 ## Settings
 
-The hunt uses the QSO tab of the [settings](settings.md): CHAR SPEED, FARNSWORTH, FIST and SPEED SPREAD. PILEUP does not apply, because one activator calls at a time. The activator sends between 8 and 40 WPM, at a pitch up to 200 Hz above or below your tone.
+The hunt uses CHAR SPEED and FARNSWORTH in the HEAR section of the [settings](settings.md), and FIST and SPEED SPREAD in the QSO section. PILEUP does not apply, because one activator calls at a time. The activator sends between 8 and 40 WPM, at a pitch up to 200 Hz above or below your tone.
 
 ## Controls
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Stops the activator and opens the settings at the QSO tab. F4 (BACK) there returns. The activator calls CQ again, or during a QSO sends its last transmission again, at the new settings. |
+| F1 (SET) | Stops the activator and opens the settings at the QSO section. F4 (BACK) there returns. The activator calls CQ again, or during a QSO sends its last transmission again, at the new settings. |
 | F2 (QRS) | The same as sending `QRS`. |
 | F3 (HINT) | Shows or hides the hidden text and the exact next step. |
 | F4 (BACK) | Pauses the hunt and opens the ON AIR list of the [menu](menu.md). Click HUNT or RESUME to go on: the activator sends its last transmission again. The counts stay while the device is on, until you start other practice. |

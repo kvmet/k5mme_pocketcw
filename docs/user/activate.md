@@ -9,7 +9,7 @@ Open ON AIR in the [menu](menu.md), then POTA or SOTA. The header shows the prog
 | POTA | 10 | 72 |
 | SOTA | 4 | 73 |
 
-Set your callsign first on the CALL tab of the [settings](settings.md). The hunters listen for it.
+Set your callsign first in the CALLSIGN section of the [settings](settings.md#callsign). The hunters listen for it.
 
 ## Work a QSO
 
@@ -53,11 +53,11 @@ Under the transcript:
 
 Under the items, your over shows as you key it. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
-Band noise and fading play on this screen when you set them on the SOUND tab.
+Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 
 ## Pileup settings
 
-The QSO tab of the [settings](settings.md) sets how the hunters behave:
+The QSO section of the [settings](settings.md#qso) sets how the hunters behave:
 
 | Setting | Values |
 | - | - |
@@ -73,7 +73,7 @@ Hunters send between 8 and 40 WPM. Each hunter sends at its own pitch, up to 200
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Stops the hunters and opens the settings at the QSO tab. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings. |
+| F1 (SET) | Stops the hunters and opens the settings at the QSO section. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings. |
 | F2 (QRS) | The same as sending `QRS`. |
 | F3 (HINT) | Shows or hides the hidden text and the exact next step. |
 | F4 (BACK) | Pauses the activation and opens the ON AIR list of the [menu](menu.md). Click POTA or SOTA, or RESUME, to go on: the hunters send their last transmission again. The log stays while the device is on, until you start other practice. |

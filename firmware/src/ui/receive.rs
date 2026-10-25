@@ -16,7 +16,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::{COLS, Play, Screen, Session, Ui, char_cells, draw_char, push_scrolling, settings::RECEIVE_TAB};
+use super::{COLS, Play, Screen, Session, Ui, char_cells, draw_char, push_scrolling, settings::Section};
 use crate::fonts::{SMALL, TINY};
 use crate::gfx::{CHAR_W, TINY_W, ink, rect, text_cols, tiny};
 use crate::lcd::Lcd;
@@ -427,7 +427,7 @@ impl Ui {
     pub(super) fn receive_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
             Action::Soft(1) if matches!(rx.state, State::Playing | State::Waiting | State::Copying) => {
                 self.stop_players();
                 self.play_group(lcd, s, true);

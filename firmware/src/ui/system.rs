@@ -7,7 +7,7 @@ use pocketcw_logic::battery::{Charge, RECORD_LEN};
 use pocketcw_logic::input::Action;
 use pocketcw_logic::panel::{self, IdRead, Panel};
 
-use super::{Screen, Ui, settings::THEME_TAB};
+use super::{Screen, Ui, settings::Section};
 use crate::battery::Reading;
 use crate::codec::Codec;
 use crate::gfx::{TINY_H, TINY_W, rect, text, text_right, tiny};
@@ -227,7 +227,7 @@ impl Ui {
 
     pub(super) fn system_act(&mut self, lcd: &mut Lcd, s: &mut pocketcw_logic::settings::Settings, action: Action) {
         if action == Action::Soft(0) {
-            self.open_settings_at(lcd, s, THEME_TAB);
+            self.open_settings_at(lcd, s, Section::Theme);
         } else if action == Action::Soft(3) {
             self.back(lcd, s);
         }

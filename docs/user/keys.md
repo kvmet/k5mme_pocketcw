@@ -6,7 +6,7 @@ The USB port can also send your keying to a computer, as typed text or for VBand
 
 ## Key types
 
-Set the key type with MODE on the KEYER tab of the settings. See [Settings](settings.md).
+Set the key type with MODE in the KEYER section of the settings. See [Settings](settings.md).
 
 | MODE | Key | How it keys |
 | - | - | - |
@@ -38,7 +38,7 @@ A mono plug connects the ring contact all the time. Plug a mono plug in before y
 
 ## The func jack
 
-The func jack keys a radio. It follows these settings on the KEYER tab:
+The func jack keys a radio. It follows these settings in the KEYER section:
 
 | Setting | Value | What the func jack does |
 | - | - | - |

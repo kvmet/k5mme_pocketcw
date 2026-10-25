@@ -12,7 +12,7 @@ use pocketcw_logic::{
     timing::Quality,
 };
 
-use super::{COLS, Screen, Ui, settings::RECEIVE_TAB};
+use super::{COLS, Screen, Ui, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::link;
@@ -76,7 +76,7 @@ impl Ui {
 
     pub(super) fn radio_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Device),
             Action::Soft(1) => {
                 self.board.filter = (self.board.filter + 1) % (MAX_FILTER + 1);
                 self.board_command = Some(board::filter(self.board.filter));

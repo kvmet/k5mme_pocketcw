@@ -58,7 +58,7 @@ Only one practice pauses at a time. When you start a different one, the paused o
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the KEYER tab. |
+| F1 (SET) | Opens the settings at the KEYER section. |
 | F2, F3 | Nothing. |
 | F4 (BACK) | In the top list, opens the KEYER screen. In another list, opens the top list. |
 | Dial turn | Moves the selection up or down. |

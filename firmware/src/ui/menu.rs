@@ -3,7 +3,7 @@
 
 use pocketcw_logic::{drill::Kind, input::Action, qso::Program, settings::Settings};
 
-use super::{Screen, Session, Ui, settings::KEYER_TAB};
+use super::{Screen, Session, Ui, settings::Section};
 use crate::gfx::{TINY_W, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -51,7 +51,7 @@ const TOP: [Row; 7] = [
     row("ON AIR", "POTA  SOTA  HUNT  RAGCHEW", "", Item::List(List::OnAir)),
     row("TIMING", "ZOOMED TAPE AND HISTOGRAMS", "", Item::Open(Screen::Timing)),
     row("STATS", "LETTER ACCURACY AND PROGRESS", "", Item::List(List::Stats)),
-    row("SETTINGS", "KEYER SOUND RECV QSO THEME CALL MEM", "", Item::Open(Screen::Settings)),
+    row("SETTINGS", "KEYER, SOUND, MEMORIES, CALL, THEME", "", Item::Open(Screen::Settings)),
     row("SYSTEM", "VERSION  HARDWARE CHECKS  BATTERY", "", Item::Open(Screen::System)),
 ];
 
@@ -215,7 +215,7 @@ impl Ui {
                     self.draw_menu_about(lcd);
                 }
             }
-            Action::Soft(0) => self.open_settings_at(lcd, s, KEYER_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Keyer),
             Action::Click => self.menu_open(lcd, s, rows[at].item),
             Action::Soft(3) if self.list == List::Top => self.open(lcd, s, Screen::Home),
             Action::Soft(3) => self.open_list(lcd, s, List::Top, Some(Item::List(self.list))),
@@ -231,10 +231,8 @@ impl Ui {
         match item {
             Item::Resume => {}
             Item::List(list) => self.open_list(lcd, s, list, None),
-            Item::Open(screen) => {
-                self.tab = 0;
-                self.open(lcd, s, screen);
-            }
+            Item::Open(Screen::Settings) => self.open_settings_at(lcd, s, Section::Keyer),
+            Item::Open(screen) => self.open(lcd, s, screen),
             Item::Drill(kind) => self.open_receive(lcd, s, kind),
             Item::Chew { quiz } => self.open_ragchew(lcd, s, quiz),
             Item::Qso(program) => self.open_qso(lcd, s, program),

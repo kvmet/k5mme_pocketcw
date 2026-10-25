@@ -43,7 +43,7 @@ Each grade also has its own shape, so you can read the grades without color.
 
 ### Statistics line
 
-`CHR` and `WRD` are your average character gap and word gap in units (ideal: 3 and 7). `RATIO` is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. F2 (CLR) on the [Timing](timing.md) screen clears these statistics.
+`CHR` and `WRD` are your average character gap and word gap in units (ideal: 3 and 7). `RATIO` is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. Hold F2 (CLEAR) on the [Timing](timing.md) screen to clear these statistics.
 
 ### Decode
 
@@ -53,7 +53,7 @@ Each character has an underline in its grade: a thin line for good, a dashed lin
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the KEYER tab. |
+| F1 (SET) | Opens the settings at the KEYER section. |
 | F2 (MEM) | Opens the memory row. See [Memories](memories.md). |
 | F3 (OUT) | Turns KEY OUT on or off. |
 | F4 (MENU) | Opens the [menu](menu.md). |

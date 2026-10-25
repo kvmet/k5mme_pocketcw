@@ -188,7 +188,7 @@ What the device loses: a live contact count in the field ("do I have my 10?"). A
 
 ### Turning it on
 
-- LOG on the KEYER tab: ON or OFF, default OFF. Bit 4 of the settings record's hardware flags byte, which older firmware ignores, so the record length stays the same.
+- LOG in the DEVICE section: ON or OFF, default OFF. Bit 4 of the settings record's hardware flags byte, which older firmware ignores, so the record length stays the same.
 - While LOG is ON with the decoder board on, the decoder board listener also runs (Pro only). Today it runs only on the RADIO screen or with USB OUT RADIO.
 
 ### What goes in the transcript

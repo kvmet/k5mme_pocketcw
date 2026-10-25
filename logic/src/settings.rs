@@ -34,6 +34,21 @@ pub enum UsbOut {
     Serial = 4,
 }
 
+/// What holding F1 does on every screen. Stored as its index in `SHORTCUTS`, which only grows
+/// at its end.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Shortcut {
+    /// Turns KEY OUT on or off.
+    KeyOut,
+    /// Opens the paused practice.
+    Resume,
+    /// Opens KEYER with the MEM row open.
+    Mem,
+    Timing,
+}
+
+pub const SHORTCUTS: [Shortcut; 4] = [Shortcut::KeyOut, Shortcut::Resume, Shortcut::Mem, Shortcut::Timing];
+
 /// In the order the setting steps through. RADIO is last, so the steps without the board are
 /// all but the last.
 const USB_OUTS: [UsbOut; 5] = [UsbOut::Off, UsbOut::Text, UsbOut::Vband, UsbOut::Serial, UsbOut::Radio];
@@ -83,6 +98,7 @@ pub struct Settings {
     pub usb_out: UsbOut,
     /// NINJA picks among the first this many pack words, a multiple of `NINJA_WORDS_STEP`.
     pub ninja_words: u16,
+    pub shortcut: Shortcut,
 }
 
 pub const MAX_VOLUME: u8 = volume::MAX_LEVEL;
@@ -131,6 +147,7 @@ pub enum Field {
     DecoderBoard,
     UsbOut,
     NinjaWords,
+    Shortcut,
 }
 
 impl Default for Settings {
@@ -142,7 +159,7 @@ impl Default for Settings {
             output_swap: false, boot_count: 0, style: 0,
             palette: 0, callsign, rx_wpm: 0, rx_effective: 0, pileup: Pileup::TakeTurns, human_fist: true,
             spread: true, reveal_lines: false, brightness: MAX_BRIGHTNESS, square: false, noise: 0, fading: 0,
-            decoder_board: false, usb_out: UsbOut::Off, ninja_words: 500,
+            decoder_board: false, usb_out: UsbOut::Off, ninja_words: 500, shortcut: Shortcut::KeyOut,
         }
     }
 }
@@ -169,7 +186,8 @@ const BODY_LEN: usize = V6_BODY + 1;
 /// firmware still finds its count.
 const COUNT_AT: usize = BODY_LEN;
 const NINJA_AT: usize = COUNT_AT + 1;
-pub const RECORD_LEN: usize = NINJA_AT + 1 + record::OVERHEAD;
+const SHORTCUT_AT: usize = NINJA_AT + 1;
+pub const RECORD_LEN: usize = SHORTCUT_AT + 1 + record::OVERHEAD;
 /// Settings are kept in two copies and saved to them in turn, so a save cut off by power loss
 /// leaves the other copy whole. A save with count `n` goes to copy `n % COPIES`.
 pub const COPIES: usize = 2;
@@ -185,7 +203,7 @@ impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
     /// it once that exists), style, palette, callsign, receive speed, effective speed, QSO and
     /// ragchew flags, brightness, sound flags (bit 0 square), noise, fading, hardware flags, save
-    /// count, NINJA words in hundreds.
+    /// count, NINJA words in hundreds, the F1 hold's index in `SHORTCUTS`.
     pub fn encode(&self, count: u8) -> [u8; RECORD_LEN] {
         let mode = match self.mode {
             Mode::IambicA => 0,
@@ -220,6 +238,7 @@ impl Settings {
         ]);
         body[COUNT_AT] = count;
         body[NINJA_AT] = (self.ninja_words / NINJA_WORDS_STEP) as u8;
+        body[SHORTCUT_AT] = SHORTCUTS.iter().position(|&c| c == self.shortcut).unwrap_or(0) as u8;
         frame(&mut record, MAGIC, VERSION);
         record
     }
@@ -297,6 +316,8 @@ impl Settings {
         let ninja_words = body.get(NINJA_AT).map_or(defaults.ninja_words, |&hundreds| {
             (hundreds as u16 * NINJA_WORDS_STEP).clamp(MIN_NINJA_WORDS, MAX_NINJA_WORDS)
         });
+        // A value from later firmware takes the default and keeps the rest of the record.
+        let shortcut = body.get(SHORTCUT_AT).and_then(|&i| SHORTCUTS.get(i as usize)).copied().unwrap_or(defaults.shortcut);
         let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
         let stored = hardware >> USB_OUT_SHIFT & USB_OUT_MASK;
         // A value from later firmware turns USB off instead of dropping the whole record.
@@ -338,6 +359,7 @@ impl Settings {
             decoder_board: hardware & 1 != 0,
             usb_out,
             ninja_words,
+            shortcut,
         };
         let in_range = (MIN_WPM..=MAX_WPM).contains(&settings.wpm)
             && settings.volume <= MAX_VOLUME
@@ -408,6 +430,10 @@ impl Settings {
                 let offered = if self.decoder_board { USB_OUTS.len() } else { USB_OUTS.len() - 1 };
                 let i = USB_OUTS.iter().position(|&u| u == self.usb_out).unwrap_or(0);
                 self.usb_out = USB_OUTS[(i as i32 + d).rem_euclid(offered as i32) as usize];
+            }
+            Field::Shortcut => {
+                let i = SHORTCUTS.iter().position(|&c| c == self.shortcut).unwrap_or(0);
+                self.shortcut = SHORTCUTS[(i as i32 + d).rem_euclid(SHORTCUTS.len() as i32) as usize];
             }
             Field::NinjaWords => {
                 let words = self.ninja_words as i32 + d * NINJA_WORDS_STEP as i32;
@@ -698,6 +724,21 @@ mod tests {
         later[record::BODY_START + NINJA_AT] = 200;
         frame(&mut later, MAGIC, VERSION);
         assert_eq!(Settings::decode(&later), Some(s), "a value past the range clamps");
+    }
+
+    #[test]
+    fn shortcut_steps_round_trips_and_reads_unknown_as_key_out() {
+        let mut s = Settings { wpm: 31, ..Settings::default() };
+        for expected in [Shortcut::Resume, Shortcut::Mem, Shortcut::Timing, Shortcut::KeyOut] {
+            s.adjust(Field::Shortcut, 1);
+            assert_eq!(s.shortcut, expected);
+        }
+        s.adjust(Field::Shortcut, -1);
+        assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+        let mut record = s.encode(0);
+        body_mut(&mut record)[SHORTCUT_AT] = 200;
+        frame(&mut record, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&record), Some(Settings { shortcut: Shortcut::KeyOut, ..s }));
     }
 
     #[test]

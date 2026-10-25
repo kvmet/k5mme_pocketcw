@@ -13,7 +13,7 @@ use pocketcw_logic::{
 
 use super::receive::{draw_marked, draw_session};
 use super::transcript::{self, Entry};
-use super::{COLS, Play, Screen, Session, Ui, push_scrolling, settings::RECEIVE_TAB};
+use super::{COLS, Play, Screen, Session, Ui, push_scrolling, settings::Section};
 use crate::gfx::{CHAR_W, TINY_W, rect, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -330,7 +330,7 @@ impl Ui {
     pub(super) fn ragchew_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Ragchew(c)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
             Action::Soft(1) if matches!(c.state, State::Playing | State::Asking | State::Answering) => {
                 self.stop_players();
                 self.start_over(lcd, s, 0);

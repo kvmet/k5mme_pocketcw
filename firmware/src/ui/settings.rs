@@ -1,287 +1,354 @@
-//! Settings: one screen with tabs. F1 moves between tabs, the dial moves between rows, and a
-//! click starts or ends editing the selected row. The CALL tab takes your callsign from the
-//! paddle.
+//! Settings: one list in sections. The dial moves between rows, a click starts or ends editing
+//! the selected row, and F2 and F3 jump between sections. A memory or the callsign takes what
+//! you key while you edit it.
 
 use core::fmt::Write;
 
-use embedded_graphics::pixelcolor::Rgb565;
 use pocketcw_logic::{
     config,
     decoder::Decoded,
     input::Action,
     keyer::Output,
-    settings::{Field, MAX_BRIGHTNESS, PALETTE_COUNT, Pileup, Settings, UsbOut},
+    memories::LEN,
+    settings::{Field, MAX_BRIGHTNESS, Pileup, Settings, Shortcut, UsbOut},
 };
 
 use super::{Ui, mode_name};
-use crate::gfx::{TINY_W, blocks, para, rect, text, text_right, tiny};
+use crate::gfx::{TINY_H, TINY_W, rect, text, text_right, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
-use crate::theme::{self, DAILY, MAIN, Theme};
+use crate::theme::{self, MAIN, Theme};
 
-const TABS: [&str; 7] = ["KEYER", "SOUND", "RECV", "QSO", "THEME", "CALL", "MEM"];
-const TAB_Y: i32 = 26;
-const TAB_H: i32 = 16;
-pub(super) const RECEIVE_TAB: usize = 2;
-pub(super) const QSO_TAB: usize = 3;
-pub(super) const KEYER_TAB: usize = 0;
-pub(super) const SOUND_TAB: usize = 1;
-pub(super) const THEME_TAB: usize = 4;
-const ROW_Y: i32 = 48;
+const LIST_Y: i32 = 26;
 const ROW_STEP: i32 = 19;
-const CALL_TAB: usize = 5;
-const MEM_TAB: usize = 6;
-/// Space inside a tab on each side of its name, and between tabs: seven tabs fill the width.
-/// The pad matches the 4 px slant of a Hazard selection, so no letter sits outside it.
-const TAB_PAD: i32 = 4;
-const TAB_GAP: i32 = 1;
+const VISIBLE: usize = 9;
+const RULE_Y: i32 = LIST_Y + VISIBLE as i32 * ROW_STEP + 2;
+const ABOUT_Y: i32 = RULE_Y + 5;
+const MEMORY_X: i32 = 44;
+/// Tiny characters of a memory that fit between `MEMORY_X` and the row's right end.
+const MEMORY_COLS: usize = ((MAIN - 10 - MEMORY_X) / TINY_W) as usize;
 
-const KEYER_ROWS: [(&str, Field); 7] = [
-    ("MODE", Field::Mode),
-    ("PADDLES", Field::Swap),
-    ("SPEED", Field::Speed),
-    ("KEY OUT", Field::KeyOut),
-    ("OUT TYPE", Field::Output),
-    ("OUT LINES", Field::OutputSwap),
-    ("USB OUT", Field::UsbOut),
-];
-const SOUND_ROWS: [(&str, Field); 5] = [
-    ("TONE", Field::Tone),
-    ("VOLUME", Field::Volume),
-    ("WAVE", Field::Wave),
-    ("NOISE", Field::Noise),
-    ("FADING", Field::Fading),
-];
-const RECEIVE_ROWS: [(&str, Field); 5] = [
-    ("CHAR SPEED", Field::RxSpeed),
-    ("FARNSWORTH", Field::RxEffective),
-    ("CHEW SHOWS", Field::Reveal),
-    ("NINJA WORDS", Field::NinjaWords),
-    ("DECODER BOARD", Field::DecoderBoard),
-];
-const QSO_ROWS: [(&str, Field); 5] = [
-    ("CHAR SPEED", Field::RxSpeed),
-    ("FARNSWORTH", Field::RxEffective),
-    ("PILEUP", Field::Pileup),
-    ("FIST", Field::Fist),
-    ("SPEED SPREAD", Field::Spread),
-];
-const THEME_ROWS: [(&str, Field); 3] =
-    [("STYLE", Field::Style), ("PALETTE", Field::Palette), ("BRIGHTNESS", Field::Brightness)];
-/// Space between the last row and the tab's note.
-const NOTE_GAP: i32 = 7;
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Section {
+    Keyer,
+    Sound,
+    Hear,
+    Drills,
+    Qso,
+    Memories,
+    Callsign,
+    Device,
+    Theme,
+}
 
-const SWATCH_Y: i32 = 112;
-/// Six fit across MAIN at a 44 px step, so all 16 palettes fit in three rows above the note.
-const SWATCHES_PER_ROW: u8 = 6;
-const PALETTE_NOTE_Y: i32 = 202;
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Row {
+    Section(Section),
+    Value(Field),
+    Memory(usize),
+    Every,
+    AfterSend,
+    Call,
+}
 
-const CALL_PX: i32 = 4;
-const CALL_GAP: i32 = 3;
-const CALL_Y: i32 = 60;
+/// Each row: its name, what it is, and the footer line that says what it does.
+const ROWS: [(&str, Row, &str); 40] = [
+    ("KEYER", Row::Section(Section::Keyer), ""),
+    ("MODE", Row::Value(Field::Mode), "IAMBIC A OR B, OR A STRAIGHT KEY"),
+    ("PADDLES", Row::Value(Field::Swap), "WHICH LEVER SENDS DITS"),
+    ("SPEED", Row::Value(Field::Speed), "YOUR KEYER SPEED"),
+    ("KEY OUT", Row::Value(Field::KeyOut), "KEYS THE RADIO ON KEYER TIMING RADIO"),
+    ("OUT TYPE", Row::Value(Field::Output), "WHAT THE FUNC JACK SENDS THE RADIO"),
+    ("OUT LINES", Row::Value(Field::OutputSwap), "WHICH FUNC JACK LINES KEY"),
+    ("SOUND", Row::Section(Section::Sound), ""),
+    ("TONE", Row::Value(Field::Tone), "THE PITCH OF YOUR SIDETONE"),
+    ("VOLUME", Row::Value(Field::Volume), "THE VOLUME OF EVERYTHING"),
+    ("WAVE", Row::Value(Field::Wave), "SINE IS SOFT, SQUARE IS BRIGHT"),
+    ("NOISE", Row::Value(Field::Noise), "BAND NOISE UNDER DRILLS AND BOTS"),
+    ("FADING", Row::Value(Field::Fading), "HOW DEEP STATIONS FADE"),
+    ("HEAR", Row::Section(Section::Hear), ""),
+    ("CHAR SPEED", Row::Value(Field::RxSpeed), "SPEED OF DRILLS AND BOTS  MATCH: YOURS"),
+    ("FARNSWORTH", Row::Value(Field::RxEffective), "LOWER IT FOR LONGER GAPS"),
+    ("DRILLS", Row::Section(Section::Drills), ""),
+    ("CHEW SHOWS", Row::Value(Field::Reveal), "WHEN A RAGCHEW'S TEXT SHOWS"),
+    ("NINJA WORDS", Row::Value(Field::NinjaWords), "NINJA PICKS FROM THIS MANY WORDS"),
+    ("QSO", Row::Section(Section::Qso), ""),
+    ("PILEUP", Row::Value(Field::Pileup), "HOW HUNTERS CALL YOU"),
+    ("FIST", Row::Value(Field::Fist), "HUMAN: SMALL TIMING ERRORS"),
+    ("SPEED SPREAD", Row::Value(Field::Spread), "STATIONS SEND FASTER OR SLOWER"),
+    ("MEMORIES", Row::Section(Section::Memories), ""),
+    ("M1", Row::Memory(0), "CLICK, THEN KEY THE MESSAGE"),
+    ("M2", Row::Memory(1), "CLICK, THEN KEY THE MESSAGE"),
+    ("M3", Row::Memory(2), "CLICK, THEN KEY THE MESSAGE"),
+    ("M4", Row::Memory(3), "CLICK, THEN KEY THE MESSAGE"),
+    ("REPEAT EVERY", Row::Every, "GAP BEFORE A HELD MEMORY REPEATS"),
+    ("AFTER SEND", Row::AfterSend, "CLOSE OR KEEP THE MEM ROW OPEN"),
+    ("CALLSIGN", Row::Section(Section::Callsign), ""),
+    ("CALL", Row::Call, "FOR THE BOTS AND THE BOOT SCREEN"),
+    ("DEVICE", Row::Section(Section::Device), ""),
+    ("USB OUT", Row::Value(Field::UsbOut), "WHAT THE USB PORT SENDS A COMPUTER"),
+    ("DECODER BOARD", Row::Value(Field::DecoderBoard), "THE RADIO DECODER OF THE PRO MODEL"),
+    ("F1 HOLD", Row::Value(Field::Shortcut), "WHAT HOLDING F1 DOES ON EVERY SCREEN"),
+    ("THEME", Row::Section(Section::Theme), ""),
+    ("STYLE", Row::Value(Field::Style), "THE SHAPES OF THE SCREEN"),
+    ("PALETTE", Row::Value(Field::Palette), "THE COLORS  DAILY: A NEW FLAG EACH BOOT"),
+    ("BRIGHTNESS", Row::Value(Field::Brightness), "THE BACKLIGHT"),
+];
 
-fn rows(tab: usize) -> &'static [(&'static str, Field)] {
-    match tab {
-        KEYER_TAB => &KEYER_ROWS,
-        SOUND_TAB => &SOUND_ROWS,
-        RECEIVE_TAB => &RECEIVE_ROWS,
-        QSO_TAB => &QSO_ROWS,
-        THEME_TAB => &THEME_ROWS,
-        _ => &[],
-    }
+fn is_section(i: usize) -> bool {
+    matches!(ROWS[i].1, Row::Section(_))
+}
+
+fn section_start(section: Section) -> usize {
+    ROWS.iter().position(|r| r.1 == Row::Section(section)).unwrap_or(0)
+}
+
+/// The scroll that shows row `i`, with its section's heading when that sits just above it.
+fn scroll_to(scroll: usize, i: usize) -> usize {
+    let top = if i > 0 && is_section(i - 1) { i - 1 } else { i };
+    let scroll = if top < scroll { top } else if i >= scroll + VISIBLE { i + 1 - VISIBLE } else { scroll };
+    scroll.min(ROWS.len() - VISIBLE)
 }
 
 impl Ui {
+    /// Selects the first row of `section`, with its heading at the top of the list.
+    pub(super) fn select_section(&mut self, section: Section) {
+        let start = section_start(section);
+        self.row = start + 1;
+        self.scroll = start.min(ROWS.len() - VISIBLE);
+        self.editing = false;
+    }
+
+    /// A SOUND row is selected, so band noise plays at the level you set.
+    pub(super) fn sound_selected(&self) -> bool {
+        (0..=self.row).rev().find_map(|i| match ROWS[i].1 {
+            Row::Section(section) => Some(section),
+            _ => None,
+        }) == Some(Section::Sound)
+    }
+
+    /// A memory or the callsign is taking what you key.
+    pub(super) fn editing_text(&self) -> bool {
+        self.editing && matches!(ROWS[self.row].1, Row::Memory(_) | Row::Call)
+    }
+
     pub(super) fn draw_settings(&mut self, lcd: &mut Lcd, s: &Settings) {
-        let t = &self.theme;
         self.header(lcd, s, "SETTINGS", &[]);
-        let keys = match self.tab {
-            CALL_TAB => ["TAB", "DEL", "CLR", "BACK"],
-            MEM_TAB => self.mem_tab_keys(),
-            _ => ["TAB", "-", "+", "BACK"],
-        };
+        self.draw_settings_keys(lcd);
+        rect(lcd, 0, RULE_Y, MAIN, 1, self.theme.rule());
+        self.draw_settings_list(lcd, s);
+    }
+
+    fn draw_settings_keys(&self, lcd: &mut Lcd) {
+        let keys = if self.editing_text() { ["", "DEL", "", "BACK"] } else { ["", "PREV", "NEXT", "BACK"] };
         self.softkeys(lcd, keys);
-        let mut x = 4;
-        for (i, name) in TABS.iter().enumerate() {
-            let w = name.len() as i32 * TINY_W + 2 * TAB_PAD;
-            let (fg, _, bg) = if i == self.tab { t.select(lcd, x, TAB_Y, w, TAB_H) } else { (t.muted, t.muted, t.bg) };
-            tiny(lcd, x + TAB_PAD, TAB_Y + 2, name, fg, bg);
-            x += w + TAB_GAP;
-        }
-        rect(lcd, 0, TAB_Y + TAB_H + 1, MAIN, 1, t.rule());
-        for i in 0..rows(self.tab).len() {
-            self.draw_row(lcd, s, i);
-        }
-        let note = match self.tab {
-            SOUND_TAB => "NOISE AND FADING: DRILLS, QSO, HUNT",
-            RECEIVE_TAB => "SPEED OF WHAT YOU HEAR: BOTS, DRILLS",
-            QSO_TAB => "SAME SPEEDS AS THE RECV TAB",
-            _ => "",
-        };
-        let note_y = ROW_Y + rows(self.tab).len() as i32 * ROW_STEP + NOTE_GAP;
-        tiny(lcd, 10, note_y, note, t.muted, t.bg);
-        if self.tab == THEME_TAB {
-            self.draw_swatches(lcd, s);
-        }
-        if self.tab == CALL_TAB {
-            self.draw_callsign(lcd, s);
-        }
-        if self.tab == MEM_TAB {
-            self.draw_mem_tab(lcd);
-        }
     }
 
-    fn draw_row(&self, lcd: &mut Lcd, s: &Settings, i: usize) {
+    fn draw_settings_list(&self, lcd: &mut Lcd, s: &Settings) {
+        for i in self.scroll..self.scroll + VISIBLE {
+            self.draw_settings_row(lcd, s, i);
+        }
+        self.draw_settings_about(lcd);
+    }
+
+    fn draw_settings_row(&self, lcd: &mut Lcd, s: &Settings, i: usize) {
+        if !(self.scroll..self.scroll + VISIBLE).contains(&i) {
+            return;
+        }
         let t = &self.theme;
-        let (label, field) = rows(self.tab)[i];
-        let y = ROW_Y + i as i32 * ROW_STEP;
-        rect(lcd, 0, y - 1, MAIN, ROW_STEP, t.bg);
-        let (fg, value_fg, bg) = if i == self.row {
-            let (fg, _, bg) = t.select(lcd, 2, y - 1, MAIN - 6, ROW_STEP);
-            (fg, fg, bg)
+        let y = LIST_Y + (i - self.scroll) as i32 * ROW_STEP;
+        rect(lcd, 0, y, MAIN, ROW_STEP, t.bg);
+        let (name, row, _) = ROWS[i];
+        if is_section(i) {
+            tiny(lcd, 4, y + 5, name, t.accent, t.bg);
+            let x = 10 + name.len() as i32 * TINY_W;
+            rect(lcd, x, y + 11, MAIN - 6 - x, 1, t.rule());
+            return;
+        }
+        let selected = i == self.row;
+        let editing = selected && self.editing;
+        let (fg, value_fg, muted, bg) = if selected {
+            let (fg, muted, bg) = t.select(lcd, 2, y, MAIN - 6, ROW_STEP - 1);
+            (fg, fg, muted, bg)
         } else {
-            (t.fg, t.accent, t.bg)
+            (t.fg, t.accent, t.muted, t.bg)
         };
-        text(lcd, 10, y + 1, label, fg, bg);
-        let value = value(s, field);
-        let shown = if self.editing && i == self.row {
-            Text::<20>::format(format_args!("< {} >", value.as_str()))
-        } else {
-            Text::format(format_args!("{}", value.as_str()))
+        text(lcd, 10, y + 2, name, fg, bg);
+        if let Row::Memory(m) = row {
+            let memory = self.memories.text(m);
+            let shown = match (editing, memory.is_empty()) {
+                (true, _) => Text::<{ MEMORY_COLS + 1 }>::format(format_args!(
+                    "{}_",
+                    &memory[memory.len().saturating_sub(MEMORY_COLS - 1)..]
+                )),
+                (false, true) => Text::format(format_args!("EMPTY")),
+                (false, false) => Text::format(format_args!("{}", &memory[..memory.len().min(MEMORY_COLS)])),
+            };
+            let color = if memory.is_empty() && !editing { muted } else { fg };
+            tiny(lcd, MEMORY_X, y + 5, shown.as_str(), color, bg);
+            return;
+        }
+        let value = self.row_value(s, row);
+        let shown = match (editing, row) {
+            (false, _) => Text::<20>::format(format_args!("{}", value.as_str())),
+            (true, Row::Call) => Text::format(format_args!("{}_", value.as_str())),
+            (true, _) => Text::format(format_args!("< {} >", value.as_str())),
         };
-        text_right(lcd, MAIN - 12, y + 1, shown.as_str(), value_fg, bg);
+        text_right(lcd, MAIN - 12, y + 2, shown.as_str(), value_fg, bg);
     }
 
-    fn draw_swatches(&self, lcd: &mut Lcd, s: &Settings) {
-        let t = &self.theme;
-        for i in 0..PALETTE_COUNT {
-            let x = 6 + (i % SWATCHES_PER_ROW) as i32 * 44;
-            let y = SWATCH_Y + (i / SWATCHES_PER_ROW) as i32 * 30;
-            rect(lcd, x - 2, y - 2, 42, 26, if i == s.palette { t.fg } else { t.bg });
-            rect(lcd, x, y, 38, 22, Rgb565::new(0, 0, 0));
-            swatch(lcd, t, self.boot_count, i, x + 2, y + 2, 34, 18);
-        }
-        if s.palette == DAILY {
-            tiny(lcd, 4, PALETTE_NOTE_Y, "A NEW FLAG EACH BOOT", t.muted, t.bg);
+    fn row_value(&self, s: &Settings, row: Row) -> Text<16> {
+        match row {
+            Row::Value(field) => Text::format(format_args!("{}", value(s, field).as_str())),
+            Row::Every => Text::format(format_args!("{} S", self.memories.every_s)),
+            Row::AfterSend => Text::format(format_args!("{}", if self.memories.stay_open { "STAY OPEN" } else { "CLOSE" })),
+            Row::Call => Text::format(format_args!("{}", s.callsign())),
+            Row::Section(_) | Row::Memory(_) => Text::new(),
         }
     }
 
-    fn draw_callsign(&self, lcd: &mut Lcd, s: &Settings) {
+    /// What the selected row does, or how to edit the text it takes.
+    fn draw_settings_about(&self, lcd: &mut Lcd) {
         let t = &self.theme;
-        rect(lcd, 0, CALL_Y - 4, MAIN, 7 * CALL_PX + 8, t.bg);
-        let end = blocks(lcd, 6, CALL_Y, s.callsign(), CALL_PX, CALL_GAP, t.slant(), t.fg, None);
-        let cursor = if s.callsign().is_empty() { 6 } else { end + CALL_GAP };
-        para(lcd, cursor, CALL_Y + 7 * CALL_PX - 3, 5 * CALL_PX, 3, t.skew(), t.accent);
-        tiny(lcd, 6, 104, "KEY YOUR CALL ON THE PADDLE", t.muted, t.bg);
-        tiny(lcd, 6, 118, "USED BY THE QSO BOT AND AT BOOT", t.muted, t.bg);
+        let (_, row, about) = ROWS[self.row];
+        let line = match (self.editing, row) {
+            (true, Row::Memory(m)) => {
+                Text::<40>::format(format_args!("{} LEFT  F2 DELETES  HOLD F3 CLEARS", LEN - self.memories.text(m).len()))
+            }
+            (true, Row::Call) => Text::format(format_args!("KEY IT  F2 DELETES  HOLD F3 CLEARS")),
+            _ => Text::format(format_args!("{about}")),
+        };
+        rect(lcd, 0, ABOUT_Y, MAIN, TINY_H, t.bg);
+        tiny(lcd, 2, ABOUT_Y, line.as_str(), t.muted, t.bg);
     }
 
     pub(super) fn settings_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
+        let row = ROWS[self.row].1;
+        let text_row = matches!(row, Row::Memory(_) | Row::Call);
         match action {
-            Action::Soft(0) => return self.next_tab(lcd, s),
-            Action::Soft(3) => return self.close_settings(lcd, s),
-            _ => {}
-        }
-        if self.tab == CALL_TAB {
-            return self.call_act(lcd, s, action);
-        }
-        if self.tab == MEM_TAB {
-            return self.mem_tab_act(lcd, action);
-        }
-        let field = rows(self.tab)[self.row].1;
-        match action {
-            Action::Turn(delta) if self.editing => self.adjust(lcd, s, field, delta),
-            Action::Turn(delta) => {
-                let next = (self.row as i32 + delta as i32).clamp(0, rows(self.tab).len() as i32 - 1) as usize;
-                if next != self.row {
-                    let old = core::mem::replace(&mut self.row, next);
-                    self.draw_row(lcd, s, old);
-                    self.draw_row(lcd, s, next);
-                }
+            Action::Soft(3) => {
+                self.editing = false;
+                self.close_settings(lcd, s);
             }
+            Action::Soft(1) if self.editing && text_row => {
+                match row {
+                    Row::Memory(m) => self.memories.pop(m),
+                    _ => s.pop_callsign(),
+                }
+                self.draw_settings_row(lcd, s, self.row);
+                self.draw_settings_about(lcd);
+            }
+            Action::Soft(1 | 2) if self.editing && text_row => {}
+            Action::Soft(key @ (1 | 2)) => self.jump_section(lcd, s, key == 2),
             Action::Click => {
                 self.editing = !self.editing;
-                self.draw_row(lcd, s, self.row);
+                if text_row {
+                    self.draw_settings_keys(lcd);
+                }
+                self.draw_settings_row(lcd, s, self.row);
+                self.draw_settings_about(lcd);
             }
-            Action::Soft(key @ (1 | 2)) => self.adjust(lcd, s, field, if key == 1 { -1 } else { 1 }),
+            Action::Turn(delta) if self.editing => match row {
+                Row::Value(field) => self.adjust(lcd, s, field, delta),
+                Row::Every => {
+                    self.memories.step_every(delta);
+                    self.draw_settings_row(lcd, s, self.row);
+                }
+                Row::AfterSend => {
+                    self.memories.stay_open ^= delta % 2 != 0;
+                    self.draw_settings_row(lcd, s, self.row);
+                }
+                Row::Section(_) | Row::Memory(_) | Row::Call => {}
+            },
+            Action::Turn(delta) => self.move_row(lcd, s, delta),
             _ => {}
         }
     }
 
-    fn next_tab(&mut self, lcd: &mut Lcd, s: &Settings) {
-        self.tab = (self.tab + 1) % TABS.len();
-        self.row = 0;
-        self.editing = false;
-        self.draw(lcd, s);
+    /// Selects the next row in the direction of `delta`, past section headings.
+    fn move_row(&mut self, lcd: &mut Lcd, s: &Settings, delta: i8) {
+        let next = if delta > 0 {
+            (self.row + 1..ROWS.len()).find(|&i| !is_section(i))
+        } else {
+            (0..self.row).rev().find(|&i| !is_section(i))
+        };
+        let Some(next) = next else { return };
+        let old = core::mem::replace(&mut self.row, next);
+        let scroll = scroll_to(self.scroll, next);
+        if scroll != self.scroll {
+            self.scroll = scroll;
+            return self.draw_settings_list(lcd, s);
+        }
+        self.draw_settings_row(lcd, s, old);
+        self.draw_settings_row(lcd, s, next);
+        self.draw_settings_about(lcd);
+    }
+
+    /// Selects the first row of the next section, or of the one before this row's.
+    fn jump_section(&mut self, lcd: &mut Lcd, s: &Settings, forward: bool) {
+        let here = (0..self.row).rev().find(|&i| is_section(i)).unwrap_or(0);
+        let start = if forward { (self.row..ROWS.len()).find(|&i| is_section(i)) } else { (0..here).rev().find(|&i| is_section(i)) };
+        let Some(Row::Section(section)) = start.map(|i| ROWS[i].1) else { return };
+        self.select_section(section);
+        self.draw_settings_list(lcd, s);
     }
 
     fn adjust(&mut self, lcd: &mut Lcd, s: &mut Settings, field: Field, delta: i8) {
         s.adjust(field, delta);
-        if matches!(field, Field::Style | Field::Palette) {
-            self.theme = Theme::new(s.style, s.palette, self.boot_count);
-            self.draw(lcd, s);
-        } else if field == Field::Output {
-            // OUT LINES names its values by the output type.
-            for i in 0..rows(self.tab).len() {
-                self.draw_row(lcd, s, i);
+        match field {
+            Field::Style | Field::Palette => {
+                self.theme = Theme::new(s.style, s.palette, self.boot_count);
+                self.draw(lcd, s);
             }
-        } else {
-            self.draw_row(lcd, s, self.row);
+            Field::Shortcut => {
+                self.shortcut = s.shortcut;
+                self.draw_settings_keys(lcd);
+                self.draw_settings_row(lcd, s, self.row);
+            }
+            // OUT LINES names its values by the output type, and the board offers USB OUT RADIO.
+            Field::Output | Field::DecoderBoard => self.draw_settings_list(lcd, s),
+            _ => self.draw_settings_row(lcd, s, self.row),
         }
     }
 
-    fn call_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
-        match action {
-            Action::Soft(1) => {
-                s.pop_callsign();
-                self.draw_callsign(lcd, s);
-            }
-            Action::Soft(2) => {
+    /// Empties the memory or callsign being edited.
+    pub(super) fn clear_text(&mut self, lcd: &mut Lcd, s: &mut Settings) {
+        match ROWS[self.row].1 {
+            Row::Memory(m) => self.memories.clear(m),
+            _ => {
                 while !s.callsign().is_empty() {
                     s.pop_callsign();
                 }
-                self.draw_callsign(lcd, s);
             }
-            _ => {}
         }
+        self.draw_settings_row(lcd, s, self.row);
+        self.draw_settings_about(lcd);
     }
 
     pub(super) fn settings_decoded(&mut self, lcd: &mut Lcd, s: &mut Settings, decoded: Decoded) {
-        if self.tab == MEM_TAB {
-            return self.mem_tab_decoded(lcd, decoded);
+        if !self.editing {
+            return;
         }
-        if self.tab == CALL_TAB
-            && let Decoded::Char(c) = decoded
-            && s.push_callsign(c as char)
-        {
-            self.draw_callsign(lcd, s);
+        match (ROWS[self.row].1, decoded) {
+            (Row::Memory(m), decoded) => {
+                let byte = match decoded {
+                    Decoded::Char(c) => c.to_ascii_uppercase(),
+                    Decoded::Space => b' ',
+                    Decoded::Unknown => return,
+                };
+                if !self.memories.push(m, byte) {
+                    return self.status(lcd, "MEMORY FULL");
+                }
+            }
+            (Row::Call, Decoded::Char(c)) if s.push_callsign(c as char) => {}
+            _ => return,
         }
+        self.draw_settings_row(lcd, s, self.row);
+        self.draw_settings_about(lcd);
     }
 }
 
-/// A palette's colors as stripes; the daily flag shows a sample of the flags it picks from.
-#[allow(clippy::too_many_arguments)]
-fn swatch(lcd: &mut Lcd, t: &Theme, boot_count: u16, palette: u8, x: i32, y: i32, w: i32, h: i32) {
-    if palette == DAILY {
-        const SHOWN: i32 = 5;
-        for k in 0..SHOWN {
-            let (accent, _) = theme::palette_pair(DAILY + 1 + k as u8, boot_count);
-            rect(lcd, x + k * w / SHOWN, y, (k + 1) * w / SHOWN - k * w / SHOWN, h, accent);
-        }
-        return;
-    }
-    let stripes = theme::palette_stripes(palette, boot_count);
-    let n = stripes.len() as i32;
-    for (i, &color) in stripes.iter().enumerate() {
-        let i = i as i32;
-        rect(lcd, x, y + i * h / n, w, (i + 1) * h / n - i * h / n, color);
-    }
-    if n == 1 {
-        let (_, echo) = theme::palette_pair(palette, boot_count);
-        para(lcd, x + w - 12, y, 8, h, t.skew(), echo);
-    }
-}
-
+/// What a value row shows: the screen's wording, which GET and SET on the serial port also use.
 pub(super) fn value(s: &Settings, field: Field) -> Text<{ config::SHOWN_LEN }> {
     let on_off = |on: bool| if on { "ON" } else { "OFF" };
     let mut t = Text::new();
@@ -340,6 +407,16 @@ pub(super) fn value(s: &Settings, field: Field) -> Text<{ config::SHOWN_LEN }> {
             if level == 0 { write!(t, "OFF") } else { write!(t, "{level}") }
         }
         Field::Brightness => write!(t, "{}%", s.brightness as u16 * 100 / MAX_BRIGHTNESS as u16),
+        Field::Shortcut => write!(
+            t,
+            "{}",
+            match s.shortcut {
+                Shortcut::KeyOut => "KEY OUT",
+                Shortcut::Resume => "RESUME",
+                Shortcut::Mem => "MEM ROW",
+                Shortcut::Timing => "TIMING",
+            }
+        ),
     };
     t
 }

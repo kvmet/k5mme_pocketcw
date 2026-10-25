@@ -258,7 +258,7 @@ A Python script can load the file and use its `Device` class: `press`, `hold`, `
 
 ### Every screen
 
-The `shots DIR` step saves a screenshot of every screen into a folder: KEYER and its MEM row, the top menu list, TIMING, the RECEIVE list and its five drills, the ON AIR list with POTA, SOTA, HUNT, CHEW and QUIZ, LETTERS, PROGRESS, SYSTEM, and each settings tab. Start it with the device on the KEYER screen; it ends there.
+The `shots DIR` step saves a screenshot of every screen into a folder: KEYER and its MEM row, the top menu list, TIMING, the RECEIVE list and its five drills, the ON AIR list with POTA, SOTA, HUNT, CHEW and QUIZ, LETTERS, PROGRESS, SYSTEM, and each settings section. Start it with the device on the KEYER screen; it ends there.
 
 ```bash
 python3 -I tools/pocketcw.py shots shots

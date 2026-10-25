@@ -33,14 +33,14 @@ Each bar counts the marks or gaps of that length, in the color of the grade a ma
 | DAH | Average dash length and its standard deviation in milliseconds, then the speed your timing works out to. |
 | GAP, CHR, WRD | Average gap inside characters, between characters and between words, in units. |
 
-The statistics collect your keying on every screen since the device was turned on, or since you last pressed F2 (CLR). The KEYER screen shows the same statistics.
+The statistics collect your keying on every screen since the device was turned on, or since you last held F2 (CLEAR). The KEYER screen shows the same statistics.
 
 ## Controls
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the KEYER tab. |
-| F2 (CLR) | Clears the statistics and the tape. |
+| F1 (SET) | Opens the settings at the KEYER section. |
+| F2 hold (CLEAR) | Clears the statistics and the tape. |
 | F3 | Nothing. |
 | F4 (BACK) | Opens the [menu](menu.md), with TIMING selected. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |

@@ -14,7 +14,7 @@ use pocketcw_logic::{
 
 use super::exchange::{self, Chip, RULE_Y};
 use super::transcript::{self, Entry};
-use super::{Play, Screen, Session, Ui, push_scrolling, settings::QSO_TAB};
+use super::{Play, Screen, Session, Ui, push_scrolling, settings::Section};
 use crate::gfx::rect;
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -242,7 +242,7 @@ impl Ui {
 
     pub(super) fn hunt_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, QSO_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Qso),
             Action::Soft(1) => {
                 self.hunt_answer("QRS");
                 self.draw_hunt_lines(lcd);
