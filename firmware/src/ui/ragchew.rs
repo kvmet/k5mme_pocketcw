@@ -197,7 +197,7 @@ impl Ui {
             text_cols(lcd, 0, COPY_Y, c.copy.as_str(), COLS, t.fg, t.bg);
         }
 
-        draw_session(lcd, t, c.session_right, c.session_total, "KEY THE ANSWER AFTER EACH OVER  ? REPEATS");
+        draw_session(lcd, t, c.session_right, c.session_total, "KEY ANSWERS AFTER EACH OVER  ? REPEATS");
     }
 
     /// Plays the current over from its first line after `delay_ms`, adding its lines hidden the

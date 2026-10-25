@@ -80,21 +80,38 @@ pub fn text_cols(lcd: &mut Lcd, x: i32, y: i32, s: &str, cols: usize, fg: Rgb565
 }
 
 /// 5 x 7 block letters of `px`-pixel blocks, `gap` pixels apart. `slant` leans them right by
-/// tenths of a pixel per block row. With `bg`, empty blocks are painted too, so new letters
-/// replace old ones in place. Returns the x after the last letter.
+/// tenths of a pixel per block row, sheared one pixel row at a time so upright strokes stay
+/// straight. With `bg`, empty blocks are painted too, so new letters replace old ones in place.
+/// Returns the x after the last letter.
 #[allow(clippy::too_many_arguments)]
 pub fn blocks(lcd: &mut Lcd, x: i32, y: i32, s: &str, px: i32, gap: i32, slant: i32, fg: Rgb565, bg: Option<Rgb565>) -> i32 {
-    let skew = (slant > 0) as i32;
+    let rows = 7 * px;
+    let shift = |py: i32| ((rows - 1 - py) * slant + 5 * px) / (10 * px);
     let mut left = x;
     for c in s.chars() {
-        for (r, bits) in glyph(c).iter().enumerate() {
-            let shift = ((6 - r as i32) * slant + 5) / 10;
-            for col in 0..5 {
-                let on = bits & (0b10000 >> col) != 0;
-                if let Some(color) = if on { Some(fg) } else { bg } {
-                    para(lcd, left + col * px + shift, y + r as i32 * px, px, px, skew, color);
-                }
+        let glyph = glyph(c);
+        let mut top = 0;
+        while top < rows {
+            // Pixel rows of one block row with the same shift go out together: each fill costs an
+            // LCD window setup.
+            let mut end = top + 1;
+            while end < rows && end / px == top / px && shift(end) == shift(top) {
+                end += 1;
             }
+            let bits = glyph[(top / px) as usize];
+            let on = |col: i32| bits & (0b10000 >> col) != 0;
+            let mut col = 0;
+            while col < 5 {
+                let mut last = col + 1;
+                while last < 5 && on(last) == on(col) {
+                    last += 1;
+                }
+                if let Some(color) = if on(col) { Some(fg) } else { bg } {
+                    rect(lcd, left + col * px + shift(top), y + top, (last - col) * px, end - top, color);
+                }
+                col = last;
+            }
+            top = end;
         }
         left += 5 * px + gap;
     }

@@ -31,8 +31,9 @@ const ROW_STEP: i32 = 19;
 const CALL_TAB: usize = 5;
 const MEM_TAB: usize = 6;
 /// Space inside a tab on each side of its name, and between tabs: seven tabs fill the width.
-const TAB_PAD: i32 = 3;
-const TAB_GAP: i32 = 2;
+/// The pad matches the 4 px slant of a Hazard selection, so no letter sits outside it.
+const TAB_PAD: i32 = 4;
+const TAB_GAP: i32 = 1;
 
 const KEYER_ROWS: [(&str, Field); 7] = [
     ("MODE", Field::Mode),
@@ -275,7 +276,7 @@ fn swatch(lcd: &mut Lcd, t: &Theme, boot_count: u16, palette: u8, x: i32, y: i32
     }
     if n == 1 {
         let (_, echo) = theme::palette_pair(palette, boot_count);
-        para(lcd, x + w - 10, y, 8, h, t.skew(), echo);
+        para(lcd, x + w - 12, y, 8, h, t.skew(), echo);
     }
 }
 

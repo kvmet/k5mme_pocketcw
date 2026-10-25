@@ -23,6 +23,8 @@ use crate::theme::{BAD, GOOD, MAIN, Theme, WARN};
 const INFO_Y: i32 = 26;
 const SET_Y: i32 = 40;
 const SET_PER_ROW: usize = 38;
+/// One more than TINY's height, so a prosign bar on the second row clears the first row.
+const SET_STEP: i32 = 13;
 const RULE_Y: i32 = 66;
 const ROWS: usize = 7;
 const ROW_Y: i32 = 70;
@@ -124,7 +126,7 @@ impl Ui {
                 cell += SET_PER_ROW - cell % SET_PER_ROW;
             }
             let x = 2 + (cell % SET_PER_ROW) as i32 * TINY_W;
-            let y = SET_Y + (cell / SET_PER_ROW) as i32 * 12;
+            let y = SET_Y + (cell / SET_PER_ROW) as i32 * SET_STEP;
             cell += cells;
             // Weak characters show inverted, so they stand out without color.
             let (fg, bg) = match self.letters.mastery(pocketcw_logic::letters::index(c).unwrap_or(0)) {
