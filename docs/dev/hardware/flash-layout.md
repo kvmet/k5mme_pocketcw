@@ -8,14 +8,14 @@
 | MCU 0x08005000 up | The app. The app must set VTOR to 0x08005000. |
 | SPI flash 0x000000 to 0x025FFF | Vendor boot screen, file `F000000.bin`. |
 | SPI flash 0x030000 to 0x0C5FFF | Vendor UI images, file `F0000C0.bin`. |
-| SPI flash 0x100000 to 0x100FFF | PocketCW file `F000400.bin`, 4 KB. |
+| SPI flash 0x100000 up | PocketCW content pack, file `F000400.bin`, up to 8,372,224 bytes. |
 | SPI flash 0xE00000 to 0xFECFFF | Vendor fonts, file `F003800.bin`. |
 
-The SPI flash ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every other sector reads blank: 0x026000 to 0x02FFFF, 0x0C6000 to 0xDFFFFF apart from `F000400.bin`, and 0xFED000 to 0xFFFFFF.
+The vendor ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every other sector read blank: 0x026000 to 0x02FFFF, 0x0C6000 to 0xDFFFFF, and 0xFED000 to 0xFFFFFF.
 
-PocketCW runs from the MCU app area. It never reads the SPI flash.
+PocketCW runs from the MCU app area and reads the content pack from the SPI flash.
 
-`F000400.bin` is `PocketCW`, a format version byte (1), then 0xFF to 4 KB. `tools/release.sh` writes it.
+`tools/pack.py` builds `F000400.bin`; `logic/src/pack.rs` gives the format. `tools/release.sh` still writes the 4 KB format 1 file, which the app reports as `PACK=OLD`.
 
 `firmware/memory.x` gives the app 236 KB from 0x08005000, and `cortex-m-rt` sets VTOR from its `set-vtor` feature.
 

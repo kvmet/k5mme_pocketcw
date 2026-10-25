@@ -7,7 +7,7 @@ PocketCW builds on the work of others: data, assets, tools, and ideas for featur
 | Work | By | License | Used for |
 | - | - | - | - |
 | [B612 Mono](https://github.com/polarsys/b612) | Airbus, Intactile Design, PolarSys | [SIL Open Font License 1.1](https://github.com/kvmet/k5mme_pocketcw/blob/main/firmware/src/B612-OFL.txt) | The text font on every screen. |
-| [wordfreq](https://github.com/rspeer/wordfreq) 3.1.1 | Robyn Speer | Data: CC BY-SA 4.0 | The 3000 common English words in the content pack (`tools/words/common.txt`). |
+| [wordfreq](https://github.com/rspeer/wordfreq) 3.1.1 | Robyn Speer | Data: CC BY-SA 4.0 | The common English words in the content pack (`tools/words/common.txt`). |
 | [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M), voice `af_heart` | hexgrad | Apache 2.0 | The spoken words in the content pack. |
 
 The Rust crates linked into the firmware are listed with their licenses in `THIRD-PARTY.txt`, in each release.
@@ -21,6 +21,9 @@ These run on a computer when the pack is built. None of them ship in a release.
 | [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx) | thewh1teagle | MIT |
 | [espeak-ng](https://github.com/espeak-ng/espeak-ng) | The espeak-ng project | GPL-3.0 |
 | [FFmpeg](https://ffmpeg.org) | The FFmpeg project | LGPL-2.1 or later |
+| [misaki](https://github.com/hexgrad/misaki) | hexgrad | Apache 2.0 |
+
+`tools/voiceclips.py` holds a table from misaki's espeak fallback. The table converts espeak-ng phonemes to the form Kokoro was trained on.
 
 ## Ideas and compatibility
 

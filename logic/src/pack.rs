@@ -204,7 +204,7 @@ mod tests {
         assert_eq!(crc32(words), header.section(WORDS).unwrap().crc);
         assert_eq!(crc32(clips), header.section(CLIPS).unwrap().crc);
         assert_eq!(word_count(words[..4].try_into().unwrap()), 4);
-        assert_eq!(clips[0], 3);
+        assert_eq!(clips[0], 2);
 
         let k = word(words, 0);
         assert_eq!((k.text(), k.char, k.ham), (&b"K"[..], true, false));

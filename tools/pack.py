@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Builds the content pack F000400.bin (format in `logic/src/pack.rs`): the characters in
 tools/words/chars.txt and the words in tools/words/ham.txt and tools/words/common.txt, each with
-a clip of the Kokoro voice af_heart at 5859 Hz. A ham word with a meaning gets a second clip
-that says the word, then its meaning.
+a clip of the Kokoro voice af_heart at 8789 Hz. A ham word with a meaning gets a second clip
+that says the word, then its meaning. The least common words are left out until the pack fits
+in one update file.
 
 Clips are kept in a cache folder by what they say and how they are made, so a rebuild only
 speaks new or changed words.
@@ -24,16 +25,23 @@ import sys
 import zlib
 from pathlib import Path
 
+import numpy as np
+
 MAGIC = b"PocketCW"
 FORMAT = 2
 WORD_TEXT = 18
 NO_CLIP = 0xFFFFFFFF
 FLAGS = {"char": 2, "ham": 1, "common": 0}
 VOICE = "af_heart"
-FACTOR = 3
+FACTOR = 2
+# The speech buffer in firmware/src/speech.rs.
 CLIP_MAX = 16384
+# The largest update file: 1022 clusters of 8 KB (docs/dev/hardware/flash-layout.md).
+FILE_MAX = 8_372_224
+WORD_ENTRY = 28
+CLIP_START = 2
 # Change when the shaping, resampling or encoding of clips changes, so the cache is rebuilt.
-CLIP_RECIPE = 1
+CLIP_RECIPE = 2
 WORDS = Path(__file__).parent / "words"
 # What Morse can send: letters, digits, and prosigns of two letters in angle brackets.
 SENDABLE = re.compile(r"(?:[A-Z0-9]|<[A-Z]{2}>)+")
@@ -69,10 +77,11 @@ def read_words() -> list[tuple[str, str, str | None, str]]:
     return chars + ham + common
 
 
-def build(words: list[tuple[str, str, bytes | None, bytes | None]]) -> bytes:
-    """The pack for (text, kind, clip, clip with meaning) entries."""
+def build(words: list[tuple[str, str, bytes | None, bytes | None]], factor: int = FACTOR) -> bytes:
+    """The pack for (text, kind, clip, clip with meaning) entries, with clips at the output rate
+    divided by `factor`."""
     entries = bytearray(struct.pack("<HH", len(words), 0))
-    clips = bytearray(struct.pack("<B3x", FACTOR))
+    clips = bytearray(struct.pack("<B3x", factor))
 
     def add(text: str, clip: bytes | None) -> int:
         if clip is None:
@@ -116,12 +125,14 @@ class Voice:
             return path.read_bytes(), False
         import audioop
 
-        from voiceclips import OUTPUT_HZ, Speaker, resample, shape
+        from voiceclips import OUTPUT_HZ, Speaker, resample, shape, undo_upsampling
 
         if self.speaker is None:
             self.speaker = Speaker("kokoro", self.models)
         samples, hz = self.speaker.speak(spoken)
-        clip = audioop.lin2adpcm(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), 2, None)[0]
+        pcm = np.frombuffer(resample(shape(samples, hz), hz, OUTPUT_HZ // FACTOR), "<i2").astype(np.float64)
+        pcm = np.clip(undo_upsampling(pcm, FACTOR), -32768, 32767).astype("<i2").tobytes()
+        clip = audioop.lin2adpcm(pcm, 2, None)[0]
         path.write_bytes(clip)
         return clip, True
 
@@ -152,8 +163,9 @@ def main():
     if not args.no_voice:
         voice = Voice(args.models, args.cache)
         spoken_now = taken = 0
-        for i, (text, said, meaning, _) in enumerate(words):
-            phrases = [said, f"{said}. {meaning}" if meaning else None]
+        for i, (text, said, meaning, kind) in enumerate(words):
+            # Kokoro rushes a lone letter; a period makes it the end of a sentence.
+            phrases = [f"{said}." if kind == "char" else said, f"{said}. {meaning}" if meaning else None]
             pair = []
             for phrase in phrases:
                 clip, new = voice.clip(phrase) if phrase else (None, False)
@@ -164,12 +176,20 @@ def main():
                     print(f"spoken {spoken_now}, at {i}/{len(words)} {text}", flush=True)
             clips[i] = tuple(pair)
         print(f"spoke {spoken_now} clips, took {taken} from the cache")
-    pack = build([(text, kind, clip, with_meaning) for (text, _, _, kind), (clip, with_meaning) in zip(words, clips)])
+    entries = [(text, kind, clip, with_meaning) for (text, _, _, kind), (clip, with_meaning) in zip(words, clips)]
+    common = sum(1 for e in entries if e[1] == "common")
+    pack = build(entries)
+    over = len(pack) - FILE_MAX
+    while over > 0 and entries[-1][1] == "common":
+        over -= WORD_ENTRY + sum(CLIP_START + len(c) for c in entries.pop()[2:] if c)
+    if over > 0:
+        sys.exit(f"the pack is {over} bytes over {FILE_MAX} with no common words")
+    pack = build(entries)
     args.out.mkdir(parents=True, exist_ok=True)
     path = args.out / "F000400.bin"
     path.write_bytes(pack)
-    counts = {kind: sum(1 for *_, k in words if k == kind) for kind in FLAGS}
-    print(f"{path}: {len(pack)} bytes, {counts['char']} characters, {counts['ham']} ham and {counts['common']} common words")
+    counts = {kind: sum(1 for e in entries if e[1] == kind) for kind in FLAGS}
+    print(f"{path}: {len(pack)} bytes, {counts['char']} characters, {counts['ham']} ham and {counts['common']} of {common} common words")
 
 
 if __name__ == "__main__":

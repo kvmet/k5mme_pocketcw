@@ -1,7 +1,7 @@
 # Every character Morse sends, for spelling what the pack has no word for. Each line is the
 # character, a tab, and what the voice says. ( and + are the prosigns KN and AR.
 
-A	ay
+A	A
 B	bee
 C	see
 D	dee

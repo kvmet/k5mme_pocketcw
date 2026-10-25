@@ -13,7 +13,7 @@ use crate::audio::{Audio, SAMPLE_HZ};
 use crate::lcd::Lcd;
 use crate::pack::Pack;
 
-/// About 5.6 s at 5859 Hz: the longest clip `tools/pack.py` makes, and all of one `say`.
+/// About 3.7 s at 8789 Hz: the longest clip `tools/pack.py` makes, and all of one `say`.
 const BUFFER_LEN: usize = 16 * 1024;
 const GAP_MS: f32 = 120.0;
 

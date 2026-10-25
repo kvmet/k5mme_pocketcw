@@ -14,6 +14,7 @@ and voices-v1.0.bin.
 import argparse
 import audioop
 import random
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -44,6 +45,29 @@ rock salt sand ship shoe short sing small smile snake snow soft south spoon star
 street sugar summer table tiger train tree truck under water whale wheel white window winter
 """.split()
 
+# Kokoro was trained on phonemes in misaki's form. This is misaki's espeak fallback for US
+# English and espeak-ng 1.52 or later (hexgrad/misaki, misaki/espeak.py): each pair in order,
+# the longest first, then the US pairs.
+MISAKI = sorted(
+    [
+        ("ʔˌn\u0329", "ʔn"), ("ʔn\u0329", "ʔn"), ("a^ɪ", "I"), ("a^ʊ", "W"), ("d^ʒ", "ʤ"), ("e^ɪ", "A"),
+        ("t^ʃ", "ʧ"), ("ɔ^ɪ", "Y"), ("ə^l", "ᵊl"), ("ʲo", "jo"), ("ʲə", "jə"), ("e", "A"), ("ʲ", ""),
+        ("ɚ", "əɹ"), ("r", "ɹ"), ("x", "k"), ("ç", "k"), ("ɐ", "ə"), ("ɬ", "l"), ("\u0303", ""),
+    ],
+    key=lambda pair: -len(pair[0]),
+)
+MISAKI_US = [("o^ʊ", "O"), ("ɜːɹ", "ɜɹ"), ("ɜː", "ɜɹ"), ("ɪə", "iə"), ("ː", "")]
+
+
+def misaki_form(phonemes: str) -> str:
+    """espeak-ng phonemes, with ^ tying the parts of a sound, as misaki writes them."""
+    for espeak, misaki in MISAKI:
+        phonemes = phonemes.replace(espeak, misaki)
+    phonemes = re.sub("(\\S)\u0329", "ᵊ\\1", phonemes).replace("\u0329", "")
+    for espeak, misaki in MISAKI_US:
+        phonemes = phonemes.replace(espeak, misaki)
+    return phonemes.replace("ɾ", "T").replace("ʔ", "t").replace("^", "")
+
 
 def words_for(voice: str) -> list[tuple[int, str]]:
     """(factor, word) pairs for `voice`: a fixed shuffle split into one slice per voice and rate."""
@@ -71,6 +95,9 @@ class Speaker:
             library = next((data.parent.parent / "lib").glob("libespeak-ng.*[ds][yo]*"))
             config = EspeakConfig(lib_path=str(library), data_path=str(data))
             self.engine = Kokoro(str(models / "kokoro-v1.0.onnx"), str(models / "voices-v1.0.bin"), espeak_config=config)
+            from phonemizer.backend import EspeakBackend
+
+            self.espeak = EspeakBackend("en-us", preserve_punctuation=True, with_stress=True, tie="^")
             self.name = "KOKORO AF_HEART"
         elif voice == "piper":
             from piper import PiperVoice
@@ -80,10 +107,11 @@ class Speaker:
         else:
             self.name = "ESPEAK-NG EN-US"
 
-    def speak(self, word: str) -> tuple[np.ndarray, int]:
-        """Mono float samples and their rate."""
+    def speak(self, word: str, speed: float = 1.0) -> tuple[np.ndarray, int]:
+        """Mono float samples and their rate. Only Kokoro takes `speed`."""
         if self.voice == "kokoro":
-            samples, hz = self.engine.create(word, voice="af_heart", lang="en-us")
+            phonemes = misaki_form(self.espeak.phonemize([word])[0].strip())
+            samples, hz = self.engine.create(phonemes, voice="af_heart", speed=speed, lang="en-us", is_phonemes=True)
             return np.asarray(samples, dtype=np.float32), hz
         if self.voice == "piper":
             chunks = list(self.engine.synthesize(word))
@@ -113,6 +141,17 @@ def resample(samples: np.ndarray, hz: int, to_hz: int) -> bytes:
         check=True,
     )
     return result.stdout
+
+
+def undo_upsampling(samples: np.ndarray, factor: int) -> np.ndarray:
+    """Divides each frequency by the gain of straight-line upsampling by `factor`, which is
+    -7 dB at the top of the band for 3 and -6 dB for 2, and keeps the peak."""
+    f = np.fft.rfftfreq(len(samples))
+    gain = np.ones_like(f)
+    nonzero = f > 0
+    gain[nonzero] = (np.sin(np.pi * f[nonzero]) / (factor * np.sin(np.pi * f[nonzero] / factor))) ** 2
+    boosted = np.fft.irfft(np.fft.rfft(samples) / gain, len(samples))
+    return boosted * (np.abs(samples).max() / np.abs(boosted).max())
 
 
 def main():
