@@ -67,6 +67,10 @@ pub(super) struct Qso {
 }
 
 impl Qso {
+    pub(super) fn badge(&self) -> &'static str {
+        exchange::badge(self.playing || self.queue.iter().any(Option::is_some), self.over.as_str())
+    }
+
     pub(super) fn pause(&mut self) {
         self.queue = [None; QUEUE];
         self.playing = false;
@@ -212,9 +216,11 @@ impl Ui {
         exchange::draw_chips(lcd, t, chips);
     }
 
-    fn draw_over(&self, lcd: &mut Lcd) {
+    fn draw_over(&mut self, lcd: &mut Lcd) {
         let Some(Session::Qso(q)) = &self.session else { return };
-        exchange::draw_over(lcd, &self.theme, q.over.as_str(), q.next_step().as_str());
+        exchange::draw_over(lcd, &self.theme, q.over.as_str());
+        let next_step = q.next_step();
+        self.set_footer(lcd, next_step.as_str());
     }
 
     pub(super) fn qso_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {

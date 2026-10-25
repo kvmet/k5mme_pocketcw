@@ -16,6 +16,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
+use super::footer::{FootLine, INPUT_COLS, INPUT_Y};
 use super::{COLS, Play, Screen, Session, Ui, char_cells, draw_char, push_scrolling, settings::Section};
 use crate::fonts::{SMALL, TINY};
 use crate::gfx::{CHAR_W, TINY_W, ink, rect, text_cols, tiny};
@@ -38,8 +39,7 @@ const COPY_X: i32 = 110;
 const SENT_CELLS: usize = 10;
 /// HEAD items shown, each on two rows: sent, then your copy.
 const HEAD_ITEMS: usize = ROWS / 2;
-const NOW_Y: i32 = ROW_Y + ROWS as i32 * ROW_STEP + 4;
-const FOOT_Y: i32 = 226;
+const _: () = assert!(ROW_Y + ROWS as i32 * ROW_STEP <= INPUT_Y);
 /// Time after a group ends to start keying it back before it counts as missed.
 const START_MS: u32 = 5000;
 /// NINJA's time to start keying before the voice says the word.
@@ -85,6 +85,16 @@ pub(super) struct Receive {
 }
 
 impl Receive {
+    pub(super) fn badge(&self) -> &'static str {
+        match self.state {
+            State::Playing => "LISTEN",
+            State::Waiting => "YOUR TURN",
+            State::Copying => "PAUSE ENDS",
+            State::Between | State::NoPack => "",
+            State::Paused => "PAUSED",
+        }
+    }
+
     pub(super) fn new(kind: Kind, level: u8, seed: u32) -> Receive {
         Receive {
             drill: Drill::new(kind, level, seed),
@@ -231,30 +241,22 @@ impl Ui {
     }
 
     /// Your copy so far, what the drill waits for, and the session score.
-    fn draw_receive_now(&self, lcd: &mut Lcd) {
+    fn draw_receive_now(&mut self, lcd: &mut Lcd) {
         let Some(Session::Receive(rx)) = &self.session else { return };
         let t = &self.theme;
         let copy = rx.copy.as_str();
-        let shown = &copy[copy.len().saturating_sub(COLS - 8)..];
-        text_cols(lcd, 0, NOW_Y, shown, COLS - 7, t.fg, t.bg);
+        let shown = &copy[copy.len().saturating_sub(INPUT_COLS - 1)..];
+        text_cols(lcd, 0, INPUT_Y, shown, INPUT_COLS, t.fg, t.bg);
         if rx.state == State::Waiting || rx.state == State::Copying {
-            rect(lcd, shown.len() as i32 * CHAR_W + 1, NOW_Y + 2, CHAR_W - 2, 13, t.accent);
+            rect(lcd, shown.len() as i32 * CHAR_W + 1, INPUT_Y + 2, CHAR_W - 2, 13, t.accent);
         }
-        let status = match rx.state {
-            State::Playing => "LISTEN",
-            State::Waiting => "YOUR TURN",
-            State::Copying => "PAUSE ENDS",
-            State::Between | State::NoPack => "",
-            State::Paused => "PAUSED",
-        };
-        rect(lcd, MAIN - 72, NOW_Y + 3, 72, 12, t.bg);
-        tiny(lcd, MAIN - 2 - status.len() as i32 * TINY_W, NOW_Y + 3, status, t.echo, t.bg);
         let hint = match rx.drill.kind {
             Kind::Ninja => "LISTEN, OR KEY IT BACK  ? REPEATS",
             Kind::Head => "KEY IT BACK AFTER IT ENDS  ? REPEATS",
             _ => "KEY BACK WHAT YOU HEARD  ? REPEATS",
         };
-        draw_session(lcd, t, rx.session_right, rx.session_total, hint);
+        let foot = session_line(rx.session_right, rx.session_total, hint);
+        self.set_footer(lcd, foot.as_str());
     }
 
     /// Starts the next group, or the same one again with `again`.
@@ -527,12 +529,10 @@ fn draw_marks(lcd: &mut Lcd, t: &Theme, y: i32, mut x: i32, sent: impl Iterator<
 }
 
 /// The footer: the session's percent right, or `hint` before anything is scored.
-pub(super) fn draw_session(lcd: &mut Lcd, t: &Theme, right: u16, total: u16, hint: &str) {
-    let foot = if total > 0 {
-        Text::<40>::format(format_args!("SESSION {}%  {} CHARS", right as u32 * 100 / total as u32, total))
+pub(super) fn session_line(right: u16, total: u16, hint: &str) -> FootLine {
+    if total > 0 {
+        FootLine::format(format_args!("SESSION {}%  {} CHARS", right as u32 * 100 / total as u32, total))
     } else {
-        Text::format(format_args!("{hint}"))
-    };
-    rect(lcd, 0, FOOT_Y, MAIN, 12, t.bg);
-    tiny(lcd, 2, FOOT_Y, foot.as_str(), t.muted, t.bg);
+        FootLine::format(format_args!("{hint}"))
+    }
 }

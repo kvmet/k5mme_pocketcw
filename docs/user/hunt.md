@@ -46,7 +46,7 @@ Under the transcript:
 
 During a QSO, only HINT shows the values of the items. `...` marks an item with no value.
 
-Under the items, your over shows as you key it. The footer shows the next step. With HINT on, the footer shows the exact text to send.
+Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the activator sends, `YOUR TURN` while it waits for you, and `PAUSE ENDS` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
 Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 

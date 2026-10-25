@@ -11,10 +11,11 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::receive::{draw_marked, draw_session};
+use super::footer::{INPUT_COLS, INPUT_Y};
+use super::receive::{draw_marked, session_line};
 use super::transcript::{self, Entry};
-use super::{COLS, Play, Screen, Session, Ui, push_scrolling, settings::Section};
-use crate::gfx::{CHAR_W, TINY_W, rect, text_cols, tiny};
+use super::{Play, Screen, Session, Ui, push_scrolling, settings::Section};
+use crate::gfx::{CHAR_W, rect, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::MAIN;
@@ -26,10 +27,9 @@ const QUIZ_ROWS: usize = transcript::ROWS;
 const LINES: usize = transcript::MAX_ROWS;
 const RULE_Y: i32 = 155;
 const PROMPT_Y: i32 = 160;
-const COPY_Y: i32 = 176;
-const RESULT_Y: i32 = 196;
+/// The answer as sent, marked against your copy.
+const RESULT_Y: i32 = 178;
 const COPY_X: i32 = 130;
-const FOOT_Y: i32 = 226;
 /// Time after the question shows to start keying the answer before it counts as missed.
 const ASK_MS: u32 = 10_000;
 /// How long the score shows before the next over.
@@ -79,6 +79,16 @@ pub(super) struct Chew {
 }
 
 impl Chew {
+    pub(super) fn badge(&self) -> &'static str {
+        match self.state {
+            State::Playing => "LISTEN",
+            State::Asking => "YOUR TURN",
+            State::Answering => "PAUSE ENDS",
+            State::Showing => "",
+            State::Paused => "PAUSED",
+        }
+    }
+
     fn new(quiz: bool, seed: u32) -> Chew {
         let chat = Ragchew::new(seed);
         Chew {
@@ -169,24 +179,14 @@ impl Ui {
     }
 
     /// The question, your answer and its score, what the screen waits for, and the footer.
-    fn draw_ragchew_now(&self, lcd: &mut Lcd, s: &Settings) {
+    fn draw_ragchew_now(&mut self, lcd: &mut Lcd, s: &Settings) {
         let Some(Session::Ragchew(c)) = &self.session else { return };
         let t = &self.theme;
-        let status = match c.state {
-            State::Playing => "LISTEN",
-            State::Asking => "YOUR TURN",
-            State::Answering => "PAUSE ENDS",
-            State::Showing => "",
-            State::Paused => "PAUSED",
-        };
-        let status_y = if c.quiz { PROMPT_Y } else { FOOT_Y };
-        rect(lcd, 0, status_y, MAIN, 12, t.bg);
-        tiny(lcd, MAIN - 2 - status.len() as i32 * TINY_W, status_y, status, t.echo, t.bg);
         if !c.quiz {
             let hint = if s.reveal_lines { "EACH LINE SHOWS AFTER IT ENDS" } else { "EACH OVER SHOWS AFTER IT ENDS" };
-            tiny(lcd, 2, FOOT_Y, hint, t.muted, t.bg);
-            return;
+            return self.set_footer(lcd, hint);
         }
+        rect(lcd, 0, PROMPT_Y, MAIN, 12, t.bg);
         let asking = matches!(c.state, State::Asking | State::Answering);
         let prompt = match (&c.question, &c.result) {
             (Some(q), _) if asking => q.prompt,
@@ -195,19 +195,20 @@ impl Ui {
         };
         tiny(lcd, 2, PROMPT_Y, prompt, t.fg, t.bg);
 
-        rect(lcd, 0, COPY_Y, MAIN, RESULT_Y + 18 - COPY_Y, t.bg);
+        rect(lcd, 0, RESULT_Y, MAIN, 18, t.bg);
+        let showing = c.state == State::Showing;
+        let copy = if asking || showing { c.copy.as_str() } else { "" };
+        let shown = &copy[copy.len().saturating_sub(INPUT_COLS - 1)..];
+        text_cols(lcd, 0, INPUT_Y, shown, INPUT_COLS, t.fg, t.bg);
         if asking {
-            let copy = c.copy.as_str();
-            let shown = &copy[copy.len().saturating_sub(COLS - 1)..];
-            text_cols(lcd, 0, COPY_Y, shown, COLS, t.fg, t.bg);
-            rect(lcd, shown.len() as i32 * CHAR_W + 1, COPY_Y + 2, CHAR_W - 2, 13, t.accent);
-        } else if let Some((q, score)) = c.result.filter(|_| c.state == State::Showing) {
+            rect(lcd, shown.len() as i32 * CHAR_W + 1, INPUT_Y + 2, CHAR_W - 2, 13, t.accent);
+        } else if let Some((q, score)) = c.result.filter(|_| showing) {
             let sent = q.answer.as_str().bytes().filter(|&b| b != b' ');
             draw_marked(lcd, t, RESULT_Y, COPY_X, sent, &score.marks, score.right);
-            text_cols(lcd, 0, COPY_Y, c.copy.as_str(), COLS, t.fg, t.bg);
         }
 
-        draw_session(lcd, t, c.session_right, c.session_total, "KEY ANSWERS AFTER EACH OVER  ? REPEATS");
+        let foot = session_line(c.session_right, c.session_total, "KEY ANSWERS AFTER EACH OVER  ? REPEATS");
+        self.set_footer(lcd, foot.as_str());
     }
 
     /// Plays the current over from its first line after `delay_ms`, adding its lines hidden the

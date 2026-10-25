@@ -902,7 +902,7 @@ mod app {
             edges &= SERIAL_OPEN.load(Ordering::Relaxed);
             if hotline && !SERIAL_OPEN.load(Ordering::Relaxed) {
                 hotline = false;
-                show_hotline(&ui, &mut lcd, hotline);
+                show_hotline(&mut ui, &mut lcd, hotline);
             }
             match received {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
@@ -931,7 +931,7 @@ mod app {
                 }
                 Ok(Ok(Message::Serial(SerialCommand::Hotline(on)))) => {
                     hotline = on;
-                    show_hotline(&ui, &mut lcd, hotline);
+                    show_hotline(&mut ui, &mut lcd, hotline);
                 }
                 Ok(Ok(Message::Serial(SerialCommand::Say(text)))) => {
                     let said = match ui.pack() {
@@ -956,7 +956,7 @@ mod app {
                 Ok(Err(_)) => unreachable!("the tick task holds the sender forever"),
                 Err(_) => {
                     if save_at.is_some_and(|at| at <= Mono::now()) {
-                        save(&ui, &mut lcd, &mut bus, &settings);
+                        save(&mut ui, &mut lcd, &mut bus, &settings);
                         save_at = None;
                     }
                     if poll_at <= Mono::now() {
@@ -964,7 +964,7 @@ mod app {
                         poll_at = Mono::now() + POLL_MS.millis();
                         save_battery(&mut ui, &mut lcd, &mut bus);
                         if ui.battery_empty() {
-                            ui.status(&mut lcd, "BATTERY EMPTY: POWERING OFF");
+                            ui.alert(&mut lcd, "BATTERY EMPTY: POWERING OFF");
                             Mono::delay(EMPTY_NOTICE_MS.millis()).await;
                             power_off(&mut ui, &mut lcd, &mut bus, &settings, save_at.is_some());
                         }
@@ -1073,7 +1073,7 @@ mod app {
         match message {
             Message::Button(event) => match input.map(event) {
                 None => {}
-                Some(Action::PowerHold) => ui.status(lcd, "RELEASE TO POWER OFF"),
+                Some(Action::PowerHold) => ui.alert(lcd, "RELEASE TO POWER OFF"),
                 Some(Action::PowerOff) => power_off(ui, lcd, bus, settings, unsaved),
                 Some(Action::PowerCancel) => ui.status(lcd, ""),
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
@@ -1174,7 +1174,7 @@ mod app {
         }
     }
 
-    fn show_hotline(ui: &Ui, lcd: &mut Lcd, on: bool) {
+    fn show_hotline(ui: &mut Ui, lcd: &mut Lcd, on: bool) {
         HOTLINE.store(on, Ordering::Relaxed);
         ui.status(lcd, if on { "HOTLINE ON" } else { "HOTLINE OFF" });
     }
@@ -1344,17 +1344,17 @@ mod app {
         })
     }
 
-    fn save(ui: &Ui, lcd: &mut Lcd, bus: &mut I2c, settings: &Settings) -> bool {
+    fn save(ui: &mut Ui, lcd: &mut Lcd, bus: &mut I2c, settings: &Settings) -> bool {
         report(ui, lcd, store::write_settings(bus, settings), "SETTINGS NOT SAVED")
     }
 
     /// Writes `record`, or shows `failure` on the status line.
-    fn save_record(ui: &Ui, lcd: &mut Lcd, bus: &mut I2c, address: u16, record: &[u8], failure: &str) -> bool {
+    fn save_record(ui: &mut Ui, lcd: &mut Lcd, bus: &mut I2c, address: u16, record: &[u8], failure: &str) -> bool {
         report(ui, lcd, store::write(bus, address, record), failure)
     }
 
     /// Shows `failure` on the status line unless `saved`.
-    fn report(ui: &Ui, lcd: &mut Lcd, saved: bool, failure: &str) -> bool {
+    fn report(ui: &mut Ui, lcd: &mut Lcd, saved: bool, failure: &str) -> bool {
         if !saved {
             ui.status(lcd, failure);
         }

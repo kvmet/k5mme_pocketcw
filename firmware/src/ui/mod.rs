@@ -4,6 +4,7 @@
 
 mod dial;
 mod exchange;
+mod footer;
 mod home;
 mod hunt;
 mod letters;
@@ -42,7 +43,7 @@ use pocketcw_logic::{
 };
 
 use crate::font::Font;
-use crate::gfx::{rect, text_cols};
+use crate::gfx::rect;
 use crate::lcd::Lcd;
 use crate::pack::Pack;
 use crate::text::Text;
@@ -59,11 +60,8 @@ pub use serial::Reply;
 pub use system::{PanelFrom, SystemInfo};
 
 const COLS: usize = (MAIN / crate::gfx::CHAR_W) as usize;
-const STATUS_Y: i32 = 222;
 /// When each contact, tip then ring, stops keying.
 const STUCK_MS: [u32; 2] = [keyer::TIP_STUCK_MS as u32, keyer::RING_STUCK_MS as u32];
-
-const SCREENS: usize = 12;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Screen {
@@ -80,7 +78,6 @@ enum Screen {
     Progress,
     Radio,
 }
-const _: () = assert!(Screen::Radio as usize + 1 == SCREENS);
 
 /// The practice open on its screen, or paused while you are on another screen.
 // Without a heap the large variant can't be boxed; one union still costs less than four fields.
@@ -145,8 +142,13 @@ pub struct Ui {
     theme: Theme,
     boot_count: u16,
     screen: Screen,
-    /// Each screen's focused dial target, once a click has moved it.
-    dial_focus: [Option<Target>; SCREENS],
+    /// The focused dial target, once a click has moved it on this screen.
+    dial_focus: Option<Target>,
+    /// The screen's own footer line, and a status message with the tick time it ends, if it does.
+    footer: footer::FootLine,
+    status: Option<(footer::FootLine, Option<u32>)>,
+    /// The state badge drawn now.
+    badge_shown: &'static str,
     key_guard: KeyGuard,
     decode: Decode,
     /// What holding F1 does, as the settings last drawn had it, for its label.
@@ -223,7 +225,10 @@ impl Ui {
             theme: Theme::new(settings.style, settings.palette, settings.boot_count),
             boot_count: settings.boot_count,
             screen: Screen::Home,
-            dial_focus: [None; SCREENS],
+            dial_focus: None,
+            footer: footer::FootLine::new(),
+            status: None,
+            badge_shown: "",
             key_guard: KeyGuard::default(),
             decode: Decode::new(),
             shortcut: settings.shortcut,
@@ -290,11 +295,14 @@ impl Ui {
         }
         self.battery_shown = self.battery_icon();
         self.theme.battery(lcd, self.battery_shown);
+        self.draw_badge(lcd, true);
+        self.draw_footer(lcd);
     }
 
     /// Runs `action` on the current screen at `now_ms`. Changes land in `s`; the caller applies
     /// them.
     pub fn act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
+        self.now_ms = now_ms;
         match action {
             Action::SoftDown(key) => {
                 self.spent[key as usize] = self.soft_down(lcd);
@@ -456,11 +464,6 @@ impl Ui {
             Some(Session::Hunt(h)) => h.bot.set_options(options, s.wpm),
             _ => {}
         }
-    }
-
-    /// One line of muted text across the bottom of the main area, until the next redraw.
-    pub fn status(&self, lcd: &mut Lcd, line: &str) {
-        text_cols(lcd, 0, STATUS_Y, line, COLS, self.theme.muted, self.theme.bg);
     }
 
     /// A character read from the paddles.
@@ -647,6 +650,9 @@ impl Ui {
     }
 
     pub fn timeout(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
+        self.now_ms = now_ms;
+        self.status_timeout(lcd, now_ms);
+        self.draw_badge(lcd, false);
         let passed = |at: u32| ticks::reached(now_ms, at);
         for (i, stuck_ms) in STUCK_MS.into_iter().enumerate() {
             if let Some(since) = self.contact_since[i]
@@ -656,7 +662,7 @@ impl Ui {
                 self.stuck_shown[i] = true;
                 let lane = if s.mode.dit_on_ring(s.swap) { 1 - i } else { i };
                 let line = Text::<COLS>::format(format_args!("{} STUCK ON: CHECK PLUG", lanes(s)[1 + lane]));
-                self.status(lcd, line.as_str());
+                self.alert(lcd, line.as_str());
             }
         }
         if !self.screen_deadline().is_some_and(passed) {
@@ -715,6 +721,8 @@ impl Ui {
         self.mem_row = false;
         self.screen = screen;
         self.editing = false;
+        self.dial_focus = None;
+        self.footer.clear();
         self.tape = Tape::new(screen == Screen::Timing);
         self.draw(lcd, s);
     }

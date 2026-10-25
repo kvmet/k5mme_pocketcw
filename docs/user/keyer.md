@@ -14,7 +14,7 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 | Bar | Your speed between 5 and 60 WPM. |
 | Timing tape | Your keying drawn to scale. See below. |
 | Statistics line | Your average gaps and speed. See below. |
-| Decode | Five lines of what your keying decodes to. |
+| Decode | Four lines of what your keying decodes to. |
 
 A small mark under a value shows which value the dial sets: speed, volume or tone.
 

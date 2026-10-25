@@ -17,9 +17,10 @@ use crate::text::Text;
 use crate::theme::{MAIN, quality_color};
 
 const HIST_Y: i32 = 112;
-const HIST_H: i32 = 40;
+const HIST_H: i32 = 26;
 const HIST_W: i32 = 124;
-const LINES_Y: i32 = 184;
+/// Below the histograms' labels, so the last line ends above the footer.
+const LINES_Y: i32 = HIST_Y + 14 + HIST_H + 16;
 const LINE_STEP: i32 = 18;
 
 impl Ui {

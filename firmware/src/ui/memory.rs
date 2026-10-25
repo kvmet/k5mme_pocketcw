@@ -59,15 +59,18 @@ impl Ui {
         self.softkeys(lcd, keys);
     }
 
-    /// The status line when no memory is sending: what the MEM row does, if it is open.
-    fn idle_status(&self, lcd: &mut Lcd) {
-        self.status(lcd, if self.mem_row { "HOLD REPEATS  CLICK CLOSES" } else { "" });
+    /// The footer when no memory is sending: what the MEM row does, if it is open.
+    fn idle_status(&mut self, lcd: &mut Lcd) {
+        self.set_footer(lcd, if self.mem_row { "HOLD REPEATS  CLICK CLOSES" } else { "" });
     }
 
     pub(super) fn close_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = false;
         self.softkeys(lcd, super::home::KEYS);
         self.draw_decode_all(lcd);
+        if self.sending.is_none() {
+            self.idle_status(lcd);
+        }
     }
 
     /// An F key on the MEM row sends its memory, and closes the row unless AFTER SEND keeps it.
@@ -98,7 +101,7 @@ impl Ui {
         } else {
             write!(line, "SENDING M{}  KEY TO STOP", slot + 1)
         };
-        self.status(lcd, line.as_str());
+        self.set_footer(lcd, line.as_str());
     }
 
     /// Stops a memory being sent or waiting to repeat.
@@ -123,7 +126,7 @@ impl Ui {
         }
         sending.again_at = Some(now_ms.wrapping_add(self.memories.every_s as u32 * 1000));
         let line = Text::<COLS>::format(format_args!("M{} AGAIN IN {}S  KEY TO STOP", sending.slot + 1, self.memories.every_s));
-        self.status(lcd, line.as_str());
+        self.set_footer(lcd, line.as_str());
     }
 
     pub(super) fn memory_timeout(&mut self, lcd: &mut Lcd, s: &Settings) {

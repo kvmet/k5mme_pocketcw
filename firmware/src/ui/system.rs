@@ -10,7 +10,7 @@ use pocketcw_logic::panel::{self, IdRead, Panel};
 use super::{Screen, Ui, settings::Section};
 use crate::battery::Reading;
 use crate::codec::Codec;
-use crate::gfx::{TINY_H, TINY_W, rect, text, text_right, tiny};
+use crate::gfx::{TINY_W, rect, text, text_right, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::{BAD, BATTERY_SEGMENTS, Battery, MAIN};
@@ -118,7 +118,7 @@ impl Ui {
         }
         tiny(lcd, MAIN - 12 - lcd_id.len() as i32 * TINY_W, below_rows, lcd_id.as_str(), t.muted, t.bg);
         let uid = Text::<28>::format(format_args!("ID {:08X}{:08X}{:08X}", self.system.uid[0], self.system.uid[1], self.system.uid[2]));
-        tiny(lcd, MAIN - 12 - uid.len() as i32 * TINY_W, below_rows + TINY_H, uid.as_str(), t.muted, t.bg);
+        self.set_footer(lcd, uid.as_str());
     }
 
     fn draw_system_value(&self, lcd: &mut Lcd, row: Row) {

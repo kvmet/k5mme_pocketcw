@@ -34,11 +34,11 @@ impl Ui {
         }
     }
 
-    /// Index of the focused target: the one this screen last focused, while its list holds
-    /// it, else the default.
+    /// Index of the focused target: the one a click moved to, else the default. Opening a screen
+    /// sets the default again.
     pub(super) fn focus_index(&self) -> usize {
         let targets = self.dial_targets();
-        self.dial_focus[self.screen as usize].and_then(|t| targets.iter().position(|&x| x == t)).unwrap_or(0)
+        self.dial_focus.and_then(|t| targets.iter().position(|&x| x == t)).unwrap_or(0)
     }
 
     pub(super) fn focused(&self) -> Option<Target> {
@@ -48,7 +48,7 @@ impl Ui {
     pub(super) fn focus_next(&mut self) {
         let targets = self.dial_targets();
         let next = targets.get((self.focus_index() + 1) % targets.len().max(1)).copied();
-        self.dial_focus[self.screen as usize] = next;
+        self.dial_focus = next;
     }
 
     /// Title, the dial chips, then up to one of `chips` left of them where it fits, and TX

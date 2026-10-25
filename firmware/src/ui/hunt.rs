@@ -50,6 +50,10 @@ pub(super) struct Hunting {
 }
 
 impl Hunting {
+    pub(super) fn badge(&self) -> &'static str {
+        exchange::badge(self.playing || self.queued.is_some(), self.over.as_str())
+    }
+
     pub(super) fn new(my_call: &str, seed: u32, options: Options, my_wpm: u8) -> Hunting {
         Hunting {
             bot: Hunt::new(my_call, seed, options, my_wpm),
@@ -155,9 +159,11 @@ impl Ui {
         exchange::draw_chips(lcd, t, chips);
     }
 
-    fn draw_hunt_over(&self, lcd: &mut Lcd) {
+    fn draw_hunt_over(&mut self, lcd: &mut Lcd) {
         let Some(Session::Hunt(h)) = &self.session else { return };
-        exchange::draw_over(lcd, &self.theme, h.over.as_str(), h.next_step().as_str());
+        exchange::draw_over(lcd, &self.theme, h.over.as_str());
+        let next_step = h.next_step();
+        self.set_footer(lcd, next_step.as_str());
     }
 
     pub(super) fn open_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {

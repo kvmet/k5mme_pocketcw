@@ -34,7 +34,7 @@ const DECODE_Y: i32 = 148;
 const DECODE_STEP: i32 = 18;
 /// The underline takes the bottom row of the text cell and the 2 rows under it.
 const UNDERLINE_Y: i32 = DECODE_STEP - UNDERLINE_H;
-const ROWS: usize = 5;
+const ROWS: usize = 4;
 pub(super) const KEYS: [&str; 4] = ["SET", "MEM", "OUT", "MENU"];
 
 /// What the dial sets here, in click order.
