@@ -148,6 +148,8 @@ mod app {
     /// Messages lost because the queue was full; shown on screen when nonzero.
     static DROPPED_EVENTS: AtomicU16 = AtomicU16::new(0);
     static KEY_OUT: AtomicBool = AtomicBool::new(true);
+    /// The screen open lets your key key the radio.
+    static SCREEN_KEYS: AtomicBool = AtomicBool::new(true);
     /// The radio jack takes paddle contacts instead of one keyed line; and tip and ring swapped.
     static OUT_PADDLE: AtomicBool = AtomicBool::new(false);
     static OUT_SWAP: AtomicBool = AtomicBool::new(false);
@@ -500,6 +502,11 @@ mod app {
                             send(Message::Button(Event::Press(button)));
                             send(Message::Button(Event::Release(button)));
                         }
+                        Some(SerialCommand::Hold(button)) => {
+                            send(Message::Button(Event::Press(button)));
+                            send(Message::Button(Event::Hold(button)));
+                            send(Message::Button(Event::Release(button)));
+                        }
                         Some(command) => send(Message::Serial(command)),
                         None => {}
                     }
@@ -719,7 +726,8 @@ mod app {
         let mut played = [None; PLAYERS];
         let mut pitches = [0; PLAYERS];
         cx.shared.players.lock(|players| {
-            if (keying.tip || keying.ring) && PLAYER_KEYS.load(Ordering::Relaxed) {
+            // Your key or a logging program's text stops a memory, so the two never key the radio together.
+            if (keying.tip || keying.ring || serial.down) && PLAYER_KEYS.load(Ordering::Relaxed) {
                 PLAYER_KEYS.store(false, Ordering::Relaxed);
                 players[0].stop();
             }
@@ -743,7 +751,8 @@ mod app {
         let output = if OUT_PADDLE.load(Ordering::Relaxed) { Output::Paddle } else { Output::Straight };
         let (dit, dah) = keying.paddles(mode.dit_on_ring(swap));
         let lines = output_lines(output, OUT_SWAP.load(Ordering::Relaxed), keyed, dit, dah);
-        let on = KEY_OUT.load(Ordering::Relaxed);
+        // A logging program keys the radio on every screen; your key only where the screen lets it.
+        let on = KEY_OUT.load(Ordering::Relaxed) && (SCREEN_KEYS.load(Ordering::Relaxed) || serial_active || serial.down);
         let key_out = (lines.0 && on, lines.1 && on);
         if key_out != *cx.local.key_out {
             *cx.local.key_out = key_out;
@@ -900,7 +909,7 @@ mod app {
             edges &= SERIAL_OPEN.load(Ordering::Relaxed);
             if hotline && !SERIAL_OPEN.load(Ordering::Relaxed) {
                 hotline = false;
-                show_hotline(&ui, &mut lcd, hotline);
+                show_hotline(&mut ui, &mut lcd, hotline);
             }
             match received {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
@@ -929,7 +938,7 @@ mod app {
                 }
                 Ok(Ok(Message::Serial(SerialCommand::Hotline(on)))) => {
                     hotline = on;
-                    show_hotline(&ui, &mut lcd, hotline);
+                    show_hotline(&mut ui, &mut lcd, hotline);
                 }
                 Ok(Ok(Message::Serial(SerialCommand::Say(text)))) => {
                     let said = match ui.pack() {
@@ -954,7 +963,7 @@ mod app {
                 Ok(Err(_)) => unreachable!("the tick task holds the sender forever"),
                 Err(_) => {
                     if save_at.is_some_and(|at| at <= Mono::now()) {
-                        save(&ui, &mut lcd, &mut bus, &settings);
+                        save(&mut ui, &mut lcd, &mut bus, &settings);
                         save_at = None;
                     }
                     if poll_at <= Mono::now() {
@@ -962,7 +971,7 @@ mod app {
                         poll_at = Mono::now() + POLL_MS.millis();
                         save_battery(&mut ui, &mut lcd, &mut bus);
                         if ui.battery_empty() {
-                            ui.status(&mut lcd, "BATTERY EMPTY: POWERING OFF");
+                            ui.alert(&mut lcd, "BATTERY EMPTY: POWERING OFF");
                             Mono::delay(EMPTY_NOTICE_MS.millis()).await;
                             power_off(&mut ui, &mut lcd, &mut bus, &settings, save_at.is_some());
                         }
@@ -997,6 +1006,10 @@ mod app {
                             if i == 0 {
                                 PLAYER_KEYS.store(p.transmit, Ordering::Relaxed);
                             }
+                            // A memory you press cancels a logging program's text, as your key does.
+                            if p.transmit {
+                                cx.shared.serial_key.lock(sender::Sender::clear);
+                            }
                             players[i].start(p.text.as_str(), p.keying, p.seed, p.delay_ms, p.pitch_hz);
                             PLAYS_STARTED.fetch_add(1, Ordering::Relaxed);
                             emit(&mut chunks, Text::<CHUNK_LEN>::format(format_args!("PLAY {}\n", p.text.as_str())).as_str());
@@ -1022,6 +1035,7 @@ mod app {
                 cx.shared.link.lock(|link| link.send(command.as_str().as_bytes()));
             }
             LISTENING.store(ui.listening(), Ordering::Relaxed);
+            SCREEN_KEYS.store(ui.screen_keys_radio(), Ordering::Relaxed);
             let band = ui.band();
             cx.shared.audio.lock(|audio| {
                 audio.synth.set_band(band);
@@ -1066,7 +1080,7 @@ mod app {
         match message {
             Message::Button(event) => match input.map(event) {
                 None => {}
-                Some(Action::PowerHold) => ui.status(lcd, "RELEASE TO POWER OFF"),
+                Some(Action::PowerHold) => ui.alert(lcd, "RELEASE TO POWER OFF"),
                 Some(Action::PowerOff) => power_off(ui, lcd, bus, settings, unsaved),
                 Some(Action::PowerCancel) => ui.status(lcd, ""),
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
@@ -1140,7 +1154,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) | SerialCommand::Hold(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }
@@ -1167,7 +1181,7 @@ mod app {
         }
     }
 
-    fn show_hotline(ui: &Ui, lcd: &mut Lcd, on: bool) {
+    fn show_hotline(ui: &mut Ui, lcd: &mut Lcd, on: bool) {
         HOTLINE.store(on, Ordering::Relaxed);
         ui.status(lcd, if on { "HOTLINE ON" } else { "HOTLINE OFF" });
     }
@@ -1340,17 +1354,17 @@ mod app {
         })
     }
 
-    fn save(ui: &Ui, lcd: &mut Lcd, bus: &mut I2c, settings: &Settings) -> bool {
+    fn save(ui: &mut Ui, lcd: &mut Lcd, bus: &mut I2c, settings: &Settings) -> bool {
         report(ui, lcd, store::write_settings(bus, settings), "SETTINGS NOT SAVED")
     }
 
     /// Writes `record`, or shows `failure` on the status line.
-    fn save_record(ui: &Ui, lcd: &mut Lcd, bus: &mut I2c, address: u16, record: &[u8], failure: &str) -> bool {
+    fn save_record(ui: &mut Ui, lcd: &mut Lcd, bus: &mut I2c, address: u16, record: &[u8], failure: &str) -> bool {
         report(ui, lcd, store::write(bus, address, record), failure)
     }
 
     /// Shows `failure` on the status line unless `saved`.
-    fn report(ui: &Ui, lcd: &mut Lcd, saved: bool, failure: &str) -> bool {
+    fn report(ui: &mut Ui, lcd: &mut Lcd, saved: bool, failure: &str) -> bool {
         if !saved {
             ui.status(lcd, failure);
         }

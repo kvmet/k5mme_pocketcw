@@ -17,7 +17,7 @@ pub const SHOWN_LEN: usize = 12;
 pub const REASON_LEN: usize = 160;
 
 /// Each setting's name: its settings row, with `_` for a space.
-const SETTINGS: [(&str, Field); 23] = [
+const SETTINGS: [(&str, Field); 24] = [
     ("MODE", Field::Mode),
     ("PADDLES", Field::Swap),
     ("SPEED", Field::Speed),
@@ -41,9 +41,9 @@ const SETTINGS: [(&str, Field); 23] = [
     ("STYLE", Field::Style),
     ("PALETTE", Field::Palette),
     ("BRIGHTNESS", Field::Brightness),
+    ("F1_HOLD", Field::Shortcut),
 ];
 const MEMORY_NAMES: [&str; memories::SLOTS] = ["M1", "M2", "M3", "M4"];
-const REPEAT_NAMES: [&str; memories::SLOTS] = ["M1_REPEAT", "M2_REPEAT", "M3_REPEAT", "M4_REPEAT"];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Name {
@@ -51,8 +51,6 @@ pub enum Name {
     Call,
     /// A memory's text.
     Memory(usize),
-    /// Whether a memory repeats.
-    Repeat(usize),
     /// Seconds between repeats.
     Every,
     /// The MEM row stays open after a send.
@@ -70,8 +68,7 @@ impl Name {
                 .iter()
                 .find(|(n, _)| *n == name)
                 .map(|&(_, field)| Name::Setting(field))
-                .or_else(|| slot(&MEMORY_NAMES).map(Name::Memory))
-                .or_else(|| slot(&REPEAT_NAMES).map(Name::Repeat)),
+                .or_else(|| slot(&MEMORY_NAMES).map(Name::Memory)),
         }
     }
 
@@ -80,7 +77,6 @@ impl Name {
             Name::Setting(field) => SETTINGS.iter().find(|&&(_, f)| f == field).map_or("", |&(n, _)| n),
             Name::Call => "CALL",
             Name::Memory(i) => MEMORY_NAMES[i],
-            Name::Repeat(i) => REPEAT_NAMES[i],
             Name::Every => "MEM_EVERY",
             Name::StayOpen => "MEM_STAY_OPEN",
         }
@@ -89,9 +85,7 @@ impl Name {
     /// Every name, in the order a plain GET lists them.
     pub fn all() -> impl Iterator<Item = Name> {
         let slots = 0..memories::SLOTS;
-        SETTINGS.iter().map(|&(_, field)| Name::Setting(field)).chain([Name::Call]).chain(slots.clone().map(Name::Memory)).chain(
-            slots.map(Name::Repeat).chain([Name::Every, Name::StayOpen]),
-        )
+        SETTINGS.iter().map(|&(_, field)| Name::Setting(field)).chain([Name::Call]).chain(slots.map(Name::Memory)).chain([Name::Every, Name::StayOpen])
     }
 }
 
@@ -110,7 +104,6 @@ pub fn get(name: Name, s: &Settings, m: &Memories, show: impl Fn(&Settings, Fiel
         Name::Setting(field) => Text::format(format_args!("{}", bare(show(s, field).as_str()))),
         Name::Call => Text::format(format_args!("{}", s.callsign())),
         Name::Memory(i) => Text::format(format_args!("{}", m.text(i))),
-        Name::Repeat(i) => Text::format(format_args!("{}", on_off(m.repeats[i]))),
         Name::Every => Text::format(format_args!("{}", m.every_s)),
         Name::StayOpen => Text::format(format_args!("{}", on_off(m.stay_open))),
     }
@@ -161,7 +154,6 @@ pub fn set(
             }
             *m = set;
         }
-        Name::Repeat(i) => m.repeats[i] = on.ok_or_else(|| Text::format(format_args!("ON OR OFF")))?,
         Name::StayOpen => m.stay_open = on.ok_or_else(|| Text::format(format_args!("ON OR OFF")))?,
         Name::Every => match value.parse::<u8>() {
             Ok(every_s) if (memories::MIN_EVERY_S..=memories::MAX_EVERY_S).contains(&every_s) => m.every_s = every_s,
@@ -324,7 +316,7 @@ mod tests {
         for name in Name::all() {
             assert_eq!(Name::parse(name.as_str()), Some(name));
         }
-        assert_eq!(Name::all().count(), SETTINGS.len() + 1 + 2 * memories::SLOTS + 2);
+        assert_eq!(Name::all().count(), SETTINGS.len() + 1 + memories::SLOTS + 2);
         assert_eq!(Name::parse("SPEED"), Some(Name::Setting(Field::Speed)));
         assert_eq!(Name::parse("M3"), Some(Name::Memory(2)));
         assert_eq!(Name::parse("speed"), None);
@@ -396,16 +388,14 @@ mod tests {
         let (mut s, mut m) = (usb_on(), Memories::new("K5MME"));
         let mut put = |name: &str, value: &str| set(Name::parse(name).unwrap(), value, &mut s, &mut m, show);
         assert_eq!(put("M2", "CQ  TEST <AR>"), Ok(()));
-        assert_eq!(put("M2_REPEAT", "ON"), Ok(()));
         assert_eq!(put("MEM_EVERY", "9"), Ok(()));
         assert_eq!(put("MEM_STAY_OPEN", "ON"), Ok(()));
         assert_eq!(put("M2", "CQ ~"), reason("NO MORSE FOR ~"));
         assert_eq!(put("M2", &"E".repeat(memories::LEN + 1)), reason("UP TO 48 CHARACTERS; A PROSIGN TAKES 4"));
         assert_eq!(put("MEM_EVERY", "31"), reason("2 TO 30"));
-        assert_eq!(put("M1_REPEAT", "YES"), reason("ON OR OFF"));
-        assert_eq!((m.text(1), m.repeats[1], m.every_s, m.stay_open), ("CQ TEST <AR>", true, 9, true));
+        assert_eq!(put("MEM_STAY_OPEN", "YES"), reason("ON OR OFF"));
+        assert_eq!((m.text(1), m.every_s, m.stay_open), ("CQ TEST <AR>", 9, true));
         assert_eq!(get(Name::Memory(1), &s, &m, show).as_str(), "CQ TEST <AR>");
-        assert_eq!(get(Name::Repeat(1), &s, &m, show).as_str(), "ON");
     }
 
     #[test]

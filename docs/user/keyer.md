@@ -9,12 +9,12 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 | Large digits | Your sending speed in WPM, 5 to 60. |
 | TONE | The sidetone pitch in Hz. |
 | VOL | The volume, 0 to 44. 0 is off. |
-| OUT | KEY OUT: ON when the func jack keys, OFF when it does not. |
+| OUT | KEY OUT: ON when your key keys the func jack, OFF when it does not. While it is ON, the header shows `TX`. |
 | DIT | The length of one dot at your speed, in milliseconds. |
 | Bar | Your speed between 5 and 60 WPM. |
 | Timing tape | Your keying drawn to scale. See below. |
 | Statistics line | Your average gaps and speed. See below. |
-| Decode | Five lines of what your keying decodes to. |
+| Decode | Four lines of what your keying decodes to. |
 
 A small mark under a value shows which value the dial sets: speed, volume or tone.
 
@@ -43,7 +43,7 @@ Each grade also has its own shape, so you can read the grades without color.
 
 ### Statistics line
 
-`CHR` and `WRD` are your average character gap and word gap in units (ideal: 3 and 7). `RATIO` is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. F2 (CLR) on the [Timing](timing.md) screen clears these statistics.
+`CHR` and `WRD` are your average character gap and word gap in units (ideal: 3 and 7). `RATIO` is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. Hold F2 (CLEAR) on the [Timing](timing.md) screen to clear these statistics.
 
 ### Decode
 
@@ -53,7 +53,7 @@ Each character has an underline in its grade: a thin line for good, a dashed lin
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the KEYER tab. |
+| F1 (SET) | Opens the settings at the KEYER section. |
 | F2 (MEM) | Opens the memory row. See [Memories](memories.md). |
 | F3 (OUT) | Turns KEY OUT on or off. |
 | F4 (MENU) | Opens the [menu](menu.md). |

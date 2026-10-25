@@ -393,8 +393,9 @@ impl Theme {
     }
 
     /// The F1..F4 labels, up to four characters, in the column beside the keys and under the
-    /// header. An empty label marks an unused key.
-    pub fn softkeys(&self, lcd: &mut Lcd, labels: [&str; 4]) {
+    /// header. An empty label marks an unused key. `holds` names what holding each key does,
+    /// up to six characters, in place of or under the key's name.
+    pub fn softkeys(&self, lcd: &mut Lcd, labels: [&str; 4], holds: [&str; 4]) {
         const KEY_NAMES: [&str; 4] = ["F1", "F2", "F3", "F4"];
         let x = MAIN;
         match self.style {
@@ -402,12 +403,13 @@ impl Theme {
                 let column = mix(self.bg, Rgb565::WHITE, 4);
                 rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, column);
                 rect(lcd, x, HEADER_H, 1, HEIGHT as i32 - HEADER_H, mix(self.fg, self.bg, 80));
-                for (i, label) in labels.iter().enumerate() {
+                for (i, (label, hold)) in labels.iter().zip(holds).enumerate() {
                     let y = HEADER_H + i as i32 * KEY_SLOT;
                     if i > 0 {
                         rect(lcd, x + 1, y, KEYS_W - 1, 1, mix(self.fg, self.bg, 86));
                     }
                     tiny(lcd, x + 32, y + 9, KEY_NAMES[i], mix(self.fg, self.bg, 60), column);
+                    tiny(lcd, x + 4, y + 41, hold, self.muted, column);
                     if label.is_empty() {
                         text(lcd, x + 14, y + 25, "--", mix(self.fg, self.bg, 75), column);
                         continue;
@@ -420,30 +422,39 @@ impl Theme {
             Style::Hud => {
                 rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, self.bg);
                 rect(lcd, x, HEADER_H + 4, 1, HEIGHT as i32 - HEADER_H - 8, self.dim);
-                for (i, label) in labels.iter().enumerate() {
+                for (i, (label, hold)) in labels.iter().zip(holds).enumerate() {
                     let y = HEADER_H + i as i32 * KEY_SLOT;
                     if label.is_empty() {
                         text(lcd, x + 14, y + 18, "--", self.dim, self.bg);
+                        tiny(lcd, x + 4, y + 35, hold, self.muted, self.bg);
                         continue;
                     }
                     let color = if self.flag { self.stripe(i, 4) } else { self.accent };
                     brackets(lcd, x + 3, y + 3, 43, 48, color, 5);
                     text(lcd, x + 4, y + 18, label, self.fg, self.bg);
-                    tiny(lcd, x + 18, y + 35, KEY_NAMES[i], self.muted, self.bg);
+                    match hold {
+                        "" => tiny(lcd, x + 18, y + 35, KEY_NAMES[i], self.muted, self.bg),
+                        hold => tiny(lcd, x + 4, y + 35, hold, self.muted, self.bg),
+                    }
                 }
             }
             Style::Block => {
                 rect(lcd, x, HEADER_H, KEYS_W, HEIGHT as i32 - HEADER_H, self.bg);
-                for (i, label) in labels.iter().enumerate() {
+                for (i, (label, hold)) in labels.iter().zip(holds).enumerate() {
                     let y = HEADER_H + i as i32 * KEY_SLOT;
                     if label.is_empty() {
-                        rect(lcd, x + 3, y + 3, 44, KEY_SLOT - 6, mix(self.fg, self.bg, 90));
+                        let unused = mix(self.fg, self.bg, 90);
+                        rect(lcd, x + 3, y + 3, 44, KEY_SLOT - 6, unused);
+                        tiny(lcd, x + 5, y + 6, hold, self.muted, unused);
                         continue;
                     }
                     let color = self.alternate(i, 4);
                     let on = ink(color);
                     rect(lcd, x + 3, y + 3, 44, KEY_SLOT - 6, color);
-                    tiny(lcd, x + 6, y + 6, KEY_NAMES[i], mix(color, on, 55), color);
+                    match hold {
+                        "" => tiny(lcd, x + 6, y + 6, KEY_NAMES[i], mix(color, on, 55), color),
+                        hold => tiny(lcd, x + 5, y + 6, hold, mix(color, on, 55), color),
+                    }
                     text(lcd, x + 4, y + 28, label, on, color);
                 }
             }

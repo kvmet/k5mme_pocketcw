@@ -29,7 +29,7 @@ pub enum Event {
 pub const DEBOUNCE_MS: u16 = 8;
 const REPEAT_DELAY_MS: u16 = 400;
 const REPEAT_MS: u16 = 80;
-const HOLD_MS: u16 = 800;
+const HOLD_MS: u16 = 500;
 /// Power-off hold time: well past a click, which the dial uses to move focus.
 pub const CLICK_HOLD_MS: u16 = 1000;
 /// The dial press also closes the dial-left contact; ignore left this long after a press ends.

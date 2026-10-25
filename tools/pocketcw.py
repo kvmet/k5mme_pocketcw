@@ -6,7 +6,8 @@ usage: python3 -I tools/pocketcw.py [--port PORT] STEP...
 
 Steps run in order:
   F1 F2 F3 F4 LEFT RIGHT CLICK   press and release that button
-  shot FILE.png                  save the screen
+  hold F1                        hold an F button past its hold time, then release it
+  shot FILE.png                 save the screen
   wait MS                        pause, for screens that change on their own
   send TEXT                      key TEXT and wait until it is sent
   expect REGEX                   wait up to 60 s for an event line that matches
@@ -91,6 +92,12 @@ class Device:
             if b not in BUTTONS:
                 raise ValueError(f'no button {b}')
             self._write(f'PRESS {b}\n')
+
+    def hold(self, *buttons):
+        for b in buttons:
+            if b not in BUTTONS[:4]:
+                raise ValueError(f'only F1 to F4 hold, not {b}')
+            self._write(f'HOLD {b}\n')
 
     def shot(self, path=None):
         """The screen as (width, height, 8-bit RGB bytes); saved as a PNG when `path` is given."""
@@ -337,12 +344,14 @@ def png(width, height, rgb):
 
 
 # Menu rows from the top. RADIO shows only with the decoder board on, so it is left out.
-MENU = ['KEYER', 'TIMING', 'RECEIVE', 'POTA', 'SOTA', 'HUNT', 'LETTERS', 'PROGRESS', 'SETTINGS', 'SYSTEM']
-SETTINGS_TABS = ['keyer', 'sound', 'recv', 'qso', 'theme', 'call', 'mem']
-# F2 on a drill opens the next one, in this order. The first three are answered; the ragchews
-# run until one over ends.
-ANSWERED = ['receive-koch', 'receive-words', 'receive-calls']
-RAGCHEWS = ['ragchew', 'ragchew-quiz']
+# The menu lists, without the rows that show only sometimes: RESUME at the top of the top list,
+# while a practice is paused, and RADIO at the end of ON AIR, with the decoder board on.
+TOP = ['RECEIVE', 'ON AIR', 'TIMING', 'STATS', 'SETTINGS', 'SYSTEM']
+RECEIVE = ['KOCH', 'WORDS', 'CALLS', 'NINJA', 'HEAD']
+ON_AIR = ['POTA', 'SOTA', 'HUNT', 'CHEW', 'QUIZ']
+STATS = ['LETTERS', 'PROGRESS']
+SETTINGS_SECTIONS = ['keyer', 'sound', 'hear', 'drills', 'qso', 'memories', 'callsign', 'device', 'theme']
+# Long enough for a ragchew over to end.
 OVER_S = 45
 # Long enough for a QSO to send its first text.
 QSO_S = 4
@@ -356,27 +365,21 @@ class Screens:
     def __init__(self, device, out_dir):
         self.d = device
         self.out_dir = out_dir
-        # The menu keeps its selection between visits; None until it is known.
-        self.row = None
 
     def shot(self, name):
         path = os.path.join(self.out_dir, name + '.png')
         self.d.shot(path)
         print(path, flush=True)
 
-    def top_of_menu(self):
-        self.d.press(*['LEFT'] * (len(MENU) - 1))
-        self.row = 0
-
-    def open(self, name):
-        """From the menu: opens row `name`."""
-        target = MENU.index(name)
-        if self.row is None:
-            self.top_of_menu()
-        move = target - self.row
+    def open(self, rows, name):
+        """From a menu list of `rows`: opens row `name`. The top list counts from its end, so
+        RESUME at its top does not move the count."""
         self.d.drain()
-        self.d.press(*(['RIGHT'] * move if move > 0 else ['LEFT'] * -move), 'CLICK')
-        self.row = target
+        if rows is TOP:
+            moves = ['RIGHT'] * len(rows) + ['LEFT'] * (len(rows) - 1 - rows.index(name))
+        else:
+            moves = ['LEFT'] * len(rows) + ['RIGHT'] * rows.index(name)
+        self.d.press(*moves, 'CLICK')
 
     def answer_group(self):
         """Keys back the next group the drill sends, once it has played."""
@@ -391,49 +394,54 @@ class Screens:
         d.press('F2')
         self.shot('keyer-mem')
         d.press('CLICK', 'F4')
-        self.top_of_menu()
         self.shot('menu')
 
-        self.open('TIMING')
+        self.open(TOP, 'TIMING')
         self.shot('timing')
-        # TIMING goes back to KEYER, and KEYER to the menu.
-        d.press('F4', 'F4')
-
-        self.open('RECEIVE')
-        for i, name in enumerate(ANSWERED):
-            if i:
-                d.drain()
-                d.press('F2')
-            self.answer_group()
-            self.shot(name)
-        for name in RAGCHEWS:
-            d.press('F2')
-            time.sleep(OVER_S)
-            self.shot(name)
         d.press('F4')
 
-        for name in ['POTA', 'SOTA', 'HUNT']:
-            self.open(name)
-            time.sleep(QSO_S)
+        # BACK on a practice opens its list; BACK on a list opens the top list.
+        self.open(TOP, 'RECEIVE')
+        self.shot('menu-receive')
+        for name in RECEIVE:
+            self.open(RECEIVE, name)
+            self.answer_group()
+            self.shot('receive-' + name.lower())
+            d.press('F4')
+        d.press('F4')
+
+        self.open(TOP, 'ON AIR')
+        self.shot('menu-on-air')
+        for name in ON_AIR:
+            self.open(ON_AIR, name)
+            time.sleep(OVER_S if name in ('CHEW', 'QUIZ') else QSO_S)
             self.shot(name.lower())
             d.press('F4')
+        d.press('F4')
 
-        for name in ['LETTERS', 'PROGRESS', 'SYSTEM']:
-            self.open(name)
+        self.open(TOP, 'STATS')
+        for name in STATS:
+            self.open(STATS, name)
             self.shot(name.lower())
             d.press('F4')
+        d.press('F4')
 
-        self.open('SETTINGS')
-        for i, tab in enumerate(SETTINGS_TABS):
+        self.open(TOP, 'SYSTEM')
+        self.shot('system')
+        d.press('F4')
+
+        self.open(TOP, 'SETTINGS')
+        # F3 (NEXT) opens each section in turn.
+        for i, section in enumerate(SETTINGS_SECTIONS):
             if i:
-                d.press('F1')
-            self.shot('settings-' + tab)
+                d.press('F3')
+            self.shot('settings-' + section)
         d.press('F4', 'F4')
 
 
 # How many values each step takes.
 STEP_VALUES = {
-    'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
+    'hold': 1, 'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
     'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2,
 }
 
@@ -453,6 +461,8 @@ def steps(args):
             sys.exit(f'{word} takes milliseconds, not {values[0]}')
         if word in ('send', 'play') and len(values[0]) > MAX_SEND:
             sys.exit(f'{word} takes {MAX_SEND} characters at most, not {len(values[0])}')
+        if word == 'hold' and values[0] not in BUTTONS[:4]:
+            sys.exit(f'hold takes F1 to F4, not {values[0]}')
         if word == 'stats' and values[0] not in STATS_SAVERS:
             sys.exit(f'stats takes letters, progress or timing, not {values[0]}')
         out.append((word, values))
@@ -464,6 +474,8 @@ def run(d, plan):
         value = values[0] if values else None
         if step in BUTTONS:
             d.press(step)
+        elif step == 'hold':
+            d.hold(value)
         elif step == 'shot':
             width, height, _ = d.shot(value)
             print(f'{value}: {width} x {height}')

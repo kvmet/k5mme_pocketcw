@@ -14,7 +14,7 @@ use pocketcw_logic::{
 
 use super::exchange::{self, Chip, RULE_Y};
 use super::transcript::{self, Entry};
-use super::{Play, Screen, Session, Ui, push_scrolling, settings::QSO_TAB};
+use super::{Play, Screen, Session, Ui, push_scrolling, settings::Section};
 use crate::gfx::rect;
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -50,6 +50,10 @@ pub(super) struct Hunting {
 }
 
 impl Hunting {
+    pub(super) fn badge(&self) -> &'static str {
+        exchange::badge(self.playing || self.queued.is_some(), self.over.as_str())
+    }
+
     pub(super) fn new(my_call: &str, seed: u32, options: Options, my_wpm: u8) -> Hunting {
         Hunting {
             bot: Hunt::new(my_call, seed, options, my_wpm),
@@ -62,6 +66,14 @@ impl Hunting {
             hint: false,
             last: None,
         }
+    }
+
+    pub(super) fn pause(&mut self) {
+        self.queued = None;
+        self.playing = false;
+        self.over.clear();
+        self.over_deadline = None;
+        self.cq_deadline = None;
     }
 
     fn queue(&mut self, tx: Tx) {
@@ -94,8 +106,8 @@ impl Hunting {
 impl Ui {
     pub(super) fn draw_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        self.header(lcd, s, "HUNT", &[s.callsign()]);
-        t.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        self.header(lcd, s, "HUNT", &[]);
+        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_hunt_lines(lcd);
         self.draw_hunt_state(lcd);
@@ -147,9 +159,11 @@ impl Ui {
         exchange::draw_chips(lcd, t, chips);
     }
 
-    fn draw_hunt_over(&self, lcd: &mut Lcd) {
+    fn draw_hunt_over(&mut self, lcd: &mut Lcd) {
         let Some(Session::Hunt(h)) = &self.session else { return };
-        exchange::draw_over(lcd, &self.theme, h.over.as_str(), h.next_step().as_str());
+        exchange::draw_over(lcd, &self.theme, h.over.as_str());
+        let next_step = h.next_step();
+        self.set_footer(lcd, next_step.as_str());
     }
 
     pub(super) fn open_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
@@ -234,16 +248,7 @@ impl Ui {
 
     pub(super) fn hunt_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => {
-                if let Some(Session::Hunt(h)) = &mut self.session {
-                    h.queued = None;
-                    h.playing = false;
-                    h.over.clear();
-                    h.over_deadline = None;
-                    h.cq_deadline = None;
-                }
-                self.open_settings_at(lcd, s, QSO_TAB);
-            }
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Qso),
             Action::Soft(1) => {
                 self.hunt_answer("QRS");
                 self.draw_hunt_lines(lcd);
@@ -256,14 +261,14 @@ impl Ui {
                 self.draw_hunt_state(lcd);
                 self.draw_hunt_over(lcd);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }
 
     /// Back from settings: the activator takes the new options and sends its last over again.
     pub(super) fn hunt_resume(&mut self, lcd: &mut Lcd, s: &Settings) {
-        let Some(Session::Hunt(h)) = &mut self.session else { return self.open(lcd, s, Screen::Menu) };
+        let Some(Session::Hunt(h)) = &mut self.session else { return self.back(lcd, s) };
         h.bot.set_options(Self::qso_options(s), s.wpm);
         h.bot.set_call(s.callsign());
         let calling = h.bot.phase == Phase::Calling;

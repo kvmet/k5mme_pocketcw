@@ -2,7 +2,7 @@
 
 The PROGRESS screen shows your practice over recent sessions. A session is one time the device is on, from turn on to turn off. The device has no clock, so sessions take the place of days.
 
-Open 08 PROGRESS in the [menu](menu.md). The header shows how many sessions the device keeps, such as `12 SESSIONS`.
+Open STATS in the [menu](menu.md), then PROGRESS. The header shows how many sessions the device keeps, such as `12 SESSIONS`.
 
 The device keeps the last 32 sessions. A session starts to count at the first thing you do, so a turn on with no practice does not take a place. When all 32 places are full, a new session replaces the oldest.
 
@@ -39,7 +39,7 @@ Before your first session, the chart says `NOTHING YET: START KEYING`.
 | - | - |
 | F1, F3 | Nothing. |
 | F2 (LTRS) | Opens [Letters](letters.md). |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

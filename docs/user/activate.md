@@ -2,14 +2,14 @@
 
 On this screen you are the activator on a park (POTA) or a summit (SOTA). You call CQ, a pileup of hunters answers, and you work the hunters one at a time. The device reads each over you send and answers the way hunters do on the air.
 
-Open 04 POTA or 05 SOTA in the [menu](menu.md). The header shows QSO, the program, and the RCV, SND and VOL values.
+Open ON AIR in the [menu](menu.md), then POTA or SOTA. The header shows the program and the RCV, SND and VOL values.
 
 | Program | QSOs for a valid activation | You sign with |
 | - | - | - |
 | POTA | 10 | 72 |
 | SOTA | 4 | 73 |
 
-Set your callsign first on the CALL tab of the [settings](settings.md). The hunters listen for it.
+Set your callsign first in the CALLSIGN section of the [settings](settings.md#callsign). The hunters listen for it.
 
 ## Work a QSO
 
@@ -51,13 +51,13 @@ Under the transcript:
 
 `...` marks an item with no value yet.
 
-Under the items, your over shows as you key it. The footer shows the next step. With HINT on, the footer shows the exact text to send.
+Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the hunters send, `YOUR TURN` while they wait for you, and `PAUSE ENDS` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
-Band noise and fading play on this screen when you set them on the SOUND tab.
+Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 
 ## Pileup settings
 
-The QSO tab of the [settings](settings.md) sets how the hunters behave:
+The QSO section of the [settings](settings.md#qso) sets how the hunters behave:
 
 | Setting | Values |
 | - | - |
@@ -73,10 +73,10 @@ Hunters send between 8 and 40 WPM. Each hunter sends at its own pitch, up to 200
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Stops the hunters and opens the settings at the QSO tab. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings. |
+| F1 (SET) | Stops the hunters and opens the settings at the QSO section. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings. |
 | F2 (QRS) | The same as sending `QRS`. |
 | F3 (HINT) | Shows or hides the hidden text and the exact next step. |
-| F4 (BACK) | Opens the [menu](menu.md). The activation ends, and the log starts from zero next time. |
+| F4 (BACK) | Pauses the activation and opens the ON AIR list of the [menu](menu.md). Click POTA or SOTA, or RESUME, to go on: the hunters send their last transmission again. The log stays while the device is on, until you start other practice. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

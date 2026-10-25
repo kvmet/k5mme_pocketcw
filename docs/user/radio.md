@@ -6,9 +6,9 @@ No one has tried PocketCW on a Pro model yet. This screen follows the vendor fir
 
 ## Turn the decoder board on
 
-1. Open the settings, and go to the RECV tab. See [Settings](settings.md).
+1. Open the settings, and go to the DEVICE section. See [Settings](settings.md).
 2. Set DECODER BOARD to ON. The device powers the decoder board.
-3. The menu now shows row 11 RADIO. Open it.
+3. The ON AIR list of the menu now shows the RADIO row. Open it.
 
 On a model without a decoder board, keep DECODER BOARD OFF. The setting is OFF by default.
 
@@ -34,10 +34,10 @@ The device decodes only while the RADIO screen is open, or on every screen while
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the RECV tab. F4 (BACK) there returns to this screen. |
+| F1 (SET) | Opens the settings at the DEVICE section. F4 (BACK) there returns to this screen. |
 | F2 (FILT) | Changes the filter setting of the board: 0, 1, 2, then 0 again. |
 | F3 (NR) | Changes the noise reduction level of the board: 0 to 6, then 0 again. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Opens the ON AIR list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

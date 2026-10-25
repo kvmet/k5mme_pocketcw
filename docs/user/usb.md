@@ -1,6 +1,6 @@
 # USB keyboard
 
-The device can show up on a computer, phone or tablet as a USB keyboard and a serial port. Set USB OUT on the KEYER tab of the [settings](settings.md#keyer-tab).
+The device can show up on a computer, phone or tablet as a USB keyboard and a serial port. Set USB OUT in the DEVICE section of the [settings](settings.md#device).
 
 | USB OUT | What the computer gets |
 | - | - |
@@ -51,7 +51,7 @@ The device types each character that it decodes from the [decoder board](radio.m
 
 ## VBAND
 
-VBAND sends your keying the way the VBand USB adapter does. In VBand, set the key type to match MODE on the KEYER tab.
+VBAND sends your keying the way the VBand USB adapter does. In VBand, set the key type to match MODE in the KEYER section of the settings.
 
 | MODE | The device sends | Set VBand to |
 | - | - | - |
@@ -85,7 +85,7 @@ A logging program can key through the device as if it were a K1EL WinKeyer. The 
 
 The screen shows `WINKEYER OPEN` when the program takes the port, and `WINKEYER CLOSED` when it lets go.
 
-- The text keys at the program's speed. When the program sets a speed, SPEED on the KEYER tab changes to it and is saved.
+- The text keys at the program's speed. When the program sets a speed, SPEED in the KEYER section of the settings changes to it and is saved.
 - The text keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT.
 - Touch your key to stop the program's text. Your keying goes to the radio as usual, and the device tells the program you broke in.
 - The device sends back each character it keys, and each character you key, when the program asks for that.

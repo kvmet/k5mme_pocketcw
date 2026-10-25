@@ -11,6 +11,8 @@ pub enum Command {
     Shot,
     /// Press and release a button.
     Press(Button),
+    /// Press an F key, hold it past its hold time, and release it.
+    Hold(Button),
     /// Key this text, upper case, as a straight key at the keyer speed.
     Send(Text<MAX_TEXT>),
     /// Send the firmware version, the screen and the panel.
@@ -120,6 +122,9 @@ fn parse(line: &[u8]) -> Command {
         upper(text).map_or(Command::TooLong, Command::Say)
     } else if let Some(button) = line.strip_prefix(b"PRESS ") {
         BUTTON_NAMES.iter().find(|(n, _)| *n == button).map_or(Command::Unknown, |&(_, b)| Command::Press(b))
+    } else if let Some(button) = line.strip_prefix(b"HOLD ") {
+        // Only the F keys: a held dial click powers off.
+        BUTTON_NAMES[..4].iter().find(|(n, _)| *n == button).map_or(Command::Unknown, |&(_, b)| Command::Hold(b))
     } else if let Some(n) = line.strip_prefix(b"GET ") {
         name(n).map_or(Command::Unknown, |n| Command::Get(Some(n)))
     } else if let Some(rest) = line.strip_prefix(SET) {
@@ -206,6 +211,15 @@ mod tests {
             let mut line = CommandLine::default();
             let found = [b"PRESS ".as_slice(), name, b"\n"].concat().iter().find_map(|&b| line.push(b));
             assert_eq!(found, Some(Command::Press(button)));
+        }
+    }
+
+    #[test]
+    fn hold_takes_only_the_f_keys() {
+        assert_eq!(one("HOLD F1\n"), Command::Hold(Button::F1));
+        assert_eq!(one("HOLD F4\n"), Command::Hold(Button::F4));
+        for line in ["HOLD CLICK\n", "HOLD LEFT\n", "HOLD F5\n", "HOLD\n"] {
+            assert_eq!(one(line), Command::Unknown, "{line:?}");
         }
     }
 

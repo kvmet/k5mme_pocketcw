@@ -7,7 +7,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::{Screen, Ui, char_cells, draw_char, settings::RECEIVE_TAB};
+use super::{Ui, char_cells, draw_char, settings::Section};
 use crate::fonts::SMALL;
 use crate::gfx::{self, CHAR_W, TINY_W, rect, tiny};
 use crate::lcd::Lcd;
@@ -26,7 +26,7 @@ impl Ui {
         let t = &self.theme;
         let level = Text::<10>::format(format_args!("KOCH {}", self.letters.level));
         self.header(lcd, s, "LETTERS", &[level.as_str()]);
-        t.softkeys(lcd, ["SET", "CLR", "DRIL", "BACK"]);
+        self.softkeys(lcd, ["SET", "", "DRIL", "BACK"]);
         for (i, &c) in KOCH.iter().enumerate() {
             let x = 2 + (i % PER_ROW) as i32 * TILE_W;
             let y = GRID_Y + (i / PER_ROW) as i32 * (TILE_H + 2);
@@ -71,19 +71,10 @@ impl Ui {
 
     pub(super) fn letters_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(1) if self.confirm_clear => {
-                self.letters.clear_stats();
-                self.confirm_clear = false;
-                self.draw(lcd, s);
-            }
-            Action::Soft(1) => {
-                self.confirm_clear = true;
-                self.status(lcd, "CLR AGAIN TO ERASE STATS");
-            }
-            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
             Action::Soft(2) => self.open_receive(lcd, s, Kind::Koch),
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
-            _ => self.confirm_clear = false,
+            Action::Soft(3) => self.back(lcd, s),
+            _ => {}
         }
     }
 }

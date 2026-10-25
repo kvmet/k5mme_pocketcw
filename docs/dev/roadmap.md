@@ -169,7 +169,7 @@ Deferred on 2026-10-25, after MIDI, Vail and the F key long presses: long presse
 
 Open questions for when it returns:
 
-- Note mode and the LOG screen need a place: the menu is full at 11 rows.
+- Note mode and the LOG screen need a place. The menu lists have room: LOG fits in STATS, and note mode fits as a menu row or an F1 hold.
 - A run ends after 4 s with no new text. Check this against real sending.
 - A memory is logged whole at the end of its playback, and only from STRAIGHT output with KEY OUT on.
 - On a Pro, check whether the decoder board hears your own sidetone. If it does, your keying logs twice, as YOU and as THEM.
@@ -188,7 +188,7 @@ What the device loses: a live contact count in the field ("do I have my 10?"). A
 
 ### Turning it on
 
-- LOG on the KEYER tab: ON or OFF, default OFF. Bit 4 of the settings record's hardware flags byte, which older firmware ignores, so the record length stays the same.
+- LOG in the DEVICE section: ON or OFF, default OFF. Bit 4 of the settings record's hardware flags byte, which older firmware ignores, so the record length stays the same.
 - While LOG is ON with the decoder board on, the decoder board listener also runs (Pro only). Today it runs only on the RADIO screen or with USB OUT RADIO.
 
 ### What goes in the transcript

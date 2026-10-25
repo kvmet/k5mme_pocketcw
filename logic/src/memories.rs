@@ -1,5 +1,5 @@
-//! Memory keyer messages: four texts you key in once and send with one press. Each can repeat,
-//! for calling CQ until someone answers.
+//! Memory keyer messages: four texts you key in once and send with one press, or send again and
+//! again with a hold, for calling CQ until someone answers.
 
 use core::fmt::Write;
 
@@ -17,7 +17,7 @@ const MAGIC: [u8; 2] = *b"Rm";
 const VERSION: u8 = 1;
 /// Set in the flags byte to keep the Home MEM row open after a send.
 const STAY_OPEN: u8 = 1 << SLOTS;
-/// Body: flags (bit i repeats memory i, then STAY_OPEN), seconds between repeats, the texts
+/// Body: flags (bits 0 to 3 unused, then STAY_OPEN), seconds between repeats, the texts
 /// zero-padded.
 const BODY_LEN: usize = 2 + SLOTS * LEN;
 pub const RECORD_LEN: usize = BODY_LEN + record::OVERHEAD;
@@ -31,8 +31,6 @@ const ONE_REPEAT_VERSION: u8 = 1;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Memories {
     texts: [Text<LEN>; SLOTS],
-    /// Memories that resend after they end, until you touch the key.
-    pub repeats: [bool; SLOTS],
     /// Silence between the end of a repeating memory and its next start.
     pub every_s: u8,
     /// The Home MEM row stays open after a send, for working one contact after another.
@@ -47,7 +45,7 @@ impl Memories {
         let _ = write!(texts[1], "UR 5NN 5NN <BK>");
         let _ = write!(texts[2], "TU 72 E E");
         let _ = write!(texts[3], "QRZ DE {call} K");
-        Memories { texts, repeats: [true, false, false, false], every_s: 6, stay_open: false }
+        Memories { texts, every_s: 6, stay_open: false }
     }
 
     pub fn text(&self, i: usize) -> &str {
@@ -84,8 +82,7 @@ impl Memories {
     pub fn encode(&self) -> [u8; RECORD_LEN] {
         let mut record = [0; RECORD_LEN];
         let body = body_mut(&mut record);
-        let repeats = self.repeats.iter().enumerate().fold(0u8, |bits, (i, &on)| bits | (on as u8) << i);
-        let flags = repeats | if self.stay_open { STAY_OPEN } else { 0 };
+        let flags = if self.stay_open { STAY_OPEN } else { 0 };
         body[..2].copy_from_slice(&[flags, self.every_s]);
         for (i, t) in self.texts.iter().enumerate() {
             let at = 2 + i * LEN;
@@ -130,8 +127,7 @@ impl Memories {
                 t.push(b);
             }
         }
-        let repeats = core::array::from_fn(|i| flags & 1 << i != 0);
-        Some(Memories { texts, repeats, every_s, stay_open: flags & STAY_OPEN != 0 })
+        Some(Memories { texts, every_s, stay_open: flags & STAY_OPEN != 0 })
     }
 }
 
@@ -160,7 +156,6 @@ mod tests {
             m.push(2, b'E');
         }
         assert!(!m.push(2, b'E'));
-        m.repeats[2] = true;
         m.step_every(100);
         m.stay_open = true;
         assert_eq!(Memories::decode(&m.encode()), Some(m));
@@ -168,21 +163,25 @@ mod tests {
     }
 
     #[test]
-    fn version_1_keeps_its_one_repeating_memory() {
+    fn legacy_records_keep_their_texts_and_stay_open() {
         let mut record = [0u8; LEGACY_LEN];
         record[..3].copy_from_slice(&[b'R', b'M', ONE_REPEAT_VERSION]);
         record[3..3 + BODY_LEN].copy_from_slice(&Memories::new("K5MME").encode()[4..4 + BODY_LEN]);
         record[3] = 2;
         seal(&mut record);
-        assert_eq!(Memories::decode(&record).unwrap().repeats, [false, true, false, false]);
-        record[3] = 0;
-        seal(&mut record);
-        let migrated = Memories::decode(&record).unwrap();
-        assert_eq!((migrated.repeats, migrated.stay_open), ([false; SLOTS], false));
+        let v1 = Memories::decode(&record).unwrap();
+        assert_eq!((v1.text(0), v1.stay_open), ("CQ POTA DE K5MME K5MME K", false));
         record[2] = LEGACY_V2;
         record[3] = 0b1_0010;
         seal(&mut record);
-        let v2 = Memories::decode(&record).unwrap();
-        assert_eq!((v2.repeats, v2.stay_open), ([false, true, false, false], true));
+        assert!(Memories::decode(&record).unwrap().stay_open);
+    }
+
+    #[test]
+    fn repeat_bits_from_older_saves_still_read() {
+        let mut record = Memories::new("K5MME").encode();
+        body_mut(&mut record)[0] = 0b0001;
+        frame(&mut record, MAGIC, VERSION);
+        assert_eq!(Memories::decode(&record), Some(Memories::new("K5MME")));
     }
 }

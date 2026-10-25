@@ -75,7 +75,7 @@ From the decoder board user manual and the Quick Start Guide. Confirmed in the m
 
 All of this is confirmed in code and not on a board.
 
-- The DECODER BOARD setting, on the RECV tab, defaults to OFF, so a Mini sees no change. ON powers the board, starts USART1, and adds RADIO to the menu.
+- The DECODER BOARD setting, in the DEVICE section, defaults to OFF, so a Mini sees no change. ON powers the board, starts USART1, and adds RADIO to the menu.
 - OFF stops USART1, sets PA9 as a pulled-down input so the board is not powered through it, and drives PB13 low. PA10 has a pull-up, so an idle line reads high with no board.
 - Frames are parsed in the USART1 interrupt and get the vendor replies at once.
 - The RADIO screen shows the board state, the filter and noise reduction (F2 and F3 send `AT+FL` and `AT+NR`), the heard speed, and the decoded text.

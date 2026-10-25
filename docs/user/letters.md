@@ -2,7 +2,7 @@
 
 The LETTERS screen shows how well you copy each of the 44 Koch characters, and the characters you mix up most. The header shows LETTERS and your Koch level, such as `KOCH 12`.
 
-Open 07 LETTERS in the [menu](menu.md), or press F2 (LTRS) on the [Progress](progress.md) screen.
+Open STATS in the [menu](menu.md), then LETTERS, or press F2 (LTRS) on the [Progress](progress.md) screen.
 
 ## Where the numbers come from
 
@@ -27,10 +27,10 @@ Under the tiles, MIXUPS lists the six most common mixups, such as `S/H 4X`: the 
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the RECV tab. F4 (BACK) there returns to this screen. |
-| F2 (CLR) | Press once: the status line says `CLR AGAIN TO ERASE STATS`. Press again to erase all counts and mixups. Your Koch level stays. Any other control cancels the erase. |
+| F1 (SET) | Opens the settings at the HEAR section. F4 (BACK) there returns to this screen. |
+| F2 hold (CLEAR) | Erases all counts and mixups. Your Koch level stays. |
 | F3 (DRIL) | Starts the KOCH drill. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

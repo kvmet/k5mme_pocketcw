@@ -34,11 +34,11 @@ impl Ui {
         }
     }
 
-    /// Index of the focused target: the one this screen last focused, while its list holds
-    /// it, else the default.
+    /// Index of the focused target: the one a click moved to, else the default. Opening a screen
+    /// sets the default again.
     pub(super) fn focus_index(&self) -> usize {
         let targets = self.dial_targets();
-        self.dial_focus[self.screen as usize].and_then(|t| targets.iter().position(|&x| x == t)).unwrap_or(0)
+        self.dial_focus.and_then(|t| targets.iter().position(|&x| x == t)).unwrap_or(0)
     }
 
     pub(super) fn focused(&self) -> Option<Target> {
@@ -48,13 +48,20 @@ impl Ui {
     pub(super) fn focus_next(&mut self) {
         let targets = self.dial_targets();
         let next = targets.get((self.focus_index() + 1) % targets.len().max(1)).copied();
-        self.dial_focus[self.screen as usize] = next;
+        self.dial_focus = next;
     }
 
-    /// Title, the dial chips, then `chips` left of them where they fit.
+    /// Title, the dial chips, then up to one of `chips` left of them where it fits, and TX
+    /// while your key keys the radio.
     pub(super) fn header(&self, lcd: &mut Lcd, s: &Settings, title: &str, chips: &[&str]) {
         let title_end = self.theme.header(lcd, title);
         let right = self.draw_dial_chips(lcd, s);
+        let tx = [chips.first().copied().unwrap_or(""), "TX"];
+        let chips = match (self.keys_radio(s), chips.is_empty()) {
+            (true, true) => &tx[1..],
+            (true, false) => &tx[..],
+            (false, _) => chips,
+        };
         self.theme.chips(lcd, chips, title_end + CHIP_GAP, right);
     }
 

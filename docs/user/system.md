@@ -1,6 +1,6 @@
 # System
 
-The SYSTEM screen shows the firmware version, the results of the startup checks, and the battery. Open 10 SYSTEM in the [menu](menu.md).
+The SYSTEM screen shows the firmware version, the results of the startup checks, and the battery. Open SYSTEM in the [menu](menu.md).
 
 A value in red shows a problem.
 
@@ -52,9 +52,9 @@ When the battery goes below 3.4 V, the status line says `BATTERY LOW: PLUG IN US
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the THEME tab. F4 (BACK) there returns to this screen. |
+| F1 (SET) | Opens the settings at the THEME section. F4 (BACK) there returns to this screen. |
 | F2, F3 | Nothing. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Opens the [menu](menu.md), with SYSTEM selected. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

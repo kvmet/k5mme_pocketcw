@@ -3,7 +3,7 @@
 
 use embedded_graphics::pixelcolor::Rgb565;
 
-use super::COLS;
+use super::footer::{INPUT_COLS, INPUT_Y};
 use crate::gfx::{CHAR_W, TINY_W, rect, text, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::theme::{MAIN, Theme};
@@ -23,8 +23,7 @@ const _: () = assert!(VALUE_X + 8 * CHAR_W < CHIP_W[0] - 1);
 const _: () = assert!(VALUE_X + 6 * CHAR_W < CHIP_W[3] - 1);
 /// Labels run up to 6 tiny characters: COPIED, MISSED, BUSTED.
 const _: () = assert!(VALUE_X + 6 * TINY_W < CHIP_W[1] - 1 && VALUE_X + 6 * TINY_W < CHIP_W[2] - 1);
-const OVER_Y: i32 = 207;
-const FOOT_Y: i32 = 226;
+const _: () = assert!(CHIP_Y + CHIP_H < INPUT_Y);
 
 pub(super) struct Chip<'a> {
     pub label: &'a str,
@@ -60,11 +59,18 @@ pub(super) fn draw_chips(lcd: &mut Lcd, t: &Theme, chips: [Chip; 4]) {
     }
 }
 
-/// The end of your over with a cursor after it, and the next step in the footer.
-pub(super) fn draw_over(lcd: &mut Lcd, t: &Theme, over: &str, next_step: &str) {
-    let shown = &over[over.len().saturating_sub(COLS - 1)..];
-    text_cols(lcd, 0, OVER_Y, shown, COLS, t.fg, t.bg);
-    rect(lcd, shown.len() as i32 * CHAR_W + 1, OVER_Y + 2, CHAR_W - 2, 13, t.accent);
-    rect(lcd, 0, FOOT_Y, MAIN, 12, t.bg);
-    tiny(lcd, 2, FOOT_Y, next_step, t.muted, t.bg);
+/// The end of your over with a cursor after it.
+pub(super) fn draw_over(lcd: &mut Lcd, t: &Theme, over: &str) {
+    let shown = &over[over.len().saturating_sub(INPUT_COLS - 1)..];
+    text_cols(lcd, 0, INPUT_Y, shown, INPUT_COLS, t.fg, t.bg);
+    rect(lcd, shown.len() as i32 * CHAR_W + 1, INPUT_Y + 2, CHAR_W - 2, 13, t.accent);
+}
+
+/// A bot is sending or about to, your over is waiting for its end, or the bots wait for you.
+pub(super) fn badge(bot_sending: bool, over: &str) -> &'static str {
+    match (bot_sending, over.is_empty()) {
+        (true, _) => "LISTEN",
+        (false, false) => "PAUSE ENDS",
+        (false, true) => "YOUR TURN",
+    }
 }

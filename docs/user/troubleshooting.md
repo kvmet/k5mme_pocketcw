@@ -80,7 +80,7 @@ The firmware stopped on an error it cannot recover from. Click the dial to turn 
 
 ### No sound
 
-Check the volume: the VOL value on the KEYER screen, or VOLUME on the SOUND tab of the settings. At 0 the sound is off. A plug in the headphone jack turns the speaker off.
+Check the volume: the VOL value on the KEYER screen, or VOLUME in the SOUND section of the settings. At 0 the sound is off. A plug in the headphone jack turns the speaker off.
 
 ### A message on the bottom line of the screen
 

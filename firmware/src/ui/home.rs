@@ -10,7 +10,7 @@ use pocketcw_logic::{
     settings::{Field, Settings},
 };
 
-use super::{COLS, Screen, Ui, dit_ms, lanes, mode_name, settings::KEYER_TAB};
+use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, blocks, blocks_width, para, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -34,7 +34,7 @@ const DECODE_Y: i32 = 148;
 const DECODE_STEP: i32 = 18;
 /// The underline takes the bottom row of the text cell and the 2 rows under it.
 const UNDERLINE_Y: i32 = DECODE_STEP - UNDERLINE_H;
-const ROWS: usize = 5;
+const ROWS: usize = 4;
 pub(super) const KEYS: [&str; 4] = ["SET", "MEM", "OUT", "MENU"];
 
 /// What the dial sets here, in click order.
@@ -52,10 +52,14 @@ fn field(target: Target) -> (Field, Option<usize>) {
 pub(super) type Decode = DecodeLines<COLS, ROWS>;
 
 impl Ui {
+    pub(super) fn draw_home_header(&self, lcd: &mut Lcd, s: &Settings) {
+        self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
+    }
+
     pub(super) fn draw_home(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        self.header(lcd, s, "KEYER", &[mode_name(s.mode)]);
-        t.softkeys(lcd, KEYS);
+        self.draw_home_header(lcd, s);
+        self.softkeys(lcd, KEYS);
         rect(lcd, DIGITS_X - 5, DIGITS_Y - 3, DIGITS_W + 10, DIGITS_H + 6, t.panel());
         tiny(lcd, DIGITS_X + DIGITS_W + 8, DIGITS_Y + DIGITS_H - 12, "WPM", t.muted, t.bg);
         for (i, label) in ["TONE", "VOL", "OUT", "DIT"].iter().enumerate() {
@@ -183,12 +187,7 @@ impl Ui {
     pub(super) fn home_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action, now_ms: u32) {
         if self.mem_row {
             match action {
-                Action::Soft(slot) => {
-                    if !self.memories.stay_open {
-                        self.close_mem_row(lcd);
-                    }
-                    return self.send_memory(lcd, s, slot as usize);
-                }
+                Action::Soft(slot) => return self.memory_key(lcd, s, slot as usize, false),
                 Action::Click if self.sending.is_none() => return self.close_mem_row(lcd),
                 _ => {}
             }
@@ -209,13 +208,13 @@ impl Ui {
                 self.focus_next();
                 self.focus_mark(lcd, self.focus_index(), true);
             }
-            Action::Soft(0) => self.open_settings_at(lcd, s, KEYER_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Keyer),
             Action::Soft(1) => self.open_mem_row(lcd),
             Action::Soft(2) => {
                 s.adjust(Field::KeyOut, 1);
-                self.draw_home_value(lcd, s, Field::KeyOut);
+                self.key_out_changed(lcd, s);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.open_menu(lcd, s),
             _ => {}
         }
     }

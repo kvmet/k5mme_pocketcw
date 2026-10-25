@@ -2,9 +2,7 @@
 
 In a receive drill, the device sends a group of characters, and you key back what you copied. The device then shows the group with each character marked right or wrong.
 
-To start, open 03 RECEIVE in the [menu](menu.md). The Koch drill starts. F2 (KIND) moves to the next drill:
-
-KOCH, WORDS, CALLS, NINJA, HEAD, then the [ragchew](ragchew.md) CHEW and QUIZ, then KOCH again.
+To start, open RECEIVE in the [menu](menu.md), then the drill. The header shows the name of the drill. For a ragchew to copy, see [Ragchew](ragchew.md) in the ON AIR list.
 
 | Drill | What the device sends |
 | - | - |
@@ -14,7 +12,7 @@ KOCH, WORDS, CALLS, NINJA, HEAD, then the [ragchew](ragchew.md) CHEW and QUIZ, t
 | NINJA | One word from the content pack, then the voice says it. See [NINJA](#ninja). |
 | HEAD | Words that get longer as you copy them, then two words, then a QSO line. See [HEAD](#head). |
 
-The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECV tab in [Settings](settings.md). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
+The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the HEAR section in [Settings](settings.md#hear). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
 
 ## How a drill runs
 
@@ -47,7 +45,7 @@ NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a
 4. If you do not key, the voice says the word, and the list shows it with no score.
 5. The next word starts about 1 second after the voice ends.
 
-The words are the ham words and abbreviations of the content pack, then the most common English words: 500 by default. NINJA WORDS on the RECV tab of the [settings](settings.md) sets how many. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
+The words are the ham words and abbreviations of the content pack, then the most common English words: 500 by default. NINJA WORDS in the DRILLS section of the [settings](settings.md#drills) sets how many. An abbreviation on its own comes with its meaning: after `QTH`, the voice says "Q T H. location".
 
 NINJA needs the content pack. Without it, the drill shows `CONTENT PACK MISSING: INSTALL IT` and sends nothing. [Install](install.md) again, with the [content pack](install.md#the-content-pack).
 
@@ -86,10 +84,10 @@ The device keeps your level and your progress toward the next level while you us
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Pauses the drill and opens the settings at the RECV tab. F4 (BACK) there returns, and the next group plays at the new settings. |
-| F2 (KIND) | Starts the next drill. |
+| F1 (SET) | Pauses the drill and opens the settings at the HEAR section. F4 (BACK) there returns, and the next group plays at the new settings. |
+| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
-| F4 (BACK) | Opens the [menu](menu.md). |
+| F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |

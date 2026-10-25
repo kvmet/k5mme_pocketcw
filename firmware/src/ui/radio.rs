@@ -12,7 +12,7 @@ use pocketcw_logic::{
     timing::Quality,
 };
 
-use super::{COLS, Screen, Ui, settings::RECEIVE_TAB};
+use super::{COLS, Screen, Ui, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::link;
@@ -42,7 +42,7 @@ impl Ui {
     pub(super) fn draw_radio(&self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "RADIO", &[]);
-        t.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
+        self.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
         self.draw_radio_info(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         for row in 0..ROWS {
@@ -76,7 +76,7 @@ impl Ui {
 
     pub(super) fn radio_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, RECEIVE_TAB),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Device),
             Action::Soft(1) => {
                 self.board.filter = (self.board.filter + 1) % (MAX_FILTER + 1);
                 self.board_command = Some(board::filter(self.board.filter));
@@ -87,7 +87,7 @@ impl Ui {
                 self.board_command = Some(board::noise_reduction(self.board.noise_reduction));
                 self.draw_radio_info(lcd);
             }
-            Action::Soft(3) => self.open(lcd, s, Screen::Menu),
+            Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }
     }
