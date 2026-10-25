@@ -47,6 +47,7 @@ mod app {
         i2c::I2c,
         lcd::{self, Lcd},
         link::{self, Link},
+        pack::Pack,
         pins::*,
         power, speech,
         store::{self, Saved},
@@ -67,7 +68,6 @@ mod app {
         board,
         keyer::{Contacts, Jack, Keyer, MAX_WPM, MIN_WPM, Mode, Output, output_lines},
         listen::Listener,
-        log::{MAX_FRAME, Source},
         morse,
         player::Player,
         sender,
@@ -862,7 +862,8 @@ mod app {
 
         let readable = system.panel == Panel::Ips;
         let gauge = Gauge::new(battery_full, TICKS.load(Ordering::Relaxed));
-        let mut ui = Ui::new(&settings, system, letters, history, memories, gauge, &mut lcd);
+        let pack = Pack::open(&mut lcd);
+        let mut ui = Ui::new(&settings, system, letters, history, memories, gauge, pack);
         ui.poll(&mut lcd, read_battery(&mut devices.adc), TICKS.load(Ordering::Relaxed));
         let mut poll_at = Mono::now() + POLL_MS.millis();
         ui.draw(&mut lcd, &settings);
@@ -898,11 +899,6 @@ mod app {
                 Ok(Ok(Message::Serial(SerialCommand::Shot))) => {
                     if !send_screen(&mut lcd, &mut chunks, readable).await {
                         ui.status(&mut lcd, "SCREENSHOT NOT SENT");
-                    }
-                }
-                Ok(Ok(Message::Serial(SerialCommand::DumpLog))) => {
-                    if !send_log(&ui, &mut lcd, &mut chunks).await {
-                        ui.status(&mut lcd, "LOG NOT SENT");
                     }
                 }
                 Ok(Ok(Message::Serial(SerialCommand::Send(_)))) if sending => emit(&mut chunks, "BUSY\n"),
@@ -959,8 +955,6 @@ mod app {
                         poll_at = Mono::now() + POLL_MS.millis();
                         save_battery(&mut ui, &mut lcd, &mut bus);
                         if ui.battery_empty() {
-                            // Before the notice, while the battery still holds up the writes.
-                            ui.close_log(&mut lcd, &settings, TICKS.load(Ordering::Relaxed));
                             ui.status(&mut lcd, "BATTERY EMPTY: POWERING OFF");
                             Mono::delay(EMPTY_NOTICE_MS.millis()).await;
                             power_off(&mut ui, &mut lcd, &mut bus, &settings, save_at.is_some());
@@ -987,7 +981,6 @@ mod app {
             // One lock for all of them, so the tick never sees the gap between a stop and the play
             // after it and reports that play as finished.
             let mut stopped = false;
-            let mut transmitted = None;
             cx.shared.players.lock(|players| {
                 while let Some(command) = ui.take_command(&settings) {
                     match command {
@@ -996,9 +989,6 @@ mod app {
                             let i = if p.transmit { 0 } else { players.iter().position(|p| !p.is_active()).unwrap_or(0) };
                             if i == 0 {
                                 PLAYER_KEYS.store(p.transmit, Ordering::Relaxed);
-                            }
-                            if p.transmit {
-                                transmitted = Some(p.text);
                             }
                             players[i].start(p.text.as_str(), p.keying, p.seed, p.delay_ms, p.pitch_hz);
                             PLAYS_STARTED.fetch_add(1, Ordering::Relaxed);
@@ -1015,10 +1005,6 @@ mod app {
             if stopped {
                 cx.shared.audio.lock(|audio| audio.synth.say(None));
             }
-            // Outside the players lock: a log write takes a few ms.
-            if let Some(text) = transmitted {
-                ui.log_memory(&mut lcd, &settings, text.as_str(), TICKS.load(Ordering::Relaxed));
-            }
             // After the stop, so it does not cut off this speech.
             if let Some(text) = ui.take_say() {
                 let ms = ui.pack().map_or(0, |pack| speech::say(&mut lcd, pack, text.as_str().as_bytes(), &mut cx.shared.audio));
@@ -1028,7 +1014,7 @@ mod app {
             if let Some(command) = ui.take_board_command() {
                 cx.shared.link.lock(|link| link.send(command.as_str().as_bytes()));
             }
-            LISTENING.store(ui.listening() || settings.log && settings.decoder_board, Ordering::Relaxed);
+            LISTENING.store(ui.listening(), Ordering::Relaxed);
             let band = ui.band();
             cx.shared.audio.lock(|audio| {
                 audio.synth.set_band(band);
@@ -1078,10 +1064,7 @@ mod app {
                 Some(Action::PowerCancel) => ui.status(lcd, ""),
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
             },
-            Message::Decoded(decoded) => {
-                ui.log_decoded(lcd, settings, Source::You, decoded, TICKS.load(Ordering::Relaxed));
-                ui.decoded(lcd, settings, decoded);
-            }
+            Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),
             Message::Edge { line, down, at_ms, dit_ms, .. } => ui.edge(lcd, settings, line, down, at_ms, dit_ms),
             Message::Mark { .. } => {}
             // A play started after the tick sent this is still sounding.
@@ -1090,10 +1073,7 @@ mod app {
             }
             Message::Played { .. } => {}
             Message::Board(event) => ui.board_event(lcd, event),
-            Message::Heard { decoded, wpm } => {
-                ui.log_decoded(lcd, settings, Source::Them, decoded, TICKS.load(Ordering::Relaxed));
-                ui.heard(lcd, decoded, wpm);
-            }
+            Message::Heard { decoded, wpm } => ui.heard(lcd, decoded, wpm),
             Message::Serial(_) => unreachable!("the UI loop answers serial commands, since replies wait on USB"),
             Message::Sent => {}
             Message::Winkeyer(open) => ui.status(lcd, if open { "WINKEYER OPEN" } else { "WINKEYER CLOSED" }),
@@ -1153,14 +1133,7 @@ mod app {
             SerialCommand::Stats(stats) => reply(chunks, ui.stats(stats)).await,
             SerialCommand::TooLong => reply(chunks, [Text::format(format_args!("ERROR TOO LONG\n"))]).await,
             SerialCommand::Unknown => reply(chunks, [Text::format(format_args!("ERROR UNKNOWN\n"))]).await,
-            SerialCommand::Shot
-            | SerialCommand::Send(_)
-            | SerialCommand::Say(_)
-            | SerialCommand::Stop
-            | SerialCommand::Edge(_)
-            | SerialCommand::Hotline(_)
-            | SerialCommand::Press(_)
-            | SerialCommand::DumpLog => {
+            SerialCommand::Shot | SerialCommand::Send(_) | SerialCommand::Say(_) | SerialCommand::Stop | SerialCommand::Edge(_) | SerialCommand::Hotline(_) | SerialCommand::Press(_) => {
                 unreachable!("the UI loop handles these itself")
             }
         }
@@ -1237,25 +1210,8 @@ mod app {
         true
     }
 
-    /// Sends every log record on the serial port, oldest first, as `LOG` and its frame in hex, then
-    /// `END`. False when USB took nothing for SHOT_WAIT_MS.
-    async fn send_log(ui: &Ui, lcd: &mut Lcd, chunks: &mut Sender<'static, Chunk, CHUNKS>) -> bool {
-        let (mut cursor, mut buf) = (ui.log().cursor(), [0; MAX_FRAME]);
-        while let Some(frame) = ui.log().next_frame(lcd, &mut cursor, &mut buf) {
-            let mut line = Text::<{ 4 + 2 * MAX_FRAME + 1 }>::new();
-            let _ = write!(line, "LOG ");
-            frame.iter().for_each(|b| _ = write!(line, "{b:02X}"));
-            line.push(b'\n');
-            if !send_serial(chunks, line.as_str().as_bytes()).await {
-                return false;
-            }
-        }
-        send_serial(chunks, b"END\n").await
-    }
-
     /// Saves everything unsaved and enters standby. `unsaved`: settings changed since the last save.
     fn power_off(ui: &mut Ui, lcd: &mut Lcd, bus: &mut I2c, settings: &Settings, unsaved: bool) -> ! {
-        ui.close_log(lcd, settings, TICKS.load(Ordering::Relaxed));
         let saved = [
             !unsaved || save(ui, lcd, bus, settings),
             save_letters(ui, lcd, bus, true),

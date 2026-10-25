@@ -33,19 +33,17 @@ use pocketcw_logic::{
     pack::WORD_TEXT,
     memories::{Memories, RECORD_LEN as MEMORIES_LEN},
     progress::{History, SLOT_LEN},
-    keyer::{self, Mode, Output},
+    keyer::{self, Mode},
     player::{Keying, MAX_TEXT},
     qso::{Options, Program},
     settings::{Field, Pileup, Settings},
     ticks,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
-    log::Source,
 };
 
 use crate::font::Font;
 use crate::gfx::{rect, text_cols};
 use crate::lcd::Lcd;
-use crate::logger::Logger;
 use crate::pack::Pack;
 use crate::text::Text;
 use crate::theme::{Battery, MAIN, Theme};
@@ -62,8 +60,6 @@ pub use system::{PanelFrom, SystemInfo};
 
 const COLS: usize = (MAIN / crate::gfx::CHAR_W) as usize;
 const STATUS_Y: i32 = 222;
-/// The driver refused a log write, which only a bug in the ring causes.
-const LOG_REFUSED: &str = "LOG WRITE REFUSED";
 /// When each contact, tip then ring, stops keying.
 const STUCK_MS: [u32; 2] = [keyer::TIP_STUCK_MS as u32, keyer::RING_STUCK_MS as u32];
 
@@ -186,7 +182,6 @@ pub struct Ui {
     /// A command for the decoder board, not sent yet.
     board_command: Option<pocketcw_logic::board::Command>,
     pack: Result<Pack, pocketcw_logic::pack::Error>,
-    log: Logger,
 }
 
 impl Ui {
@@ -197,7 +192,7 @@ impl Ui {
         history: History,
         memories: Memories,
         gauge: Gauge,
-        lcd: &mut Lcd,
+        pack: Result<Pack, pocketcw_logic::pack::Error>,
     ) -> Ui {
         Ui {
             theme: Theme::new(settings.style, settings.palette, settings.boot_count),
@@ -240,8 +235,7 @@ impl Ui {
             heard: radio::Heard::new(),
             board: radio::Board::default(),
             board_command: None,
-            pack: Pack::open(lcd),
-            log: Logger::open(lcd),
+            pack,
         }
     }
 
@@ -319,34 +313,6 @@ impl Ui {
     /// One line of muted text across the bottom of the main area, until the next redraw.
     pub fn status(&self, lcd: &mut Lcd, line: &str) {
         text_cols(lcd, 0, STATUS_Y, line, COLS, self.theme.muted, self.theme.bg);
-    }
-
-    /// Logs a character that went out on the air: your keying while LOG and KEY OUT are on, or
-    /// what the decoder board hears while LOG is on.
-    pub fn log_decoded(&mut self, lcd: &mut Lcd, s: &Settings, source: Source, decoded: Decoded, now_ms: u32) {
-        let on = s.log && (source != Source::You || s.key_out);
-        if on && !self.log.push_decoded(lcd, s, source, decoded, now_ms) {
-            self.status(lcd, LOG_REFUSED);
-        }
-    }
-
-    /// Logs a memory that keys the radio. PADDLE output plays a memory as tone only.
-    pub fn log_memory(&mut self, lcd: &mut Lcd, s: &Settings, text: &str, now_ms: u32) {
-        let on = s.log && s.key_out && s.output == Output::Straight;
-        if on && !self.log.push_memory(lcd, s, text, now_ms) {
-            self.status(lcd, LOG_REFUSED);
-        }
-    }
-
-    /// Writes the open log runs, before power off.
-    pub fn close_log(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
-        if !self.log.close(lcd, s, now_ms) {
-            self.status(lcd, LOG_REFUSED);
-        }
-    }
-
-    pub fn log(&self) -> &Logger {
-        &self.log
     }
 
     /// A character read from the paddles.
@@ -451,7 +417,6 @@ impl Ui {
 
     /// The player finished a transmission at `now_ms`.
     pub fn played(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
-        self.log.played(now_ms);
         if core::mem::take(&mut self.serial_play) {
             return;
         }
@@ -516,7 +481,7 @@ impl Ui {
             .filter(|&i| !self.stuck_shown[i])
             .filter_map(|i| Some(self.contact_since[i]?.wrapping_add(STUCK_MS[i])))
             .fold(None, earliest);
-        [stuck, self.screen_deadline(), self.log.deadline()].into_iter().flatten().fold(None, earliest)
+        [stuck, self.screen_deadline()].into_iter().flatten().fold(None, earliest)
     }
 
     fn screen_deadline(&self) -> Option<u32> {
@@ -531,9 +496,6 @@ impl Ui {
     }
 
     pub fn timeout(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
-        if !self.log.timeout(lcd, s, now_ms) {
-            self.status(lcd, LOG_REFUSED);
-        }
         let passed = |at: u32| ticks::reached(now_ms, at);
         for (i, stuck_ms) in STUCK_MS.into_iter().enumerate() {
             if let Some(since) = self.contact_since[i]

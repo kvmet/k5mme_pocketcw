@@ -254,8 +254,6 @@ Wrap:
 - Device, on hardware: power off during a write, then check the log reads back. Battery-empty power off flushes the buffers.
 - Computer: QSO detection runs only after you record real activations. Those transcripts, with the QSOs you logged by hand, are the test fixtures.
 
-Built: the ring, the LOG setting, YOU, MEMORY and THEM capture, `DUMP LOG` and `pocketcw.py log`: 5.6 KB. Not built: note mode, the LOG screen and `pocketcw.py adif`.
-
 Flash cost: 4 to 5 KB (ring, `DUMP LOG`, note mode, LOG screen).
 
 ## 7. Stats export

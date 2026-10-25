@@ -36,7 +36,7 @@ const MEM_TAB: usize = 6;
 const TAB_PAD: i32 = 4;
 const TAB_GAP: i32 = 1;
 
-const KEYER_ROWS: [(&str, Field); 8] = [
+const KEYER_ROWS: [(&str, Field); 7] = [
     ("MODE", Field::Mode),
     ("PADDLES", Field::Swap),
     ("SPEED", Field::Speed),
@@ -44,7 +44,6 @@ const KEYER_ROWS: [(&str, Field); 8] = [
     ("OUT TYPE", Field::Output),
     ("OUT LINES", Field::OutputSwap),
     ("USB OUT", Field::UsbOut),
-    ("LOG", Field::Log),
 ];
 const SOUND_ROWS: [(&str, Field); 5] = [
     ("TONE", Field::Tone),
@@ -323,7 +322,6 @@ pub(super) fn value(s: &Settings, field: Field) -> Text<{ config::SHOWN_LEN }> {
         Field::Reveal => write!(t, "{}", if s.reveal_lines { "EACH LINE" } else { "WHOLE OVER" }),
         Field::Wave => write!(t, "{}", if s.square { "SQUARE" } else { "SINE" }),
         Field::DecoderBoard => write!(t, "{}", on_off(s.decoder_board)),
-        Field::Log => write!(t, "{}", on_off(s.log)),
         Field::UsbOut => write!(
             t,
             "{}",

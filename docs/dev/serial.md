@@ -30,7 +30,6 @@ Each command is one line of up to 55 bytes, ended by `\n` or `\r`. Commands are 
 | `EDGE ON`, `EDGE OFF` | Starts or stops the key timing lines. See [Edges](#edges). |
 | `VBand On`, `VBand Off` | Starts or stops the CW Hotline lines, in this mixed case. See [VBand Hotline](#vband-hotline). No reply. |
 | `STATS LETTERS`, `STATS PROGRESS`, `STATS TIMING` | Sends the letter stats, the practice sessions, or your keying timing. See [Stats](#stats). |
-| `DUMP LOG` | Sends every log record. See [Log](#log). |
 
 Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: `PRESS CLICK` does not power off. More than about 30 commands sent at once can fill the queue; the device then shows `n INPUTS LOST`.
 
@@ -143,20 +142,6 @@ BINS GAP 8 0 2 ...
 - Numbers have two decimals.
 - Marks in ms mix speeds when SPEED changes after a CLR. Text that `SEND` keys counts too, since it keys the same line.
 
-## Log
-
-`DUMP LOG` sends every record of the log ring, oldest first, one line each, then `END`:
-
-```
-LOG 4C4801080100000002000000459F
-LOG 4C54011103010082E8030000DC050000043C41523E9D19
-END
-```
-
-Each line is one record frame in hex: magic, version, body length, body, CRC. The device sends only frames whose CRC checks, of every kind, so a newer `tools/pocketcw.py` can read kinds this firmware does not know. The format is in "Log format" in [the roadmap](roadmap.md). `pocketcw.py log FILE.txt` saves a transcript per session.
-
-A run is written when it ends, so the dump leaves out text from the last 4 s and a memory that is still playing. A full log is about 4 MB of hex, and the screen handles nothing else while it sends.
-
 ## Events
 
 While the computer has the port open (holds DTR), the device sends a line for each of these:
@@ -261,5 +246,3 @@ The text keys with perfect timing, at the WinKeyer speed. The paddles keep the d
 | Hotline marks and spaces | `logic/src/hotline.rs`, and `tick` in `firmware/src/main.rs` |
 | Pushbutton bytes | `tick` in `firmware/src/main.rs` |
 | The screenshot, row by row, from the UI task | `send_screen` in `firmware/src/main.rs`, `read_row` in `firmware/src/lcd.rs` |
-| The log ring, its records and the write guard | `Ring` in `logic/src/log.rs`, `firmware/src/spi_flash.rs` |
-| What the logger records, and `DUMP LOG` | `Logger` in `logic/src/log.rs`, `firmware/src/logger.rs`, the log hooks in `firmware/src/ui/mod.rs`, `send_log` in `firmware/src/main.rs` |

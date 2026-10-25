@@ -17,7 +17,7 @@ pub const SHOWN_LEN: usize = 12;
 pub const REASON_LEN: usize = 160;
 
 /// Each setting's name: its settings row, with `_` for a space.
-const SETTINGS: [(&str, Field); 23] = [
+const SETTINGS: [(&str, Field); 22] = [
     ("MODE", Field::Mode),
     ("PADDLES", Field::Swap),
     ("SPEED", Field::Speed),
@@ -25,7 +25,6 @@ const SETTINGS: [(&str, Field); 23] = [
     ("OUT_TYPE", Field::Output),
     ("OUT_LINES", Field::OutputSwap),
     ("USB_OUT", Field::UsbOut),
-    ("LOG", Field::Log),
     ("TONE", Field::Tone),
     ("VOLUME", Field::Volume),
     ("WAVE", Field::Wave),

@@ -6,7 +6,6 @@ use core::ops::Range;
 
 use crate::record::{self, BODY_START, OVERHEAD};
 use crate::text::Text;
-use crate::ticks;
 
 /// The only range PocketCW erases or programs.
 pub const LOG: Range<u32> = 0xC0_0000..0xE0_0000;
@@ -311,11 +310,11 @@ impl Ring {
     pub fn next_frame<'a>(&self, flash: &mut impl Flash, cursor: &mut Cursor, buf: &'a mut [u8; MAX_FRAME]) -> Option<&'a [u8]> {
         while cursor.after_head <= self.sectors {
             let sector = sector_address((self.head + cursor.after_head) % self.sectors);
-            if (cursor.offset > 0 || header(flash, sector).is_some())
-                && let Found::Frame(len) = read_at(flash, sector, cursor.offset, buf)
-            {
-                cursor.offset += len as u32;
-                return Some(&buf[..len]);
+            if cursor.offset > 0 || header(flash, sector).is_some() {
+                if let Found::Frame(len) = read_at(flash, sector, cursor.offset, buf) {
+                    cursor.offset += len as u32;
+                    return Some(&buf[..len]);
+                }
             }
             (cursor.after_head, cursor.offset) = (cursor.after_head + 1, 0);
         }
@@ -338,157 +337,6 @@ impl Ring {
         let header = Record::Header { sequence: self.sequence, session: self.session }.encode(&mut buf);
         program(flash, sector, header);
         self.offset = header.len() as u32;
-    }
-}
-
-/// A run ends this long after its last text: longer than a pause in the middle of an over at
-/// 10 WPM.
-pub const RUN_END_MS: u32 = 4000;
-
-/// The part a source is filling.
-#[derive(Clone, Copy)]
-struct Open {
-    run: Run,
-    /// When its last text came, or its memory stopped playing.
-    last: u32,
-    /// A memory still playing: its run cannot end before the playback does.
-    sounding: bool,
-}
-
-impl Open {
-    fn ended(&self, now: u32) -> bool {
-        !self.sounding && ticks::reached(now, self.last.wrapping_add(RUN_END_MS))
-    }
-}
-
-/// Collects the text of each source into runs, and writes each run to the ring when it ends.
-/// `call` goes in the session start record, which the first run of a power-on writes.
-pub struct Logger {
-    ring: Ring,
-    version: [u8; 3],
-    open: [Option<Open>; SOURCES.len()],
-    next_run: u16,
-    session_written: bool,
-}
-
-impl Logger {
-    /// `version` is the firmware's.
-    pub fn open(flash: &mut impl Flash, sectors: u16, version: [u8; 3]) -> Logger {
-        let ring = Ring::open(flash, sectors);
-        Logger { ring, version, open: [None; SOURCES.len()], next_run: 0, session_written: false }
-    }
-
-    /// Adds `text` from `source` at `now`. Non-ASCII bytes are dropped.
-    pub fn push(&mut self, flash: &mut impl Flash, call: &str, source: Source, text: &str, now: u32) {
-        self.end_if_quiet(flash, call, source, now);
-        text.bytes().for_each(|byte| self.push_byte(flash, call, source, byte, now));
-    }
-
-    /// Adds the text of a memory that starts to play at `now`. Its run stays open until `played`.
-    pub fn push_memory(&mut self, flash: &mut impl Flash, call: &str, text: &str, now: u32) {
-        let slot = Source::Memory as usize;
-        self.end_if_quiet(flash, call, Source::Memory, now);
-        if self.open[slot].is_some_and(|open| !open.run.text.as_str().ends_with(' ')) {
-            self.push_byte(flash, call, Source::Memory, b' ', now);
-        }
-        self.push(flash, call, Source::Memory, text, now);
-        if let Some(open) = &mut self.open[slot] {
-            open.sounding = true;
-        }
-    }
-
-    /// The memory playing ended at `now`.
-    pub fn played(&mut self, now: u32) {
-        if let Some(open) = &mut self.open[Source::Memory as usize]
-            && core::mem::take(&mut open.sounding)
-        {
-            open.run.end = now;
-            open.last = now;
-        }
-    }
-
-    /// When the next open run ends.
-    pub fn deadline(&self) -> Option<u32> {
-        let quiet = self.open.iter().flatten().filter(|open| !open.sounding);
-        quiet.map(|open| open.last.wrapping_add(RUN_END_MS)).reduce(ticks::earlier)
-    }
-
-    /// Writes the runs that have ended by `now`, then erases ahead.
-    pub fn timeout(&mut self, flash: &mut impl Flash, call: &str, now: u32) {
-        SOURCES.into_iter().for_each(|source| self.end_if_quiet(flash, call, source, now));
-        self.ring.erase_ahead(flash);
-    }
-
-    /// Writes every open run, before power off.
-    pub fn close(&mut self, flash: &mut impl Flash, call: &str, now: u32) {
-        for slot in 0..self.open.len() {
-            if let Some(open) = self.open[slot].take() {
-                self.write(flash, call, open.run, now);
-            }
-        }
-    }
-
-    pub fn cursor(&self) -> Cursor {
-        self.ring.cursor()
-    }
-
-    pub fn next_frame<'a>(&self, flash: &mut impl Flash, cursor: &mut Cursor, buf: &'a mut [u8; MAX_FRAME]) -> Option<&'a [u8]> {
-        self.ring.next_frame(flash, cursor, buf)
-    }
-
-    fn end_if_quiet(&mut self, flash: &mut impl Flash, call: &str, source: Source, now: u32) {
-        if let Some(open) = self.open[source as usize]
-            && open.ended(now)
-        {
-            self.open[source as usize] = None;
-            self.write(flash, call, open.run, now);
-        }
-    }
-
-    /// A full part is written once its next byte comes, so its more flag is set only when more
-    /// text follows. Part `LAST_PART` ends its run.
-    fn push_byte(&mut self, flash: &mut impl Flash, call: &str, source: Source, byte: u8, now: u32) {
-        let slot = source as usize;
-        if !byte.is_ascii() {
-            return;
-        }
-        if let Some(open) = self.open[slot]
-            && open.run.text.len() == MAX_TEXT
-        {
-            let full = open.run;
-            let more = full.part < LAST_PART;
-            let next = Run { part: full.part + 1, more: false, start: now, text: Text::new(), ..full };
-            self.open[slot] = more.then_some(Open { run: next, ..open });
-            self.write(flash, call, Run { more, ..full }, now);
-        }
-        if self.open[slot].is_none() {
-            if byte == b' ' {
-                return;
-            }
-            let run = Run { source, run: self.next_run, part: 0, more: false, start: now, end: now, text: Text::new() };
-            self.next_run = self.next_run.wrapping_add(1);
-            self.open[slot] = Some(Open { run, last: now, sounding: false });
-        }
-        if let Some(open) = &mut self.open[slot] {
-            open.run.text.push(byte);
-            open.run.end = now;
-            open.last = now;
-        }
-    }
-
-    fn write(&mut self, flash: &mut impl Flash, call: &str, mut run: Run, now: u32) {
-        if !core::mem::replace(&mut self.session_written, true) {
-            let call = Text::format(format_args!("{call}"));
-            let record = Record::Session { session: self.ring.session(), start: now, version: self.version, call };
-            self.ring.append(flash, &record);
-        }
-        // A space before the next part is a word gap, which joining the parts keeps.
-        if !run.more {
-            while run.text.as_str().ends_with(' ') {
-                run.text.pop();
-            }
-        }
-        self.ring.append(flash, &Record::Run(run));
     }
 }
 
@@ -595,20 +443,6 @@ mod tests {
         *bad.last_mut().unwrap() ^= 1;
         assert_eq!(Record::decode(&bad), None, "a bad CRC");
         assert_eq!(run(0, 200, false, "").encode(&mut buf)[BODY_START + 3], 200 & !MORE, "a part never sets the more bit");
-    }
-
-    /// The persisted bytes, which `tools/pocketcw.py` also reads.
-    #[test]
-    fn frames_keep_their_bytes() {
-        let mut buf = [0; MAX_FRAME];
-        let mut hex = |record: Record| record.encode(&mut buf).iter().map(|b| std::format!("{b:02X}")).collect::<std::string::String>();
-        assert_eq!(hex(Record::Header { sequence: 1, session: 2 }), "4C4801080100000002000000459F");
-        assert_eq!(hex(session(3)), "4C530111030000002A000000000300054B354D4D4597C8");
-        let mut part = run(1, 2, true, "<AR>");
-        if let Record::Run(r) = &mut part {
-            r.source = Source::Them;
-        }
-        assert_eq!(hex(part), "4C54011103010082E8030000DC050000043C41523E9D19");
     }
 
     #[test]
@@ -795,88 +629,5 @@ mod tests {
         assert_eq!(runs(&ring, &mut chip).len(), 17);
         let ring = Ring::open(&mut chip, SMALL);
         assert_eq!((ring.head, ring.next_erased), (1, false), "after a power-off the next sector is erased again");
-    }
-
-    const VERSION_0_3: [u8; 3] = [0, 3, 0];
-
-    fn logged(logger: &Logger, chip: &mut Chip) -> Vec<Run> {
-        records(&logger.ring, chip)
-            .into_iter()
-            .filter_map(|r| match r {
-                Some(Record::Run(r)) => Some(r),
-                _ => None,
-            })
-            .collect()
-    }
-
-    fn joined(parts: &[Run]) -> std::string::String {
-        parts.iter().map(|r| r.text.as_str()).collect()
-    }
-
-    #[test]
-    fn a_run_ends_after_a_quiet_spell_after_its_session_start() {
-        let mut chip = Chip::new();
-        let mut logger = Logger::open(&mut chip, SMALL, VERSION_0_3);
-        logger.timeout(&mut chip, "K5MME", 10_000);
-        assert_eq!(records(&logger.ring, &mut chip), [], "nothing logged writes nothing");
-        logger.push(&mut chip, "K5MME", Source::You, "  CQ", 1000);
-        logger.push(&mut chip, "K5MME", Source::You, " ", 1500);
-        assert_eq!(logger.deadline(), Some(1500 + RUN_END_MS));
-        logger.timeout(&mut chip, "K5MME", 1500 + RUN_END_MS - 1);
-        assert_eq!(logged(&logger, &mut chip), []);
-        logger.timeout(&mut chip, "K5MME", 1500 + RUN_END_MS);
-        logger.push(&mut chip, "K5MME", Source::You, "K", 9000);
-        logger.close(&mut chip, "K5MME", 9100);
-        let start = Record::Session { session: 1, start: 1500 + RUN_END_MS, version: VERSION_0_3, call: Text::format(format_args!("K5MME")) };
-        assert_eq!(records(&logger.ring, &mut chip)[1], Some(start), "after the header, once");
-        let runs = logged(&logger, &mut chip);
-        assert_eq!(runs.iter().map(|r| (r.run, r.start, r.end, r.text.as_str())).collect::<Vec<_>>(), [(0, 1000, 1500, "CQ"), (1, 9000, 9000, "K")]);
-        assert_eq!(records(&logger.ring, &mut chip).len(), 4);
-    }
-
-    #[test]
-    fn a_full_part_keeps_its_word_gap_and_only_it_has_more() {
-        let mut chip = Chip::new();
-        let mut logger = Logger::open(&mut chip, SMALL, VERSION_0_3);
-        let text = std::format!("{} TU", "E".repeat(MAX_TEXT - 1));
-        logger.push(&mut chip, "K5MME", Source::Them, &text, 1000);
-        logger.close(&mut chip, "K5MME", 2000);
-        let parts = logged(&logger, &mut chip);
-        assert_eq!(parts.iter().map(|r| (r.source, r.run, r.part, r.more)).collect::<Vec<_>>(), [(Source::Them, 0, 0, true), (Source::Them, 0, 1, false)]);
-        assert_eq!(joined(&parts), text);
-    }
-
-    #[test]
-    fn part_127_ends_its_run() {
-        let mut chip = Chip::new();
-        let mut logger = Logger::open(&mut chip, 12, VERSION_0_3);
-        let parts = LAST_PART as usize + 1;
-        logger.push(&mut chip, "K5MME", Source::You, &"E".repeat(parts * MAX_TEXT), 1000);
-        logger.push(&mut chip, "K5MME", Source::You, " T", 1000);
-        logger.close(&mut chip, "K5MME", 2000);
-        let runs = logged(&logger, &mut chip);
-        assert_eq!(runs.len(), parts + 1);
-        assert!(runs[..parts - 1].iter().all(|r| r.run == 0 && r.more));
-        let last = runs[parts - 1];
-        assert_eq!((last.run, last.part, last.more), (0, LAST_PART, false));
-        assert_eq!((runs[parts].run, runs[parts].part, runs[parts].text.as_str()), (1, 0, "T"));
-    }
-
-    #[test]
-    fn a_memory_longer_than_the_quiet_spell_ends_when_it_stops_playing() {
-        let mut chip = Chip::new();
-        let mut logger = Logger::open(&mut chip, SMALL, VERSION_0_3);
-        logger.push_memory(&mut chip, "K5MME", "CQ POTA", 1000);
-        assert_eq!(logger.deadline(), None);
-        logger.timeout(&mut chip, "K5MME", 20_000);
-        assert_eq!(logged(&logger, &mut chip), []);
-        logger.played(21_000);
-        logger.push_memory(&mut chip, "K5MME", "K", 22_000);
-        logger.played(23_000);
-        logger.played(24_000);
-        assert_eq!(logger.deadline(), Some(23_000 + RUN_END_MS), "a play that is not a memory moves nothing");
-        logger.timeout(&mut chip, "K5MME", 23_000 + RUN_END_MS);
-        let runs = logged(&logger, &mut chip);
-        assert_eq!(runs.iter().map(|r| (r.source, r.start, r.end, r.text.as_str())).collect::<Vec<_>>(), [(Source::Memory, 1000, 23_000, "CQ POTA K")]);
     }
 }

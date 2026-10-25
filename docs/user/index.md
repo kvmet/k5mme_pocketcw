@@ -16,7 +16,6 @@ This manual tells you how to install PocketCW and how to use it.
 - [Menu](menu.md): every screen the menu opens.
 - [Keyer](keyer.md): the main screen.
 - [Memories](memories.md): store four messages and send them on your radio.
-- [Log](log.md): record what goes out on the air, and save it on a computer.
 - [Timing](timing.md): a close look at your keying.
 - [Receive drills](receive.md): Koch, words and callsigns.
 - [Ragchew](ragchew.md): copy a full QSO between two stations.
