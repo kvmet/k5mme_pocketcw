@@ -128,7 +128,10 @@ def ended(text: str) -> str:
 def spoken(clip: str, said: str) -> str:
     """What the voice says for a clip of `said`. Kokoro rushes a lone letter and runs spelled
     letters together; as the end of a sentence it says each one in full, so a character, a
-    meaning and each part of a spelled word end in a period."""
+    meaning and each part of a spelled word end in a period. Kokoro barely pauses at a comma,
+    so a meaning's commas become ellipses."""
+    if clip == "meaning" and not PHONEMES.fullmatch(said):
+        return ended(said.replace(",", "…"))
     if clip != "word":
         return ended(said)
     if not PHONEMES.fullmatch(said) and SPELLED.search(said):
