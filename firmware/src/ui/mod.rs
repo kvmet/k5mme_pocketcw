@@ -415,11 +415,10 @@ impl Ui {
         }
     }
 
-    /// The player finished a transmission at `now_ms`.
+    /// Every player went quiet at `now_ms`. A serial PLAY can end here with nothing of the
+    /// screen's sounding, so each screen checks that its own transmission was.
     pub fn played(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
-        if core::mem::take(&mut self.serial_play) {
-            return;
-        }
+        self.serial_play = false;
         match self.screen {
             Screen::Qso => self.qso_played(),
             Screen::Hunt => self.hunt_played(now_ms),

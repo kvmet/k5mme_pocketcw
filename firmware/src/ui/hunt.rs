@@ -279,6 +279,9 @@ impl Ui {
     /// The activator finished sending; while it is calling and you are quiet, it calls again.
     pub(super) fn hunt_played(&mut self, now_ms: u32) {
         let Some(Session::Hunt(h)) = &mut self.session else { return };
+        if !h.playing {
+            return;
+        }
         h.playing = false;
         let quiet = h.over.is_empty() && h.over_deadline.is_none() && h.queued.is_none();
         if quiet && h.bot.phase == Phase::Calling {

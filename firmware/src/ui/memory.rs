@@ -113,6 +113,9 @@ impl Ui {
     /// A memory ended: the repeating one waits and goes again.
     pub(super) fn memory_played(&mut self, lcd: &mut Lcd, now_ms: u32) {
         let Some(sending) = &mut self.sending else { return };
+        if sending.again_at.is_some() {
+            return;
+        }
         if !self.memories.repeats[sending.slot] {
             self.sending = None;
             return self.idle_status(lcd);
