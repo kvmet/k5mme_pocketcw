@@ -15,7 +15,7 @@ The vendor ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every othe
 
 PocketCW runs from the MCU app area and reads the content pack from the SPI flash.
 
-`tools/pack.py` builds `F000400.bin`; `logic/src/pack.rs` gives the format. `tools/release.sh` still writes the 4 KB format 1 file, which the app reports as `PACK=OLD`.
+`tools/pack.py` builds `F000400.bin`; `logic/src/pack.rs` gives the format. `tools/release.sh` builds it into each release.
 
 `firmware/memory.x` gives the app 236 KB from 0x08005000, and `cortex-m-rt` sets VTOR from its `set-vtor` feature.
 
@@ -35,7 +35,7 @@ On macOS, PocketCW installs with `tools/pocketcw-flash.c`. The tool blocks the m
 
 The update drive is FAT16 with 2 KB sectors, 8 KB clusters and 51,200 sectors (100 MB). Confirmed on 2.64; `pocketcw-flash` prints the cluster size. `pocketcw-flash` writes the whole FAT in one sector, so a file holds at most 1022 clusters: 8,372,224 bytes.
 
-An SPI flash install erases and programs the 4 KB sectors its file covers. Confirmed on 2.64 with a 2,093,056 byte file at 0x100000, the largest tested: every sector of it read back. Tags written beforehand in the sector just past its end, 4 KB, 64 KB and 1 MB past it, and at 0xC00000 and 0xDFF000 all survived.
+An SPI flash install erases and programs the 4 KB sectors its file covers. Confirmed on 2.64 with a 2,093,056 byte file at 0x100000, the largest tested: every sector of it read back. A 5.97 MB content pack also installed and played to its last clip. Tags written beforehand in the sector just past its end, 4 KB, 64 KB and 1 MB past it, and at 0xC00000 and 0xDFF000 all survived.
 
 Drive writes that are not part of an update file can also land in the SPI flash. On 2.64, after a session with several installs, 0x101000 to 0x103FFF held a FAT directory cluster (first entry `.`, attribute 0x12) in place of the test file data. The sectors were erased before the write. Likely: macOS wrote to the drive while it was mounted, and the bootloader routed the write to the SPI flash beside the last F file. So data that PocketCW keeps in the SPI flash checks its own frames, and the install path never lets macOS mount the drive.
 
@@ -43,7 +43,7 @@ After a finished write, the status file reads `Success` for about 1 second. Then
 
 A failed write leaves the bootloader in update mode at every power on, until a write finishes. The vendor upgrade notes say so, and a 2.64 unit did it. Likely cause on that unit: macOS mounted the drive when it came back `Ready` after `Success`, and wrote its own files to it. So the tool counts a write as done only when it reads `Success`, and it blocks the mount until the drive is back.
 
-On first installs, every user who installed only `A000014.bin` saw the device stay in update mode. Installing an `F` file first, then `A000014.bin`, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: `F000000.bin`, then `A000014.bin`. The cause is not known; no dump of the bootloader exists. So a first install writes `F000400.bin` before `A000014.bin`, and the stock install always writes `F0000C0.bin` before `A000014.bin`. `pocketcw-flash` writes both files in one update mode session, as a Windows copy does: after `Success` on the F file, it waits for the drive to come back `Ready`, then writes the A file. A retry starts again at the F file.
+On first installs, every user who installed only `A000014.bin` saw the device stay in update mode. Installing an `F` file first, then `A000014.bin`, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: `F000000.bin`, then `A000014.bin`. The cause is not known; no dump of the bootloader exists. So every install writes `F000400.bin`, the content pack, before `A000014.bin`, and the stock install always writes `F0000C0.bin` before `A000014.bin`. `pocketcw-flash` writes both files in one update mode session, as a Windows copy does: after `Success` on the F file, it waits for the drive to come back `Ready`, then writes the A file. A retry starts again at the F file.
 
 ## Write protection
 

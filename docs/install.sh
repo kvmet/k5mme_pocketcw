@@ -1,7 +1,7 @@
 #!/bin/sh
 # Installs PocketCW, or the stock firmware V5.03, on a HamCube from macOS.
-# A first install writes an F file to SPI flash before the A file: the bootloader can fail an A write
-# that no F write came before.
+# Each install writes an F file to SPI flash before the A file: PocketCW's content pack must match
+# its firmware, and the bootloader can fail an A write that no F write came before.
 # usage: curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 #        curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 # The shell reads this script from its stdin, so prompts and pocketcw-flash read the terminal.
@@ -36,19 +36,11 @@ flash() {
 
 install_pocketcw() {
     mkdir "$work/pocketcw"
+    echo "Downloading the content pack, about 8 MB, and the firmware."
+    get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
     get "$release/A000014.bin" "$work/pocketcw/A000014.bin"
-    echo "A first install on a device writes a small PocketCW file, then the firmware."
-    printf "Is this the first PocketCW install on this device? [Y/n] "
-    read -r answer </dev/tty
-    case $answer in
-    [nN]*)
-        flash "$work/pocketcw/A000014.bin"
-        ;;
-    *)
-        get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
-        flash "$work/pocketcw/F000400.bin" "$work/pocketcw/A000014.bin"
-        ;;
-    esac
+    echo "The install writes the content pack, which takes a few minutes, then the firmware."
+    flash "$work/pocketcw/F000400.bin" "$work/pocketcw/A000014.bin"
 }
 
 install_stock() {

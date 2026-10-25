@@ -26,8 +26,8 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 - `opt-level = "z"` is adopted: the app ran fine on hardware. The worst-case synth sample costs 1900 of 4096 cycles at `"z"` and 1400 at `"s"`, measured on board 2.64.
 - USB MIDI is planned next, and will take MCU flash.
 - SPI flash: 16 MB GigaDevice GD25Q128 (JEDEC C8 40 18), on SPI1 with the LCD (`LCD_CS` PB6, `FLASH_CS` PB9). No write protection is set. SFDP 1.0 with 9 dwords lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, but no erase times and no page size.
-- SPI flash in use, by scan: 0x000000 to 0x025FFF (boot screen), 0x030000 to 0x0C5FFF (UI images), 0x100000 to 0x100FFF (`F000400.bin`), 0xE00000 to 0xFECFFF (fonts). Free: 0x0C6000 to 0xDFFFFF apart from `F000400.bin`. The stock firmware has a contact log whose location is not known.
-- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:250`): 1022 clusters. The update drive has 8 KB clusters, so 8,372,224 bytes. Installs of 2 MB are tested; larger ones are not.
+- SPI flash in use, by scan: 0x000000 to 0x025FFF (boot screen), 0x030000 to 0x0C5FFF (UI images), 0x100000 to about 0x8FC000 (the content pack `F000400.bin`), 0xE00000 to 0xFECFFF (fonts). Free: 0x0C6000 to 0x0FFFFF and 0x8FC000 to 0xDFFFFF. The stock firmware has a contact log whose location is not known, so a pack install may erase it.
+- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:250`): 1022 clusters. The update drive has 8 KB clusters, so 8,372,224 bytes. A 5.97 MB install is tested.
 - An install erases and writes only the 4 KB sectors its file covers. Data in the next sector is kept.
 - No RTC (PC14 and PC15 carry the dial) and no audio input (no I2S lines to the MCU).
 - Task model: `sample` at priority 4, `tick` at 3, `ui` at 1. The `audio` resource is shared by `tick` and `ui`, so its lock masks the 1 ms tick. The event queue to `ui` is 64 deep.
@@ -124,7 +124,7 @@ Flash cost: about 1 KB.
   | Piper LJSpeech | Public domain dataset. Other Piper voices carry their own licenses and are not candidates. |
   | espeak-ng | GPL-3.0. Robotic, but formant speech can stay clear at low sample rates. |
 
-- The clip builder records the voice name, version and license in `THIRD-PARTY.txt`.
+- `tools/release.sh` appends the content pack's credits, `tools/pack-notice.txt`, to `THIRD-PARTY.txt`.
 - Format: 4-bit IMA ADPCM at 8789 Hz (17578 / 2), about 4.4 KB a second. Playback draws two output samples per input on straight lines (`logic/src/adpcm.rs`), so no fractional resampler is needed. The pack header gives the rate, so a pack at another rate needs no firmware change.
 - Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack.py` leaves out the least common words until the pack fits. A 5.97 MB pack installed and played to its last clip.
 

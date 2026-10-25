@@ -49,7 +49,7 @@ Then:
 1. Follow the steps the script prints. The script installs both files in one update mode session, so you put the device in update mode only once. macOS can ask for your password once for each file.
 2. When the script says "Finished", unplug the device, then click the dial to turn it on.
 
-To install PocketCW again, follow [Install](install.md), with the first install steps.
+To install PocketCW again, follow [Install](install.md).
 
 ## The beta for board 2.63
 

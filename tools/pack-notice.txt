@@ -1,0 +1,27 @@
+
+==============================================================================
+F000400.bin, the PocketCW content pack
+==============================================================================
+
+The content pack includes data and speech from these works.
+
+Word list: wordfreq 3.1.1 by Robyn Speer, https://github.com/rspeer/wordfreq
+Its data is under the Creative Commons Attribution-ShareAlike 4.0 license,
+https://creativecommons.org/licenses/by-sa/4.0/
+PocketCW kept the 3000 most frequent English words made only of letters,
+removed single letters other than A and I and the words in
+tools/words/blocklist.txt, and upper cased them. That list, in the pack and as
+tools/words/common.txt in the PocketCW source, is shared under the same
+license. The pack leaves out the least common words that do not fit.
+
+wordfreq's data comes from many sources. Its credits include:
+- SUBTLEX, by Marc Brysbaert, Boris New and the other SUBTLEX authors.
+  SUBTLEX is freely available data.
+- OpenSubtitles, https://www.opensubtitles.org
+- Google Books Ngram Viewer, http://books.google.com/ngrams
+The full list is in wordfreq's README.
+
+Voice: Kokoro-82M by hexgrad, voice af_heart,
+https://huggingface.co/hexgrad/Kokoro-82M
+The model is under the Apache License 2.0. The clips in the pack are speech
+that the model made.
