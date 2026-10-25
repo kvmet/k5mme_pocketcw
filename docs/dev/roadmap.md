@@ -6,7 +6,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 2. SPI flash driver and log location
 3. Content pack
 4. Morse then voice, and the head-copy ladder
-5. Two-way ragchew bot
+5. Two-way ragchew bot: deferred
 6. In-line logger: raw transcripts on the device, QSO detection on the computer
 7. Stats export
 8. Later: send drill, keyer extras, games
@@ -139,6 +139,8 @@ Flash cost: about 4 KB.
 
 ## 5. Two-way ragchew bot
 
+Deferred on 2026-10-25. The POTA and SOTA modes already give two-way practice, and its 6 to 10 KB of flash goes to Vail and MIDI support instead.
+
 ### What it does
 
 You are one of the two stations. The bot calls CQ or answers yours. The QSO runs as on the air: reports, names, QTH, rig, antenna, weather, then 73. The bot answers what you send: it sends your report back, uses your name, asks `AGN?` about a field it could not read, and answers `QRS` and `?`.
@@ -254,12 +256,12 @@ Flash cost: about 1 KB.
 | SPI flash driver | 3 KB |
 | Content pack parser | 1 KB |
 | Voice and head copy | 4 KB |
-| Two-way ragchew | 6 to 10 KB |
+| Two-way ragchew (deferred) | 6 to 10 KB |
 | Logger, LOG screen, `DUMP LOG` | 4 to 5 KB |
 | Stats export | 1 KB |
-| Total | 19 to 24 KB |
+| Total, without the deferred ragchew | 13 to 14 KB |
 
-The plan needs 19 to 24 KB of 46.1 KiB free at `"z"`, before MIDI. More ways to get flash back:
+The plan needs 13 to 14 KB of 46.1 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
 
 - Float formatting: about 10 KB of `core::fmt` float code (grisu, dragon, `float_to_decimal_common_exact`), from `{:.1}` in `ui/tape.rs:156` and `ui/home.rs:234` and at least one shortest-form float print. Fixed-point integer formatting removes it.
 - Move fixed text tables (ragchew names, cities, rigs; bot phrases) into the content pack, with a small fallback in MCU flash so the bots still work without a pack.
