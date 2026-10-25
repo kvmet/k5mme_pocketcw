@@ -7,7 +7,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 3. Content pack
 4. Morse then voice, and the head-copy ladder
 5. Two-way ragchew bot: deferred
-6. In-line logger: raw transcripts on the device, QSO detection on the computer
+6. In-line logger: deferred until after MIDI, Vail and F key long presses
 7. Stats export: built
 8. Later: send drill, keyer extras, games
 9. Revisit at the end: F key long presses, when the serial port is up
@@ -27,7 +27,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 - USB MIDI is planned next, and will take MCU flash.
 - SPI flash: 16 MB GigaDevice GD25Q128 (JEDEC C8 40 18), on SPI1 with the LCD (`LCD_CS` PB6, `FLASH_CS` PB9). No write protection is set. SFDP 1.0 with 9 dwords lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, but no erase times and no page size.
 - SPI flash in use, by scan: 0x000000 to 0x025FFF (boot screen), 0x030000 to 0x0C5FFF (UI images), 0x100000 to about 0x8FC000 (the content pack `F000400.bin`), 0xE00000 to 0xFECFFF (fonts). Free: 0x0C6000 to 0x0FFFFF and 0x8FC000 to 0xDFFFFF. The stock firmware has a contact log whose location is not known, so a pack install may erase it.
-- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:250`): 1022 clusters. The update drive has 8 KB clusters, so 8,372,224 bytes. A 5.97 MB install is tested.
+- Install limit: `pocketcw-flash` refuses a file that needs more than one FAT sector (`tools/pocketcw-flash.c:250`): 1022 clusters. The update drive has 8 KB clusters, so 8,372,224 bytes. An 8.37 MB install is tested.
 - An install erases and writes only the 4 KB sectors its file covers. Data in the next sector is kept.
 - No RTC (PC14 and PC15 carry the dial) and no audio input (no I2S lines to the MCU).
 - Task model: `sample` at priority 4, `tick` at 3, `ui` at 1. The `audio` resource is shared by `tick` and `ui`, so its lock masks the 1 ms tick. The event queue to `ui` is 64 deep.
@@ -101,7 +101,7 @@ Flash cost: about 3 KB.
 - Header: magic, format version, a table of sections (kind, offset, length, CRC32).
 - Sections are added as the features that use them arrive: word lists by frequency first, for the head-copy ladder.
 
-The device parses the header in `logic`, with host tests on packs the tool builds. Features that need a missing section show `CONTENT PACK MISSING: REINSTALL`; the rest of the firmware works.
+The device parses the header in `logic`, with host tests on packs the tool builds. Features that need a missing section show `CONTENT PACK MISSING: INSTALL IT`; the rest of the firmware works.
 
 The core bots must work without a pack. Their tables stay in MCU flash unless the flash budget forces a move; then a small fallback table stays.
 
@@ -113,6 +113,8 @@ Flash cost: about 1 KB.
 
 - NINJA drill: the device sends a word in Morse, waits, then speaks it. No keying needed. Key the word before the voice, and it is scored like the other drills. Built as a fourth receive drill, with single words from the content pack; phrases are not built.
 - Head-copy ladder: words get longer as you copy them, then two words, then short sentences. You key back at the end. Built as a fifth receive drill, HEAD, with QSO exchange lines as the sentences.
+- Planned for HEAD: save the rung across power off, as an appended field of the progress record.
+- Maybe for HEAD: the voice says the item after your copy, as in NINJA. The pack would first need clips for every word of the QSO lines (names, cities, rigs, weather), which is a pack change.
 
 ### Voice clips
 
@@ -126,7 +128,8 @@ Flash cost: about 1 KB.
 
 - `tools/release.sh` appends the content pack's credits, `tools/pack-notice.txt`, to `THIRD-PARTY.txt`.
 - Format: 4-bit IMA ADPCM at 8789 Hz (17578 / 2), about 4.4 KB a second. Playback draws two output samples per input on straight lines (`logic/src/adpcm.rs`), so no fractional resampler is needed. The pack header gives the rate, so a pack at another rate needs no firmware change.
-- Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack.py` leaves out the least common words until the pack fits. A 5.97 MB pack installed and played to its last clip.
+- Size: a pack file is 8,372,224 bytes or less, about 1900 s of speech. `tools/pack.py` leaves out the least common words until the pack fits. An 8.37 MB pack installed and played its first and last clips.
+- Planned: a computer tool that plays every clip of a built pack, so a listener can mark the bad ones without the device. The marks feed `tools/words/blocklist.txt` or a new spelling for the voice.
 
 ### Playback
 
@@ -160,6 +163,16 @@ Host tests run scripted QSOs: a clean one, one with an error in each field, one 
 Flash cost: 6 to 10 KB, the largest item.
 
 ## 6. In-line logger
+
+Deferred on 2026-10-25, after MIDI, Vail and the F key long presses: long presses can give note mode and the LOG screen a place outside the menu. Built and kept: the log ring and format (`logic/src/log.rs`), and the flash write guard (`firmware/src/spi_flash.rs`). Built and taken out: run capture, the LOG setting, `DUMP LOG` and `pocketcw.py log`, in commit d920c55; commit 3bb0d26 takes them out, and a revert of 3bb0d26 puts them back.
+
+Open questions for when it returns:
+
+- Note mode and the LOG screen need a place: the menu is full at 11 rows.
+- A run ends after 4 s with no new text. Check this against real sending.
+- A memory is logged whole at the end of its playback, and only from STRAIGHT output with KEY OUT on.
+- On a Pro, check whether the decoder board hears your own sidetone. If it does, your keying logs twice, as YOU and as THEM.
+- A memory's run ends when the "playback ended" message arrives. A full event queue can drop that message, and the run then stays open until the next memory or power off.
 
 The device sits between your key and the radio with KEY OUT on, and records a raw transcript. The device does no QSO detection. `tools/pocketcw.py` finds QSOs in the exported transcript.
 
@@ -270,11 +283,11 @@ Flash cost: about 1 KB.
 | Content pack parser | 1 KB |
 | Voice and head copy | 4 KB |
 | Two-way ragchew (deferred) | 6 to 10 KB |
-| Logger, LOG screen, `DUMP LOG` | 4 to 5 KB |
+| Logger, LOG screen, `DUMP LOG` (deferred) | 4 to 5 KB; capture and `DUMP LOG` measured 5.6 KB |
 | Stats export | 1 KB |
-| Total, without the deferred ragchew | 13 to 14 KB |
+| Total, without the deferred items | 9 KB |
 
-The plan needs 13 to 14 KB of 46.1 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
+The plan needs 9 KB of 46.1 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
 
 - Float formatting: about 10 KB of `core::fmt` float code (grisu, dragon, `float_to_decimal_common_exact`), from `{:.1}` in `ui/tape.rs:156` and `ui/home.rs:234` and at least one shortest-form float print. Fixed-point integer formatting removes it.
 - Move fixed text tables (ragchew names, cities, rigs; bot phrases) into the content pack, with a small fallback in MCU flash so the bots still work without a pack.
