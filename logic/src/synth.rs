@@ -27,6 +27,9 @@ const AGC_RELEASE_S: f32 = 0.5;
 const LIMIT_KNEE: f32 = 0.8;
 /// Key edges rise and fall over 5 ms on a raised cosine, so they don't click.
 const RAMP_S: f32 = 0.005;
+/// A square sounds about 7.5 dB louder than a sine of the same peak, by ear on the speaker and the
+/// headphones, so it plays 7.5 dB down.
+const SQUARE_GAIN: f32 = 0.4217;
 /// 1/n for the odd harmonics a square sums: n = 1, 3, .. 31. At 17.6 kHz this reaches the
 /// Nyquist frequency for pitches down to 284 Hz; a lower pitch loses its top harmonics.
 const ODD_RECIPROCALS: [f32; 16] = {
@@ -221,6 +224,9 @@ pub struct Synth {
     /// Gain on the stations, below 1 while they overlap.
     agc: f32,
     agc_release: f32,
+    /// Gain on the whole mix, easing toward `gain_target` so a change doesn't click.
+    gain: f32,
+    gain_target: f32,
     step: f32,
 }
 
@@ -246,6 +252,8 @@ impl Synth {
             duck: 1.0,
             agc: 1.0,
             agc_release: 1.0 / (AGC_RELEASE_S * sample_hz),
+            gain: 1.0,
+            gain_target: 1.0,
             step: 1.0 / (RAMP_S * sample_hz),
         };
         synth.set_sound(sound);
@@ -258,6 +266,11 @@ impl Synth {
         self.noise_rms = if noise == 0 { 0.0 } else { NOISE_RMS[noise as usize - 1] };
         self.fade_depth = sound.fading.min(MAX_LEVEL) as f32 * MAX_FADE_DEPTH / MAX_LEVEL as f32;
         self.noise.tune(sound.tone_hz as f32, self.sample_hz);
+    }
+
+    /// Scales everything the synth plays by `gain`, 0..=1, easing in over about `RAMP_S`.
+    pub fn set_gain(&mut self, gain: f32) {
+        self.gain_target = gain;
     }
 
     /// Whether the current screen plays band noise.
@@ -308,7 +321,7 @@ impl Synth {
             }
             let wave = if self.square {
                 let (sin, cos) = v.tone.next_unit();
-                square(sin, cos, v.harmonics)
+                SQUARE_GAIN * square(sin, cos, v.harmonics)
             } else {
                 v.tone.next()
             };
@@ -336,7 +349,8 @@ impl Synth {
                 None => self.speech = None,
             }
         }
-        limit(mix)
+        self.gain += (self.gain_target - self.gain) * step;
+        self.gain * limit(mix)
     }
 }
 
@@ -393,6 +407,28 @@ mod tests {
         assert!((649..=651).contains(&crossings), "{crossings}");
         let peak = samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
         assert!((VOICE_PEAK * 0.98..VOICE_PEAK * 1.05).contains(&peak), "{peak}");
+    }
+
+    #[test]
+    fn a_gain_change_eases_in_without_a_jump() {
+        let (mut synth, mut plain) = (Synth::new(RATE, SOUND), Synth::new(RATE, SOUND));
+        synth.key(SIDETONE, true, 700);
+        plain.key(SIDETONE, true, 700);
+        for _ in 0..RATE as usize / 10 {
+            assert_eq!(synth.sample(), plain.sample());
+        }
+        synth.set_gain(0.5);
+        let mut gain = 1.0;
+        for _ in 0..RATE as usize / 10 {
+            let (s, p) = (synth.sample(), plain.sample());
+            // Near a zero crossing the ratio says little about the gain, so a few samples go by
+            // between checks. Without easing the gain would drop by 0.5 at once.
+            if p.abs() > 0.3 {
+                assert!((s / p - gain).abs() < 0.05, "{gain} to {}", s / p);
+                gain = s / p;
+            }
+        }
+        assert!((gain - 0.5).abs() < 0.001, "{gain}");
     }
 
     #[test]
@@ -484,6 +520,17 @@ mod tests {
             assert!((ratio - 1.0).abs() < 0.01, "harmonic {n}: {ratio}");
         }
         assert!(level(&samples, 1400.0) / fundamental < 1e-4);
+    }
+
+    #[test]
+    fn a_square_peaks_7_5_db_under_a_sine() {
+        let mut sine = Synth::new(RATE, SOUND);
+        sine.key(SIDETONE, true, 700);
+        let peak = |samples: &[f32]| samples.iter().fold(0.0f32, |m, x| m.max(x.abs()));
+        let sine: std::vec::Vec<f32> = (0..RATE as usize).map(|_| sine.sample()).collect();
+        let db = 20.0 * (peak(&square_samples(700)) / peak(&sine)).log10();
+        // The band-limited square peaks up to 0.9 dB under 1.
+        assert!((-8.4..=-7.4).contains(&db), "{db}");
     }
 
     #[test]
