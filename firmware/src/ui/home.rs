@@ -59,7 +59,7 @@ impl Ui {
     pub(super) fn draw_home(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.draw_home_header(lcd, s);
-        self.softkeys(lcd, KEYS);
+        self.draw_home_keys(lcd);
         rect(lcd, DIGITS_X - 5, DIGITS_Y - 3, DIGITS_W + 10, DIGITS_H + 6, t.panel());
         tiny(lcd, DIGITS_X + DIGITS_W + 8, DIGITS_Y + DIGITS_H - 12, "WPM", t.muted, t.bg);
         for (i, label) in ["TONE", "VOL", "OUT", "DIT"].iter().enumerate() {

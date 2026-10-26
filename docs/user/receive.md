@@ -85,7 +85,7 @@ The device keeps your level and your progress toward the next level while you us
 | Control | Action |
 | - | - |
 | F1 (SET) | Pauses the drill and opens the settings at the HEAR section. F4 (BACK) there returns, and the next group plays at the new settings. |
-| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. |
+| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
 | F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |

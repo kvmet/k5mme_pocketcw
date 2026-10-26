@@ -30,13 +30,13 @@ A closing over holds TU, 72, 73, 5NN, 599, TNX or RR.
 
 ## What the screen shows
 
-The transcript shows each over: YOU for yours, THEM for the activator. What the activator sends shows as a row of dashes until you log the QSO, so you copy it by ear. F3 (HINT) shows the text.
+The transcript shows each over: YOU for yours, THEM for the activator. What the activator sends shows as a row of dashes until you log the QSO, so you copy it by ear. F3 (HINT) shows the text, and then reads HIDE.
 
 Under the transcript:
 
 | Item | What it shows |
 | - | - |
-| NOW or LAST | NOW during a QSO. LAST after you log a QSO: the items show the QSO you logged last until the next activator answers you. |
+| NOW or LAST | NOW during a QSO and before your first. LAST after you log a QSO: the items show the QSO you logged last until the next activator answers you. |
 | HUNTED | QSOs you logged. |
 | GOOD | QSOs where you logged the activator's callsign right and the activator copied your callsign right. |
 | CALL | The activator's callsign. After you log, the label says COPIED with a green edge, MISSED with a red edge when you keyed a wrong callsign, or BUSTED with a red edge when the activator copied your callsign wrong. |
@@ -60,7 +60,7 @@ The hunt uses CHAR SPEED and FARNSWORTH in the HEAR section of the [settings](se
 | - | - |
 | F1 (SET) | Stops the activator and opens the settings at the QSO section. F4 (BACK) there returns. The activator calls CQ again, or during a QSO sends its last transmission again, at the new settings. |
 | F2 (QRS) | The same as sending `QRS`. |
-| F3 (HINT) | Shows or hides the hidden text and the exact next step. |
+| F3 (HINT or HIDE) | Shows or hides the hidden text and the exact next step. |
 | F4 (BACK) | Pauses the hunt and opens the ON AIR list of the [menu](menu.md). Click HUNT or RESUME to go on: the activator sends its last transmission again. The counts stay while the device is on, until you start other practice. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |

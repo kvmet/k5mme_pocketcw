@@ -107,7 +107,8 @@ impl Ui {
     pub(super) fn draw_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "HUNT", &[]);
-        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        let Some(Session::Hunt(h)) = &self.session else { return };
+        self.softkeys(lcd, exchange::keys(h.hint));
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_hunt_lines(lcd);
         self.draw_hunt_state(lcd);
@@ -254,9 +255,10 @@ impl Ui {
                 self.draw_hunt_lines(lcd);
             }
             Action::Soft(2) => {
-                if let Some(Session::Hunt(h)) = &mut self.session {
-                    h.hint = !h.hint;
-                }
+                let Some(Session::Hunt(h)) = &mut self.session else { return };
+                h.hint = !h.hint;
+                let hint = h.hint;
+                self.softkeys(lcd, exchange::keys(hint));
                 self.draw_hunt_lines(lcd);
                 self.draw_hunt_state(lcd);
                 self.draw_hunt_over(lcd);

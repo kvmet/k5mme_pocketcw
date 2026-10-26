@@ -161,8 +161,8 @@ impl Ui {
 
     fn draw_ragchew_keys(&self, lcd: &mut Lcd) {
         let Some(Session::Ragchew(c)) = &self.session else { return };
-        let pause = if c.state == State::Paused { "GO" } else { "STOP" };
-        self.softkeys(lcd, ["SET", "AGN", pause, "BACK"]);
+        let (again, pause) = if c.state == State::Paused { ("", "GO") } else { ("AGN", "STOP") };
+        self.softkeys(lcd, ["SET", again, pause, "BACK"]);
     }
 
     fn draw_ragchew_lines(&self, lcd: &mut Lcd) {

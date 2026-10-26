@@ -45,7 +45,7 @@ The footer shows your score for this session.
 | Control | Action |
 | - | - |
 | F1 (SET) | Pauses and opens the settings at the HEAR section. F4 (BACK) there returns, and the current over plays again at the new settings. |
-| F2 (AGN) | While an over plays or waits for your answer: sends the over again from its start. |
+| F2 (AGN) | While an over plays or waits for your answer: sends the over again from its start. Blank while paused. |
 | F3 (STOP or GO) | Pauses, or starts again from the start of the current over. |
 | F4 (BACK) | Pauses and opens the ON AIR list of the [menu](menu.md). Click CHEW or QUIZ, or RESUME, to go on from the start of the current over. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |

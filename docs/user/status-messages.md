@@ -38,7 +38,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
 | `KEY OUT ON`, `KEY OUT OFF` | You held F1 and turned KEY OUT on or off. See [Controls](controls.md#held-buttons). |
-| `KEY OUT ON: NOT IN PRACTICE` | You held F1 and turned KEY OUT on, on a screen where your key does not key the radio. It keys the radio on the KEYER, TIMING and RADIO screens. |
+| `KEY OUT ON: NOT ON THIS SCREEN` | You held F1 and turned KEY OUT on, on a screen where your key does not key the radio. It keys the radio on the KEYER, TIMING and RADIO screens. |
 | `NOTHING TO RESUME` | You held F1 with F1 HOLD set to RESUME, and you have not opened a drill or QSO yet. |
 
 ## WinKeyer
@@ -63,14 +63,14 @@ These messages show when VBand's page connects to the device as a CW Hotline. Se
 
 ## Memories
 
-These messages show on the KEYER screen. See [Memories](memories.md).
+These lines show on the KEYER screen. See [Memories](memories.md). The first four are the footer: they stay while their state lasts, in the footer's color.
 
 | Message | Meaning |
 | - | - |
 | `HOLD REPEATS  CLICK CLOSES` | The memory row is open. Hold an F button to send its memory again and again. A dial click closes the row. |
 | `SENDING Mn  KEY TO STOP` | Memory n is sending. Touch your key to stop it. |
-| `Mn AGAIN IN nS  KEY TO STOP` | Memory n repeats after the time shown. |
-| `Mn TONE ONLY: OUT IS PADDLE` | Memory n plays as a tone and does not key the func jack, because OUT TYPE is PADDLE. |
+| `Mn REPEATS EVERY nS  KEY TO STOP` | Memory n waits that long after each send, then sends again. |
+| `Mn TONE ONLY: OUT TYPE PADDLE` or `Mn TONE ONLY: KEY OUT OFF` | Memory n plays as a tone and does not key the func jack. |
 | `Mn IS EMPTY (SETTINGS)` | Memory n holds no message. Key one in, in the MEMORIES section of the settings. |
 | `MEMORY FULL` | In the settings: the memory has no room for the last character you keyed. A memory holds up to 48 characters, and a prosign such as `<AR>` takes 4. |
 

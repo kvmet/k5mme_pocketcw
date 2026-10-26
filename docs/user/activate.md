@@ -35,13 +35,13 @@ More ways to talk to the hunters:
 
 ## What the screen shows
 
-The transcript shows each over: YOU for yours, PILE for the pileup, and the hunter's callsign for the hunter you work. What the hunters send shows as a row of dashes until the QSO is in your log, so you copy it by ear. F3 (HINT) shows the text.
+The transcript shows each over: YOU for yours, PILE for the pileup, and the hunter's callsign for the hunter you work. What the hunters send shows as a row of dashes until the QSO is in your log, so you copy it by ear. F3 (HINT) shows the text, and then reads HIDE.
 
 Under the transcript:
 
 | Item | What it shows |
 | - | - |
-| NOW or LAST | NOW during a QSO. LAST after a QSO: the items show the QSO you logged last. |
+| NOW or LAST | NOW during a QSO and before your first. LAST after a QSO: the items show the QSO you logged last. |
 | LOG | QSOs in your log and the goal, such as `LOG 3/10`. The count turns green at the goal. |
 | COPY | QSOs where you sent the hunter's state back. |
 | CALL | The callsign of the hunter. A green edge marks a QSO in progress. |
@@ -75,7 +75,7 @@ Hunters send between 8 and 40 WPM. Each hunter sends at its own pitch, up to 200
 | - | - |
 | F1 (SET) | Stops the hunters and opens the settings at the QSO section. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings. |
 | F2 (QRS) | The same as sending `QRS`. |
-| F3 (HINT) | Shows or hides the hidden text and the exact next step. |
+| F3 (HINT or HIDE) | Shows or hides the hidden text and the exact next step. |
 | F4 (BACK) | Pauses the activation and opens the ON AIR list of the [menu](menu.md). Click POTA or SOTA, or RESUME, to go on: the hunters send their last transmission again. The log stays while the device is on, until you start other practice. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |

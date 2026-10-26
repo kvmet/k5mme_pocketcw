@@ -67,6 +67,11 @@ pub(super) fn draw_over(lcd: &mut Lcd, t: &Theme, over: &str) {
 }
 
 /// A bot is sending or about to, your over is waiting for its end, or the bots wait for you.
+/// The QSO keys; F3 reads HIDE while hints show.
+pub(super) fn keys(hint: bool) -> [&'static str; 4] {
+    ["SET", "QRS", if hint { "HIDE" } else { "HINT" }, "BACK"]
+}
+
 pub(super) fn badge(bot_sending: bool, over: &str) -> &'static str {
     match (bot_sending, over.is_empty()) {
         (true, _) => "LISTEN",

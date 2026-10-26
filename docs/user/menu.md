@@ -52,7 +52,7 @@ See [Receive drills](receive.md).
 
 When you leave a drill, an activation, the hunt or a ragchew, it pauses. It keeps its log, transcript and score while the device is on. The RESUME row shows at the top of the top list, and the practice's own row shows `PAUSED`. Click either row to go on.
 
-The device remembers the last practice you opened, even after you turn it off. With nothing paused, RESUME starts that practice again from the start. KOCH starts at your level, and HEAD at your rung.
+The device remembers the last practice you opened, even after you turn it off. With nothing paused, RESUME starts that practice again from the start. KOCH starts at your level, and HEAD at your rung. The footer then reads `START YOUR LAST PRACTICE AGAIN`.
 
 Only one practice pauses at a time. When you start a different one, the paused one ends.
 

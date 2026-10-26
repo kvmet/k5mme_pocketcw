@@ -141,8 +141,12 @@ impl Ui {
 
     fn draw_receive_keys(&self, lcd: &mut Lcd) {
         let Some(Session::Receive(rx)) = &self.session else { return };
-        let pause = if rx.state == State::Paused { "GO" } else { "STOP" };
-        self.softkeys(lcd, ["SET", "AGN", pause, "BACK"]);
+        let (again, pause) = match rx.state {
+            State::NoPack => ("", ""),
+            State::Paused => ("", "GO"),
+            _ => ("AGN", "STOP"),
+        };
+        self.softkeys(lcd, ["SET", again, pause, "BACK"]);
     }
 
     /// Koch level and progress, and the character set colored by your accuracy.
@@ -255,7 +259,11 @@ impl Ui {
             Kind::Head => "KEY IT BACK AFTER IT ENDS  ? REPEATS",
             _ => "KEY BACK WHAT YOU HEARD  ? REPEATS",
         };
-        let foot = session_line(rx.session_right, rx.session_total, hint);
+        let foot = match rx.state {
+            State::Paused => FootLine::format(format_args!("PAUSED: TOUCH THE KEY OR PRESS GO")),
+            State::Waiting => FootLine::format(format_args!("{hint}")),
+            _ => session_line(rx.session_right, rx.session_total, hint),
+        };
         self.set_footer(lcd, foot.as_str());
     }
 
@@ -278,6 +286,7 @@ impl Ui {
             let Some(group) = group else {
                 rx.state = State::NoPack;
                 rx.deadline = None;
+                self.draw_receive_keys(lcd);
                 self.draw_receive_info(lcd);
                 self.draw_receive_now(lcd);
                 return;

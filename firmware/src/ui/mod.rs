@@ -381,7 +381,7 @@ impl Ui {
                 let line = match (s.key_out, self.screen_keys_radio()) {
                     (false, _) => "KEY OUT OFF",
                     (true, true) => "KEY OUT ON",
-                    (true, false) => "KEY OUT ON: NOT IN PRACTICE",
+                    (true, false) => "KEY OUT ON: NOT ON THIS SCREEN",
                 };
                 self.status(lcd, line);
             }
@@ -434,7 +434,7 @@ impl Ui {
         };
         let holds = match (self.mem_row, self.screen) {
             // While a memory sends, a press or hold only stops it.
-            (true, _) if self.sending.is_some() => [""; 4],
+            (_, Screen::Home) if self.sending.is_some() => [""; 4],
             (true, _) => ["REPEAT"; 4],
             (false, Screen::Home) => [f1, "", "", ""],
             (false, Screen::Letters | Screen::Timing) => [f1, "CLEAR", "", "HOME"],

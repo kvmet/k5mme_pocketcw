@@ -26,7 +26,7 @@ F1 HOLD has four values:
 
 | F1 HOLD | Label | Action |
 | - | - | - |
-| KEY OUT | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT IN PRACTICE`. See [The func jack](keys.md#the-func-jack). |
+| KEY OUT | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT ON THIS SCREEN`. See [The func jack](keys.md#the-func-jack). |
 | RESUME | `RESUME` | Goes on with the drill or QSO you paused. With nothing paused, it starts the last one you opened again. With no last one, the status line shows `NOTHING TO RESUME`. |
 | MEM ROW | `MEM` | Opens the KEYER screen with the [memory](memories.md) row open. |
 | TIMING | `TIMING` | Opens the [TIMING](timing.md) screen. |

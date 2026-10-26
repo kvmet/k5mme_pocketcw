@@ -160,7 +160,7 @@ impl Ui {
         let Some(Session::Qso(q)) = &self.session else { return };
         let t = &self.theme;
         self.header(lcd, s, q.bot.program.name(), &[]);
-        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        self.softkeys(lcd, exchange::keys(q.hint));
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_qso_lines(lcd);
         self.draw_qso_state(lcd);
@@ -191,7 +191,7 @@ impl Ui {
         let working = bot.working();
         let log = Text::<24>::format(format_args!("LOG {}/{}  COPY {}", bot.logged, bot.program.goal(), bot.copied));
         let done = bot.logged >= bot.program.goal();
-        let label = if working.is_some() { "NOW" } else { "LAST" };
+        let label = if working.is_some() || q.last.is_none() { "NOW" } else { "LAST" };
         exchange::draw_now(lcd, t, label, log.as_str(), if done { GOOD } else { t.muted });
 
         let shown = working.copied().or(q.last.map(|l| l.hunter));
@@ -282,9 +282,10 @@ impl Ui {
             Action::Soft(0) => self.open_settings_at(lcd, s, Section::Qso),
             Action::Soft(1) => self.bot_answer(lcd, s, "QRS"),
             Action::Soft(2) => {
-                if let Some(Session::Qso(q)) = &mut self.session {
-                    q.hint = !q.hint;
-                }
+                let Some(Session::Qso(q)) = &mut self.session else { return };
+                q.hint = !q.hint;
+                let hint = q.hint;
+                self.softkeys(lcd, exchange::keys(hint));
                 self.draw_qso_lines(lcd);
                 self.draw_qso_state(lcd);
                 self.draw_over(lcd);

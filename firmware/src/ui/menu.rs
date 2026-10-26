@@ -172,7 +172,8 @@ impl Ui {
         let t = &self.theme;
         let row = &rows(self.list)[self.cursor[self.list as usize]];
         rect(lcd, 0, ABOUT_Y, MAIN, CREDIT_Y + 12 - ABOUT_Y, t.bg);
-        tiny(lcd, 2, ABOUT_Y, row.about, t.muted, t.bg);
+        let restarts = row.item == Item::Resume && self.session.is_none();
+        tiny(lcd, 2, ABOUT_Y, if restarts { "START YOUR LAST PRACTICE AGAIN" } else { row.about }, t.muted, t.bg);
         tiny(lcd, 2, CREDIT_Y, row.credit, t.dim, t.bg);
     }
 
