@@ -1075,7 +1075,7 @@ mod app {
                 None => {}
                 Some(Action::PowerHold) => ui.alert(lcd, "RELEASE TO POWER OFF"),
                 Some(Action::PowerOff) => power_off(ui, lcd, bus, settings, unsaved),
-                Some(Action::PowerCancel) => ui.status(lcd, ""),
+                Some(Action::PowerCancel) => ui.alert(lcd, ""),
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
             },
             Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),

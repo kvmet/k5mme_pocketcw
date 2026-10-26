@@ -29,7 +29,7 @@ Under the tiles, MIXUPS lists the six most common mixups, such as `S/H 4X`: the 
 | - | - |
 | F1 (SET) | Opens the settings at the HEAR section. F4 (BACK) there returns to this screen. |
 | F2 hold (CLEAR) | Erases all counts and mixups. Your Koch level stays. |
-| F3 (DRIL) | Starts the KOCH drill. |
+| F3 (KOCH) | Goes on with the KOCH drill if it is paused, or starts it. |
 | F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |

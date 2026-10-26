@@ -230,7 +230,6 @@ impl Ui {
         let paused = self.session.as_ref().map(Session::item);
         match item {
             Item::Resume if paused.is_some() => self.resume(lcd, s),
-            _ if paused == Some(item) => self.resume(lcd, s),
             Item::Resume => {
                 if let Some(practice) = s.last_practice {
                     self.start(lcd, s, practice);
@@ -239,7 +238,7 @@ impl Ui {
             Item::List(list) => self.open_list(lcd, s, list, None),
             Item::Open(Screen::Settings) => self.open_settings_at(lcd, s, Section::Keyer),
             Item::Open(screen) => self.open(lcd, s, screen),
-            Item::Practice(practice) => self.start(lcd, s, practice),
+            Item::Practice(practice) => self.open_practice(lcd, s, practice),
         }
     }
 }

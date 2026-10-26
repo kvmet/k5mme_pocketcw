@@ -30,7 +30,7 @@ More ways to talk to the hunters:
 | `CQ`, `QRZ` or `QRZ?` | The pileup calls again. |
 | `CQ` without your callsign | A hunter asks `CALL?`. |
 | `QRS` | The last transmission again, 4 WPM slower. Each QRS slows the hunters by 4 WPM more, down to 8 WPM, until the QSO ends. |
-| `AGN` or `?` | The last transmission again. |
+| `AGN`, `AGN?` or `?` | The last transmission again. |
 | Anything else | The hunter you work sends `?`. With no hunter in a QSO, the pileup calls. |
 
 ## What the screen shows

@@ -214,7 +214,7 @@ impl Bot {
             self.qrs = self.qrs.saturating_add(QRS_STEP);
             return self.repeat(out);
         }
-        if has("AGN") || words == ["?"] {
+        if has("AGN") || has("AGN?") || words == ["?"] {
             return self.repeat(out);
         }
 
@@ -802,6 +802,13 @@ mod tests {
         assert_eq!(bot.pile_size(), 1);
         let again = heard(&mut bot, "AGN");
         assert!(again.len() <= 1 && again.iter().all(|t| t.wpm == 12 && t.fist == 0), "{:?}", texts(&again));
+    }
+
+    #[test]
+    fn agn_with_a_question_mark_asks_for_a_repeat() {
+        let mut bot = Bot::new(Program::Pota, "K5MME", 23, Options::default());
+        let first = heard(&mut bot, "CQ POTA DE K5MME K");
+        assert_eq!(texts(&heard(&mut bot, "AGN?")), texts(&first));
     }
 
     #[test]

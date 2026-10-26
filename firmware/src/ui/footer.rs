@@ -29,7 +29,7 @@ impl Ui {
     /// The screen's own footer line. It shows whenever no status message does.
     pub(super) fn set_footer(&mut self, lcd: &mut Lcd, line: &str) {
         self.footer = FootLine::format(format_args!("{line}"));
-        if self.status.is_none() {
+        if self.status.is_none() && self.alert.is_none() {
             self.draw_footer(lcd);
         }
     }
@@ -37,23 +37,21 @@ impl Ui {
     /// A status message on the footer line for a few seconds. An empty line brings the
     /// footer back at once.
     pub fn status(&mut self, lcd: &mut Lcd, line: &str) {
-        self.show_status(lcd, line, Some(self.now_ms.wrapping_add(STATUS_MS)));
-    }
-
-    /// A status message that stays until the next one, for a state that lasts, such as a
-    /// stuck contact.
-    pub fn alert(&mut self, lcd: &mut Lcd, line: &str) {
-        self.show_status(lcd, line, None);
-    }
-
-    fn show_status(&mut self, lcd: &mut Lcd, line: &str, until: Option<u32>) {
+        let until = self.now_ms.wrapping_add(STATUS_MS);
         self.status = (!line.is_empty()).then(|| (FootLine::format(format_args!("{line}")), until));
+        self.draw_footer(lcd);
+    }
+
+    /// A message for a state that lasts, such as a stuck contact, until an empty line ends it.
+    /// A status message shows over it for its time.
+    pub fn alert(&mut self, lcd: &mut Lcd, line: &str) {
+        self.alert = (!line.is_empty()).then(|| FootLine::format(format_args!("{line}")));
         self.draw_footer(lcd);
     }
 
     /// Brings the footer back once a timed status message has had its time.
     pub(super) fn status_timeout(&mut self, lcd: &mut Lcd, now_ms: u32) {
-        if let Some((_, Some(until))) = self.status
+        if let Some((_, until)) = self.status
             && ticks::reached(now_ms, until)
         {
             self.status = None;
@@ -61,12 +59,12 @@ impl Ui {
         }
     }
 
-    /// The status message if one shows, else the screen's footer.
+    /// The status message if one shows, else the alert, else the screen's footer.
     pub(super) fn draw_footer(&self, lcd: &mut Lcd) {
         let t = &self.theme;
-        let (line, color) = match &self.status {
-            Some((line, _)) => (line.as_str(), t.fg),
-            None => (self.footer.as_str(), t.muted),
+        let (line, color) = match (&self.status, &self.alert) {
+            (Some((line, _)), _) | (None, Some(line)) => (line.as_str(), t.fg),
+            (None, None) => (self.footer.as_str(), t.muted),
         };
         rect(lcd, 0, FOOT_TOP, MAIN, HEIGHT as i32 - FOOT_TOP, t.bg);
         tiny(lcd, 2, FOOT_Y, line, color, t.bg);

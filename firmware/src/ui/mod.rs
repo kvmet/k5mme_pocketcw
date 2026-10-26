@@ -144,7 +144,9 @@ pub struct Ui {
     dial_focus: Option<Target>,
     /// The screen's own footer line, and a status message with the tick time it ends, if it does.
     footer: footer::FootLine,
-    status: Option<(footer::FootLine, Option<u32>)>,
+    /// A timed status message, and the tick time it ends.
+    status: Option<(footer::FootLine, u32)>,
+    alert: Option<footer::FootLine>,
     /// The state badge drawn now.
     badge_shown: &'static str,
     key_guard: KeyGuard,
@@ -227,6 +229,7 @@ impl Ui {
             dial_focus: None,
             footer: footer::FootLine::new(),
             status: None,
+            alert: None,
             badge_shown: "",
             key_guard: KeyGuard::default(),
             decode: Decode::new(),
@@ -547,7 +550,7 @@ impl Ui {
                 }
                 if self.stuck_shown[i] {
                     self.stuck_shown[i] = false;
-                    self.status(lcd, "");
+                    self.alert(lcd, "");
                 }
                 if down {
                     self.contact_since[i] = Some(at_ms);
@@ -771,6 +774,15 @@ impl Ui {
             Practice::Qso(program) => self.open_qso(lcd, s, program),
             Practice::Hunt => self.open_hunt(lcd, s),
             Practice::Chew { quiz } => self.open_ragchew(lcd, s, quiz),
+        }
+    }
+
+    /// Goes on with `practice` if it is paused, or starts it afresh.
+    fn open_practice(&mut self, lcd: &mut Lcd, s: &mut Settings, practice: Practice) {
+        if self.session.as_ref().map(Session::practice) == Some(practice) {
+            self.resume(lcd, s);
+        } else {
+            self.start(lcd, s, practice);
         }
     }
 
