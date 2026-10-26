@@ -331,7 +331,7 @@ impl Ui {
     pub(super) fn ragchew_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Ragchew(c)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Drills),
             Action::Soft(1) if matches!(c.state, State::Playing | State::Asking | State::Answering) => {
                 self.stop_players();
                 self.start_over(lcd, s, 0);

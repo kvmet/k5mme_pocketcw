@@ -32,7 +32,7 @@ const MEMORY_COLS: usize = ((MAIN - 10 - MEMORY_X) / TINY_W) as usize;
 pub(super) enum Section {
     Keyer,
     Sound,
-    Hear,
+    Receive,
     Drills,
     Qso,
     Memories,
@@ -66,7 +66,7 @@ const ROWS: [(&str, Row, &str); 40] = [
     ("WAVE", Row::Value(Field::Wave), "SINE IS SOFT, SQUARE IS BRIGHT"),
     ("NOISE", Row::Value(Field::Noise), "BAND NOISE UNDER DRILLS AND STATIONS"),
     ("FADING", Row::Value(Field::Fading), "HOW DEEP STATIONS FADE"),
-    ("HEAR", Row::Section(Section::Hear), ""),
+    ("RECEIVE", Row::Section(Section::Receive), ""),
     ("CHAR SPEED", Row::Value(Field::RxSpeed), "DRILLS AND STATIONS  MATCH: YOURS"),
     ("FARNSWORTH", Row::Value(Field::RxEffective), "LOWER IT FOR LONGER GAPS"),
     ("DRILLS", Row::Section(Section::Drills), ""),
@@ -287,8 +287,14 @@ impl Ui {
     /// Selects the first row of the next section, or of the one before this row's.
     fn jump_section(&mut self, lcd: &mut Lcd, s: &Settings, forward: bool) {
         let here = (0..self.row).rev().find(|&i| is_section(i)).unwrap_or(0);
-        let start = if forward { (self.row..ROWS.len()).find(|&i| is_section(i)) } else { (0..here).rev().find(|&i| is_section(i)) };
-        let Some(Row::Section(section)) = start.map(|i| ROWS[i].1) else { return };
+        let previous = |end: usize| (0..end).rev().find(|&i| is_section(i));
+        // Both ends wrap; ROWS starts with a section.
+        let start = if forward {
+            (self.row..ROWS.len()).find(|&i| is_section(i)).unwrap_or(0)
+        } else {
+            previous(here).or_else(|| previous(ROWS.len())).unwrap_or(0)
+        };
+        let Row::Section(section) = ROWS[start].1 else { return };
         self.select_section(section);
         self.draw_settings_list(lcd, s);
     }

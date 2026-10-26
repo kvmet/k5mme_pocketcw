@@ -1,6 +1,6 @@
 # Settings
 
-All settings are on one screen, in one list with nine sections: KEYER, SOUND, HEAR, DRILLS, QSO, MEMORIES, CALLSIGN, DEVICE and THEME. The device saves the settings 2 seconds after your last change.
+All settings are on one screen, in one list with nine sections: KEYER, SOUND, RECEIVE, DRILLS, QSO, MEMORIES, CALLSIGN, DEVICE and THEME. The device saves the settings 2 seconds after your last change.
 
 ## Open the settings
 
@@ -8,7 +8,8 @@ All settings are on one screen, in one list with nine sections: KEYER, SOUND, HE
 | - | - | - |
 | [Menu](menu.md), row SETTINGS | Dial click | KEYER |
 | Menu, KEYER, TIMING | F1 (SET) | KEYER |
-| Receive drills, ragchew, LETTERS | F1 (SET) | HEAR |
+| KOCH, WORDS, CALLS, HEAD, LETTERS, PROGRESS | F1 (SET) | RECEIVE |
+| NINJA, CHEW, QUIZ | F1 (SET) | DRILLS |
 | POTA, SOTA, HUNT | F1 (SET) | QSO |
 | RADIO | F1 (SET) | DEVICE |
 | SYSTEM | F1 (SET) | THEME |
@@ -20,8 +21,8 @@ F4 (BACK) leaves the settings and returns to the screen you came from. A drill o
 | Control | Action |
 | - | - |
 | F1 hold | Does what F1 HOLD sets, as on every screen. See [Held buttons](controls.md#held-buttons). |
-| F2 (PREV) | Selects the first row of the section before. |
-| F3 (NEXT) | Selects the first row of the next section. |
+| F2 (PREV) | Selects the first row of the section before. From KEYER, it goes to THEME. |
+| F3 (NEXT) | Selects the first row of the next section. From THEME, it goes to KEYER. |
 | F4 (BACK) | Leaves the settings. |
 | F4 hold (HOME) | Opens the KEYER screen. |
 | Dial turn | Selects another row. While you edit, changes the value. |
@@ -56,7 +57,7 @@ A line under the list tells you what the selected row sets.
 
 Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA and HUNT screens. While a SOUND row is selected, the band noise plays, so you hear the level you set.
 
-## HEAR
+## RECEIVE
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |

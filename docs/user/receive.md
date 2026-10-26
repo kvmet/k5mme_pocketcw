@@ -12,7 +12,7 @@ To start, open RECEIVE in the [menu](menu.md), then the drill. The header shows 
 | NINJA | One word from the content pack, then the voice says it. See [NINJA](#ninja). |
 | HEAD | Words that get longer as you copy them, then two words, then a QSO line. See [HEAD](#head). |
 
-The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the HEAR section in [Settings](settings.md#hear). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
+The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECEIVE section in [Settings](settings.md#receive). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
 
 ## How a drill runs
 
@@ -84,7 +84,7 @@ The device keeps your level and your progress toward the next level while you us
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Pauses the drill and opens the settings at the HEAR section. F4 (BACK) there returns, and the next group plays at the new settings. |
+| F1 (SET) | Pauses the drill and opens the settings at the RECEIVE section, or at DRILLS from NINJA. F4 (BACK) there returns, and the next group plays at the new settings. |
 | F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
 | F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |

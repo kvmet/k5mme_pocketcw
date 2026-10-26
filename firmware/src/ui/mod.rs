@@ -717,6 +717,8 @@ impl Ui {
     }
 
     fn open(&mut self, lcd: &mut Lcd, s: &Settings, screen: Screen) {
+        // SET and then BACK keep the dial focus of the screen you set from.
+        let keeps_focus = screen == Screen::Settings || (self.screen == Screen::Settings && self.settings_from == Some(screen));
         if screen != self.screen
             && let Some(session) = &mut self.session
             && session.screen() == self.screen
@@ -734,7 +736,9 @@ impl Ui {
         self.mem_row = false;
         self.screen = screen;
         self.editing = false;
-        self.dial_focus = None;
+        if !keeps_focus {
+            self.dial_focus = None;
+        }
         self.footer.clear();
         self.tape = Tape::new(screen == Screen::Timing);
         self.draw(lcd, s);
@@ -748,7 +752,7 @@ impl Ui {
     }
 
     fn close_settings(&mut self, lcd: &mut Lcd, s: &Settings) {
-        match self.settings_from.take() {
+        match self.settings_from {
             Some(screen) if self.session.as_ref().map(Session::screen) == Some(screen) => self.resume(lcd, s),
             Some(Screen::Settings) | None => self.back(lcd, s),
             Some(screen) => self.open(lcd, s, screen),

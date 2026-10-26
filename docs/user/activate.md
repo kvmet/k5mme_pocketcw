@@ -57,7 +57,7 @@ Band noise and fading play on this screen when you set them in the SOUND section
 
 ## Pileup settings
 
-The QSO section of the [settings](settings.md#qso) sets how the hunters behave. Their base speed is CHAR SPEED, with FARNSWORTH for longer gaps, in the [HEAR](settings.md#hear) section; MATCH uses your keyer speed.
+The QSO section of the [settings](settings.md#qso) sets how the hunters behave. Their base speed is CHAR SPEED, with FARNSWORTH for longer gaps, in the [RECEIVE](settings.md#receive) section; MATCH uses your keyer speed.
 
 | Setting | Values |
 | - | - |

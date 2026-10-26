@@ -438,7 +438,8 @@ impl Ui {
     pub(super) fn receive_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
+            Action::Soft(0) if rx.drill.kind == Kind::Ninja => self.open_settings_at(lcd, s, Section::Drills),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Receive),
             Action::Soft(1) if matches!(rx.state, State::Playing | State::Waiting | State::Copying) => {
                 self.stop_players();
                 self.play_group(lcd, s, true);

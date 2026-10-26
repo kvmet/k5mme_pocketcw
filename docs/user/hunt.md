@@ -52,7 +52,7 @@ Band noise and fading play on this screen when you set them in the SOUND section
 
 ## Settings
 
-The hunt uses CHAR SPEED and FARNSWORTH in the HEAR section of the [settings](settings.md), and FIST and SPEED SPREAD in the QSO section. PILEUP does not apply, because one activator calls at a time. The activator sends between 8 and 40 WPM, at a pitch up to 200 Hz above or below your tone.
+The hunt uses CHAR SPEED and FARNSWORTH in the RECEIVE section of the [settings](settings.md#receive), and FIST and SPEED SPREAD in the QSO section. PILEUP does not apply, because one activator calls at a time. The activator sends between 8 and 40 WPM, at a pitch up to 200 Hz above or below your tone.
 
 ## Controls
 

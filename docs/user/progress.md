@@ -37,7 +37,8 @@ Before your first session, the chart says `NOTHING YET: START KEYING`.
 
 | Control | Action |
 | - | - |
-| F1, F3 | Nothing. |
+| F1 (SET) | Opens the settings at the RECEIVE section. F4 (BACK) there returns to this screen. |
+| F3 | Nothing. |
 | F2 (LTRS) | Opens [Letters](letters.md). |
 | F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |

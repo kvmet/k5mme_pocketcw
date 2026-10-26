@@ -74,13 +74,13 @@ On every screen except KEYER, MENU and SETTINGS, the dial sets values that show 
 | - | - | - |
 | `VOL 23` | The volume. | VOLUME in the SOUND section |
 | `SND 20` | Your keyer speed, in WPM. | SPEED in the KEYER section |
-| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH in the HEAR section |
+| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH in the RECEIVE section |
 
 - A dial click moves the focus to the next value. The focused number shows inverted. On RECEIVE KOCH, the focus also reaches `LEVEL` under the header.
 - A dial turn changes the focused value.
 - A dial turn does nothing while you key, and for one word gap after you stop. A brushed dial cannot change a value in the middle of your over.
-- Each screen keeps its own focus while the device is on. A screen starts on RCV where it shows, on SND on TIMING, and on VOL on the others.
-- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the HEAR section of the settings.
+- Opening a screen puts the focus on RCV where it shows, on SND on TIMING, and on VOL on the others. After F1 (SET) and then F4 (BACK), the focus stays where it was.
+- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the RECEIVE section of the settings.
 - Turn the second RCV number down for Farnsworth spacing. Turn it up to the first number to stop the spacing.
 - On QSO and HUNT, a new RCV speed moves every station by the same amount: each keeps its offset from RCV and its fist. Any QRS ends.
 

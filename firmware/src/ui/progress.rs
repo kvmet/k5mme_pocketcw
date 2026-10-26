@@ -8,7 +8,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::{Screen, Ui};
+use super::{Screen, Ui, settings::Section};
 use crate::gfx::{self, TINY_W, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -52,7 +52,7 @@ impl Ui {
         let (sessions, n) = self.history.sessions();
         let count = Text::<12>::format(format_args!("{n} SESSIONS"));
         self.header(lcd, s, "PROGRESS", &[count.as_str()]);
-        self.softkeys(lcd, ["", "LTRS", "", "BACK"]);
+        self.softkeys(lcd, ["SET", "LTRS", "", "BACK"]);
         let bar_color = gfx::mix(t.fg, t.bg, 45);
 
         // Bars and hollow squares differ in shape, so the legend works without color.
@@ -131,6 +131,7 @@ impl Ui {
 
     pub(super) fn progress_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Receive),
             Action::Soft(1) => self.open(lcd, s, Screen::Letters),
             Action::Soft(3) => self.back(lcd, s),
             _ => {}

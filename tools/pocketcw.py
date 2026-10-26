@@ -353,7 +353,7 @@ TOP = ['RECEIVE', 'ON AIR', 'TIMING', 'STATS', 'SETTINGS', 'SYSTEM']
 RECEIVE = ['KOCH', 'WORDS', 'CALLS', 'NINJA', 'HEAD']
 ON_AIR = ['POTA', 'SOTA', 'HUNT', 'CHEW', 'QUIZ']
 STATS = ['LETTERS', 'PROGRESS']
-SETTINGS_SECTIONS = ['keyer', 'sound', 'hear', 'drills', 'qso', 'memories', 'callsign', 'device', 'theme']
+SETTINGS_SECTIONS = ['keyer', 'sound', 'receive', 'drills', 'qso', 'memories', 'callsign', 'device', 'theme']
 # Long enough for a ragchew over to end.
 OVER_S = 45
 # Long enough for a QSO to send its first text.
@@ -400,8 +400,11 @@ class Screens:
         self.shot('menu')
 
         self.open(TOP, 'TIMING')
+        d.send('PARIS PARIS')
         self.shot('timing')
-        d.press('F4')
+        d.press('F3')
+        self.shot('timing-hand')
+        d.press('F3', 'F4')
 
         # BACK on a practice opens its list; BACK on a list opens the top list.
         self.open(TOP, 'RECEIVE')
