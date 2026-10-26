@@ -66,7 +66,7 @@ HEAD is a head-copy ladder. You copy each item in your head while it plays, and 
 
 Three copies in a row all right move you up one rung. Three copies in a row under half right move you down one. An extra character makes a copy not all right. A `?` repeat does not count.
 
-The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung while you use other screens, but not after you turn it off.
+The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung, also after you turn it off.
 
 ## The Koch method
 

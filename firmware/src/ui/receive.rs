@@ -300,7 +300,7 @@ impl Ui {
         if self.koch_window.0 == self.letters.level {
             rx.drill.resume(self.koch_window.1);
         }
-        rx.drill.set_rung(self.head_rung);
+        rx.drill.set_rung(s.head_rung);
         self.session = Some(Session::Receive(rx));
         self.open(lcd, s, Screen::Receive);
         self.play_group(lcd, s, false);
@@ -357,7 +357,7 @@ impl Ui {
     }
 
     /// The copy ended or timed out: score it. Or the pause between groups ended: play the next.
-    pub(super) fn receive_timeout(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
+    pub(super) fn receive_timeout(&mut self, lcd: &mut Lcd, s: &mut Settings, now_ms: u32) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
         rx.deadline = None;
         if rx.state == State::Between {
@@ -385,7 +385,7 @@ impl Ui {
         let score = rx.drill.score(rx.group.as_str(), rx.copy.as_str(), &mut self.letters);
         self.letters.level = rx.drill.level;
         self.koch_window = (rx.drill.level, rx.drill.window());
-        self.head_rung = rx.drill.rung();
+        s.head_rung = rx.drill.rung();
         self.history.copied(score.right, score.len as u8);
         rx.session_right += score.right as u16;
         rx.session_total += score.len as u16;

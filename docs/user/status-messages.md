@@ -39,7 +39,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
 | `KEY OUT ON`, `KEY OUT OFF` | You held F1 and turned KEY OUT on or off. See [Controls](controls.md#held-buttons). |
 | `KEY OUT ON: NOT IN PRACTICE` | You held F1 and turned KEY OUT on, on a screen where your key does not key the radio. It keys the radio on the KEYER, TIMING and RADIO screens. |
-| `NOTHING PAUSED` | You held F1 with F1 HOLD set to RESUME, and no drill or QSO is paused. |
+| `NOTHING TO RESUME` | You held F1 with F1 HOLD set to RESUME, and you have not opened a drill or QSO yet. |
 
 ## WinKeyer
 

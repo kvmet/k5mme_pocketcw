@@ -969,7 +969,7 @@ mod app {
                             power_off(&mut ui, &mut lcd, &mut bus, &settings, save_at.is_some());
                         }
                     }
-                    ui.timeout(&mut lcd, &settings, TICKS.load(Ordering::Relaxed));
+                    ui.timeout(&mut lcd, &mut settings, TICKS.load(Ordering::Relaxed));
                 }
             }
             if edges && (settings.mode, settings.swap, settings.wpm) != (before.mode, before.swap, before.wpm) {

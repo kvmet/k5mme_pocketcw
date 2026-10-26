@@ -27,7 +27,6 @@ use pocketcw_logic::{
     battery::Gauge,
     decoder::Decoded,
     dial::{KeyGuard, Target},
-    drill::FIRST_RUNG,
     input::Action,
     morse,
     letters::{Letters, RECORD_LEN as LETTERS_LEN},
@@ -37,7 +36,7 @@ use pocketcw_logic::{
     keyer::{self, Mode},
     player::{Keying, MAX_TEXT},
     qso::{Options, Program},
-    settings::{Field, Pileup, Settings, Shortcut},
+    settings::{Field, Pileup, Practice, Settings, Shortcut},
     ticks,
     hand::Hand,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
@@ -100,14 +99,12 @@ impl Session {
         }
     }
 
-    /// The practice's title: the drill, program or ragchew.
-    fn name(&self) -> &'static str {
+    fn practice(&self) -> Practice {
         match self {
-            Session::Qso(q) => q.bot.program.name(),
-            Session::Hunt(_) => "HUNT",
-            Session::Receive(rx) => rx.kind().name(),
-            Session::Ragchew(c) if c.quiz => "QUIZ",
-            Session::Ragchew(_) => "CHEW",
+            Session::Qso(q) => Practice::Qso(q.bot.program),
+            Session::Hunt(_) => Practice::Hunt,
+            Session::Receive(rx) => Practice::Drill(rx.kind()),
+            Session::Ragchew(c) => Practice::Chew { quiz: c.quiz },
         }
     }
 
@@ -178,8 +175,6 @@ pub struct Ui {
     letters_saved: Letters,
     /// The Koch drill's window, kept while you leave the drill, and the level it counts toward.
     koch_window: (u8, (u16, u16)),
-    /// The HEAD rung, kept while you leave the drill.
-    head_rung: u8,
     history: History,
     memories: Memories,
     /// `memories` as last saved.
@@ -252,7 +247,6 @@ impl Ui {
             letters,
             letters_saved: letters,
             koch_window: (letters.level, (0, 0)),
-            head_rung: FIRST_RUNG,
             history,
             memories,
             memories_saved: memories,
@@ -391,10 +385,11 @@ impl Ui {
                 };
                 self.status(lcd, line);
             }
-            Shortcut::Resume => match self.session.as_ref().map(Session::screen) {
-                None => self.status(lcd, "NOTHING PAUSED"),
-                Some(screen) if screen == self.screen => {}
-                Some(_) => self.resume(lcd, s),
+            Shortcut::Resume => match (self.session.as_ref().map(Session::screen), s.last_practice) {
+                (Some(screen), _) if screen == self.screen => {}
+                (Some(_), _) => self.resume(lcd, s),
+                (None, Some(practice)) => self.start(lcd, s, practice),
+                (None, None) => self.status(lcd, "NOTHING TO RESUME"),
             },
             Shortcut::Mem => {
                 if self.screen != Screen::Home {
@@ -664,7 +659,7 @@ impl Ui {
         }
     }
 
-    pub fn timeout(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
+    pub fn timeout(&mut self, lcd: &mut Lcd, s: &mut Settings, now_ms: u32) {
         self.now_ms = now_ms;
         self.status_timeout(lcd, now_ms);
         self.draw_badge(lcd, false);
@@ -765,6 +760,17 @@ impl Ui {
             Some(Screen::Receive) => self.receive_resume(lcd, s),
             Some(Screen::Ragchew) => self.ragchew_resume(lcd, s),
             _ => {}
+        }
+    }
+
+    /// Starts `practice` afresh, and keeps it for RESUME after power on.
+    fn start(&mut self, lcd: &mut Lcd, s: &mut Settings, practice: Practice) {
+        s.last_practice = Some(practice);
+        match practice {
+            Practice::Drill(kind) => self.open_receive(lcd, s, kind),
+            Practice::Qso(program) => self.open_qso(lcd, s, program),
+            Practice::Hunt => self.open_hunt(lcd, s),
+            Practice::Chew { quiz } => self.open_ragchew(lcd, s, quiz),
         }
     }
 

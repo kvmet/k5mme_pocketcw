@@ -4,7 +4,7 @@ use pocketcw_logic::{
     drill::Kind,
     input::Action,
     letters::{KOCH, Mastery},
-    settings::Settings,
+    settings::{Practice, Settings},
 };
 
 use super::{Ui, char_cells, draw_char, settings::Section};
@@ -72,7 +72,7 @@ impl Ui {
     pub(super) fn letters_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
             Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
-            Action::Soft(2) => self.open_receive(lcd, s, Kind::Koch),
+            Action::Soft(2) => self.start(lcd, s, Practice::Drill(Kind::Koch)),
             Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }

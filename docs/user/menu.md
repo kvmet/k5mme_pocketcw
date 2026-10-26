@@ -8,7 +8,7 @@ To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other sc
 
 | Row | Opens | Page |
 | - | - | - |
-| RESUME | The practice you left, where you left it. This row shows only while a practice is paused, and the right end names the practice. | See below |
+| RESUME | The practice you left, where you left it. After you turn the device on, it starts the last practice you opened again from the start. The right end names the practice. The row shows once you have opened a practice. | See below |
 | RECEIVE | The list of receive drills. | [Receive drills](receive.md) |
 | ON AIR | The list of on-air practice: activations, the hunt and ragchews. | See below |
 | TIMING | A zoomed timing tape and histograms of your keying. | [Timing](timing.md) |
@@ -51,6 +51,8 @@ See [Receive drills](receive.md).
 ## Paused practice
 
 When you leave a drill, an activation, the hunt or a ragchew, it pauses. It keeps its log, transcript and score while the device is on. The RESUME row shows at the top of the top list, and the practice's own row shows `PAUSED`. Click either row to go on.
+
+The device remembers the last practice you opened, even after you turn it off. With nothing paused, RESUME starts that practice again from the start. KOCH starts at your level, and HEAD at your rung.
 
 Only one practice pauses at a time. When you start a different one, the paused one ends.
 
