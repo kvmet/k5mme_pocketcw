@@ -7,11 +7,11 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 3. Content pack
 4. Morse then voice, and the head-copy ladder
 5. Two-way ragchew bot: deferred
-6. In-line logger: deferred until after MIDI, Vail and F key long presses
+6. In-line logger: deferred until after MIDI and Vail
 7. Stats export: built
 8. More QSO kinds: P2P and S2S callers, short contest exchanges
 9. Later: send drill, keyer extras, games
-10. Revisit at the end: F key long presses, when the serial port is up
+10. F key long presses: built
 
 ## Ground facts
 
@@ -165,11 +165,11 @@ Flash cost: 6 to 10 KB, the largest item.
 
 ## 6. In-line logger
 
-Deferred on 2026-10-25, after MIDI, Vail and the F key long presses: long presses can give note mode and the LOG screen a place outside the menu. Built and kept: the log ring and format (`logic/src/log.rs`), and the flash write guard (`firmware/src/spi_flash.rs`). Built and taken out: run capture, the LOG setting, `DUMP LOG` and `pocketcw.py log`, in commit d920c55; commit 3bb0d26 takes them out, and a revert of 3bb0d26 puts them back.
+Deferred on 2026-10-25, after MIDI and Vail. F key holds are built, so note mode can take a hold outside the menu. Built and kept: the log ring and format (`logic/src/log.rs`), and the flash write guard (`firmware/src/spi_flash.rs`). Built and taken out: run capture, the LOG setting, `DUMP LOG` and `pocketcw.py log`, in commit d920c55; commit 3bb0d26 takes them out, and a revert of 3bb0d26 puts them back.
 
 Open questions for when it returns:
 
-- Note mode and the LOG screen need a place. The menu lists have room: LOG fits in STATS, and note mode fits as a menu row or an F1 hold.
+- Note mode and the LOG screen need a place. LOG fits in STATS. Note mode fits on a hold; the F1 hold is the user's one shortcut, and the menu lists hold 7 rows without scrolling, so a new row needs menu scrolling first.
 - A run ends after 4 s with no new text. Check this against real sending.
 - A memory is logged whole at the end of its playback, and only from STRAIGHT output with KEY OUT on.
 - On a Pro, check whether the decoder board hears your own sidetone. If it does, your keying logs twice, as YOU and as THEM.
@@ -195,7 +195,7 @@ What the device loses: a live contact count in the field ("do I have my 10?"). A
 
 - YOU: what the decoder reads from your keying.
 - MEMORY: the text of each memory that keys the radio. Memory playback does not pass through the decoder, so the text is logged directly.
-- NOTE: text keyed in note mode. The key writes to the log and KEY OUT stays off. A hunter on a Mini never sends the activator's call, so a note is the only way it reaches the log. Note mode shows on the screen while it is on, and ends after one note, so it cannot silently stop transmitting. Note mode starts from a menu row, since the KEYER F keys are taken. F key long presses are on the revisit list.
+- NOTE: text keyed in note mode. The key writes to the log and KEY OUT stays off. A hunter on a Mini never sends the activator's call, so a note is the only way it reaches the log. Note mode shows on the screen while it is on, and ends after one note, so it cannot silently stop transmitting. Note mode starts from a hold on KEYER, such as F2 or F3, which have none yet.
 - THEM (Pro only): the decoder board text. The Pro is untested.
 
 Text is buffered in RAM and written once per over or note, not once per character. Power off, including the battery-empty path, writes the buffers first.
@@ -329,5 +329,5 @@ If flash stays short, set a budget per feature: which features ship first.
 
 ## Revisit at the end
 
-1. F key long presses: a second action per F key, so controls like note mode need not live in a menu.
+1. F key long presses: built. A hold is a second action per F key, so controls like note mode need not live in a menu.
 2. When the serial port is up: today only while USB OUT is not OFF. Option: up whenever USB is plugged in, with USB OUT choosing only what types.

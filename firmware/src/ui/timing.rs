@@ -1,4 +1,4 @@
-//! Timing: a zoomed tape with the error of each element over one of two views. MARKS: session
+//! Timing: a zoomed tape with the error of each element over one of two views. BARS: session
 //! histograms of mark and gap lengths with the averages under them. HAND: what your contacts do
 //! around the keyer, for the keyer mode in use.
 
@@ -38,7 +38,7 @@ impl Ui {
 
     /// F3 names the view it switches to.
     fn draw_timing_keys(&self, lcd: &mut Lcd) {
-        self.softkeys(lcd, ["SET", "", if self.timing_hand { "MARKS" } else { "HAND" }, "BACK"]);
+        self.softkeys(lcd, ["SET", "", if self.timing_hand { "BARS" } else { "HAND" }, "BACK"]);
     }
 
     pub(super) fn draw_timing_stats(&self, lcd: &mut Lcd, s: &Settings) {
@@ -184,7 +184,7 @@ impl Ui {
 /// A mean length in ms and its spread, or `--`.
 fn ms<const N: usize>(out: &mut Text<N>, m: &Moments) {
     let _ = match (m.mean(), m.sd()) {
-        (Some(mean), Some(sd)) => write!(out, "{}MS SD{}", mean as i32, sd as i32),
+        (Some(mean), Some(sd)) => write!(out, "{}MS SD {}", mean as i32, sd as i32),
         _ => write!(out, "--"),
     };
 }

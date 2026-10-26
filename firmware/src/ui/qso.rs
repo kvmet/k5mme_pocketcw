@@ -189,7 +189,7 @@ impl Ui {
         let t = &self.theme;
         let bot = &q.bot;
         let working = bot.working();
-        let log = Text::<24>::format(format_args!("LOG {}/{}  COPY {}", bot.logged, bot.program.goal(), bot.copied));
+        let log = Text::<24>::format(format_args!("LOG {}/{}  GOOD {}", bot.logged, bot.program.goal(), bot.copied));
         let done = bot.logged >= bot.program.goal();
         let label = if working.is_some() || q.last.is_none() { "NOW" } else { "LAST" };
         exchange::draw_now(lcd, t, label, log.as_str(), if done { GOOD } else { t.muted });

@@ -89,7 +89,7 @@ impl Hunting {
         let _ = match bot.phase {
             _ if !self.over.is_empty() => write!(step, "YOUR OVER ENDS WHEN YOU PAUSE"),
             Phase::Calling if self.hint => write!(step, "SEND: {}  OR  P2P {0}", bot.my_call()),
-            Phase::Calling => write!(step, "SEND YOUR CALL (P2P FIRST FROM A PARK)"),
+            Phase::Calling => write!(step, "SEND YOUR CALL"),
             Phase::Working { heard, .. } if self.hint && heard.as_str() != bot.my_call() => {
                 write!(step, "THEY HEARD {}: SEND CALL AGAIN", heard.as_str())
             }

@@ -22,6 +22,8 @@ Two held buttons work on every screen:
 | F1 | Set by F1 HOLD | Does what F1 HOLD in the DEVICE section of the [settings](settings.md#device) sets. The default is KEY OUT. |
 | F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in pauses: RESUME in the [menu](menu.md) goes on with it. |
 
+On KEYER, F4 has no hold. With the memory row open, every hold sends its memory again and again instead. See [Memories](memories.md).
+
 F1 HOLD has four values:
 
 | F1 HOLD | Label | Action |
@@ -62,7 +64,7 @@ When the battery is empty, the device saves everything and turns off by itself. 
 
 - The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end. `TX` shows while your key keys the radio.
 - The column at the right edge, under the header, shows the labels of F1 to F4.
-- The status line at the bottom shows short messages. A message stays until the screen draws that area again. See [Status messages](status-messages.md).
+- The footer at the bottom shows what the screen waits for or what the selected row does. Short messages show there for 3 seconds, brighter, and then the footer comes back. See [Status messages](status-messages.md).
 
 ## Header values
 

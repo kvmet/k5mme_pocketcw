@@ -24,7 +24,7 @@ const SHOWN_MIXUPS: usize = 6;
 impl Ui {
     pub(super) fn draw_letters(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        let level = Text::<10>::format(format_args!("KOCH {}", self.letters.level));
+        let level = Text::<10>::format(format_args!("LEVEL {}", self.letters.level));
         self.header(lcd, s, "LETTERS", &[level.as_str()]);
         self.softkeys(lcd, ["SET", "", "KOCH", "BACK"]);
         for (i, &c) in KOCH.iter().enumerate() {

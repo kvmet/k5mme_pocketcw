@@ -89,7 +89,7 @@ impl Receive {
         match self.state {
             State::Playing => "LISTEN",
             State::Waiting => "YOUR TURN",
-            State::Copying => "PAUSE ENDS",
+            State::Copying => "KEYING",
             State::Between | State::NoPack => "",
             State::Paused => "PAUSED",
         }
@@ -166,7 +166,7 @@ impl Ui {
                 info_x += level.len() as i32 * TINY_W;
                 let (right, total) = drill.window();
                 let percent = if total > 0 { right as u32 * 100 / total as u32 } else { 0 };
-                let _ = write!(info, "  {}% OF {}  NEED 90% OF 50", percent, total);
+                let _ = write!(info, "  {total}/50 CHARS  {percent}%  NEED 90%");
                 &KOCH[..drill.level as usize]
             }
             Kind::Ninja | Kind::Head if rx.state == State::NoPack => {

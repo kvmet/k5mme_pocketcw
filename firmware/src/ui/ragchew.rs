@@ -83,7 +83,7 @@ impl Chew {
         match self.state {
             State::Playing => "LISTEN",
             State::Asking => "YOUR TURN",
-            State::Answering => "PAUSE ENDS",
+            State::Answering => "KEYING",
             State::Showing => "",
             State::Paused => "PAUSED",
         }

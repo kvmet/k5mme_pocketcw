@@ -33,7 +33,7 @@ After an over that holds a fact, the screen asks one question, such as:
 `SENDER'S CALL?`, `RST?`, `NAME?`, `QTH CITY?`, `RIG?`, `POWER IN WATTS?`, `ANTENNA?`, `WX?`, `TEMPERATURE?`, `YEARS LICENSED?`, `AGE?` or `JOB?`
 
 1. The status shows `YOUR TURN`. Start to key the answer within 10 seconds.
-2. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your answer ends.
+2. While you key, the status shows `KEYING`. When you stop keying for three word gaps, your answer ends.
 3. The device shows the answer as sent, your copy with each character marked, and the score. The text of the over shows too. After 2.5 seconds the next over plays.
 
 If you do not start to key within 10 seconds, the answer counts as missed. To hear the over again, key `?` alone as your answer. The sign off overs have no question.

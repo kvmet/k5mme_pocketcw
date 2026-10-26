@@ -14,8 +14,8 @@ pub(super) const INPUT_Y: i32 = 204;
 /// Characters of the input row left of the badge, one of them for the cursor.
 pub(super) const INPUT_COLS: usize = COLS - 7;
 const BADGE_Y: i32 = INPUT_Y + 5;
-/// Room for the longest badge, `PAUSE ENDS`.
-const BADGE_W: i32 = 10 * TINY_W;
+/// Room for the longest badge, `YOUR TURN`.
+const BADGE_W: i32 = 9 * TINY_W;
 const _: () = assert!(INPUT_COLS as i32 * crate::gfx::CHAR_W <= MAIN - 2 - BADGE_W);
 /// The footer clears from here, below the input row's 16 px text.
 pub(super) const FOOT_TOP: i32 = INPUT_Y + 18;

@@ -9,7 +9,7 @@ Open ON AIR in the [menu](menu.md), then HUNT. The header shows HUNT and the RCV
 Your over ends when you stop keying for three word gaps. The footer tells you what to send next.
 
 1. The activator calls CQ, such as `CQ POTA DE K1ABC K1ABC K`. While you are quiet, the activator calls again 3.5 seconds after each CQ. When you start to key, the CQs stop.
-2. Send your callsign. For a park to park QSO (P2P), send `P2P` with your callsign. The activator sends your callsign, your report and its state, such as `K5XYZ GM UR 5NN CA CA BK`. An activator in Canada sends its province, such as `ON`. An activator outside the US and Canada sends no state.
+2. Send your callsign. For a park to park QSO (P2P), send `P2P`, then your callsign. With HINT on, the footer shows both forms. The activator sends your callsign, your report and its state, such as `K5XYZ GM UR 5NN CA CA BK`. An activator in Canada sends its province, such as `ON`. An activator outside the US and Canada sends no state.
 3. Close the QSO: send TU, a report, your state and 72 or 73, such as `TU 5NN TX 72`. The activator says goodbye, such as `TU 72 E E`.
 4. Log the QSO: key the activator's callsign, without `/P`. The activator you logged shows in the items, and the next activator calls 1.5 seconds later.
 
@@ -46,7 +46,7 @@ Under the transcript:
 
 During a QSO, only HINT shows the values of the items. `...` marks an item with no value.
 
-Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the activator sends, `YOUR TURN` while it waits for you, and `PAUSE ENDS` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
+Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the activator sends, `YOUR TURN` while it waits for you, and `KEYING` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
 Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 

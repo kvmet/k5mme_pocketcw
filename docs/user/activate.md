@@ -43,7 +43,7 @@ Under the transcript:
 | - | - |
 | NOW or LAST | NOW during a QSO and before your first. LAST after a QSO: the items show the QSO you logged last. |
 | LOG | QSOs in your log and the goal, such as `LOG 3/10`. The count turns green at the goal. |
-| COPY | QSOs where you sent the hunter's state back. |
+| GOOD | QSOs where you sent the hunter's state back. |
 | CALL | The callsign of the hunter. A green edge marks a QSO in progress. |
 | RST | The report the hunter gave you. During a QSO, only HINT shows it. |
 | STATE | The hunter's state or province, or DX for a hunter outside the US and Canada. During a QSO, only HINT shows it. After the QSO, the label is COPIED with a green edge, or MISSED with a red edge: whether you sent the state back. |
@@ -51,18 +51,16 @@ Under the transcript:
 
 `...` marks an item with no value yet.
 
-Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the hunters send, `YOUR TURN` while they wait for you, and `PAUSE ENDS` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
+Under the items, your over shows as you key it. At the right of your over, the state shows `LISTEN` while the hunters send, `YOUR TURN` while they wait for you, and `KEYING` while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.
 
 Band noise and fading play on this screen when you set them in the SOUND section of the settings.
 
 ## Pileup settings
 
-The QSO section of the [settings](settings.md#qso) sets how the hunters behave:
+The QSO section of the [settings](settings.md#qso) sets how the hunters behave. Their base speed is CHAR SPEED, with FARNSWORTH for longer gaps, in the [HEAR](settings.md#hear) section; MATCH uses your keyer speed.
 
 | Setting | Values |
 | - | - |
-| CHAR SPEED | The hunters' base speed. MATCH uses your keyer speed. |
-| FARNSWORTH | Longer gaps in what the hunters send. |
 | PILEUP | OFF: one hunter at a time. TAKE TURNS: up to four hunters, who call one after another. OVERLAP: up to four hunters, who call at the same time. |
 | FIST | HUMAN: each hunter keys with small timing errors. CLEAN: exact timing. |
 | SPEED SPREAD | ON: each hunter sends up to 5 WPM faster or slower than the base speed. |

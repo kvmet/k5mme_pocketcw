@@ -1,6 +1,6 @@
 # Letters
 
-The LETTERS screen shows how well you copy each of the 44 Koch characters, and the characters you mix up most. The header shows LETTERS and your Koch level, such as `KOCH 12`.
+The LETTERS screen shows how well you copy each of the 44 Koch characters, and the characters you mix up most. The header shows LETTERS and your Koch level, such as `LEVEL 12`.
 
 Open STATS in the [menu](menu.md), then LETTERS, or press F2 (LTRS) on the [Progress](progress.md) screen.
 

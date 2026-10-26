@@ -164,7 +164,7 @@ pub struct Ui {
     meter: Meter,
     stats: Stats,
     hand: Hand,
-    /// TIMING shows the HAND view, not MARKS.
+    /// TIMING shows the HAND view, not BARS.
     timing_hand: bool,
     tape: Tape,
     /// When each contact closed, while it is closed: tip, ring.

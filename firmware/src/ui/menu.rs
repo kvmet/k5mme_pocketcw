@@ -50,7 +50,7 @@ const fn row(name: &'static str, about: &'static str, credit: &'static str, item
 const TOP: [Row; 7] = [
     row("RESUME", "PICK UP WHERE YOU LEFT OFF", "", Item::Resume),
     row("RECEIVE", "KOCH  WORDS  CALLS  NINJA  HEAD", "", Item::List(List::Receive)),
-    row("ON AIR", "POTA  SOTA  HUNT  RAGCHEW", "", Item::List(List::OnAir)),
+    row("ON AIR", "POTA  SOTA  HUNT  CHEW  QUIZ", "", Item::List(List::OnAir)),
     row("TIMING", "ZOOMED TAPE AND HISTOGRAMS", "", Item::Open(Screen::Timing)),
     row("STATS", "LETTER ACCURACY AND PROGRESS", "", Item::List(List::Stats)),
     row("SETTINGS", "KEYER, SOUND, MEMORIES, CALL, THEME", "", Item::Open(Screen::Settings)),

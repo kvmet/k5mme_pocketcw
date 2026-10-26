@@ -2,7 +2,7 @@
 
 The menu is a top list and three lists it opens: RECEIVE, ON AIR and STATS. Each row shows the name of a screen or a list. A `>` at the right end marks a row that opens a list. Under the rows, a line tells you what the selected row holds, and a dimmer line names the work the idea came from.
 
-To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other screen opens the list that holds that screen, with its row selected.
+To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other screen opens the list that holds that screen, with its row selected. SETTINGS is the exception: BACK returns to the screen you opened it from.
 
 ## The top list
 

@@ -18,7 +18,7 @@ The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the
 
 1. The device sends a group. The status shows `LISTEN`.
 2. The status shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
-3. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your copy ends.
+3. While you key, the status shows `KEYING`. When you stop keying for three word gaps, your copy ends.
 4. The device scores your copy and shows it in the list. The next group starts after about 1 second.
 
 If you do not start to key within 5 seconds, the group counts as missed.
@@ -27,7 +27,7 @@ To hear the group again, key `?` alone as your copy.
 
 ## What the screen shows
 
-- The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  80% OF 30  NEED 90% OF 50`.
+- The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  30/50 CHARS  80%  NEED 90%`: the characters scored at this level, up to the last 50, the percent of them you copied, and the percent the next level needs.
 - The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. The other drills show all 44 characters.
 - In HEAD, the top line shows your rung and what it sends, such as `RUNG 3 OF 8  1 WORD OF 5 CHARS`.
 - The list of recent groups. Each row shows the group that was sent, then your copy with each character marked: green for right, red and inverted for wrong, `_` for missed. The score shows at the right, such as `4/5`.
@@ -88,7 +88,8 @@ The device keeps your level and your progress toward the next level while you us
 | F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused. |
 | F3 (STOP or GO) | Pauses the drill, or starts it again. |
 | F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
-| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial turn on `LEVEL` | KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Keys your copy. |
