@@ -52,6 +52,8 @@ In STRAIGHT, for a straight key or a sideswiper:
 | - | - |
 | TIP, RING | For each contact, the average length and standard deviation of the dots and dashes it keyed, in milliseconds. A mark counts for the contact that closed first. A straight key uses only the tip. |
 | WEIGHT | Each dot over the gap after it inside a character, on average, with its standard deviation. 1.00 is even; more is heavy, less is light. |
+| RATIO | For each contact, its average dash over its average dot. 3.0 is standard. |
+| OVERLAP | The percent of marks during which the other contact closed too, and how many marks it counts. On a sideswiper, the second contact holds the key down, so the mark runs long. |
 
 Keying that `SEND` sends over USB counts in BARS, but not in HAND.
 

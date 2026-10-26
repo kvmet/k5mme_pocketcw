@@ -135,6 +135,21 @@ impl Ui {
             _ => write!(line, "WEIGHT --"),
         };
         text_cols(lcd, 0, LINES_Y, line.as_str(), super::COLS, t.fg, t.bg);
+
+        line.clear();
+        let [tip, ring] = &self.hand.sides;
+        let _ = write!(line, "RATIO TIP ");
+        number(&mut line, tip.ratio());
+        let _ = write!(line, "  RING ");
+        number(&mut line, ring.ratio());
+        text_cols(lcd, 0, LINES_Y + LINE_STEP, line.as_str(), super::COLS, t.fg, t.bg);
+
+        line.clear();
+        let marks: u32 = [tip, ring].iter().map(|side| side.dit.count + side.dah.count).sum();
+        let _ = write!(line, "OVERLAP ");
+        percent(&mut line, self.hand.overlap, marks);
+        let _ = write!(line, " OF {marks}");
+        text_cols(lcd, 0, LINES_Y + 2 * LINE_STEP, line.as_str(), super::COLS, t.fg, t.bg);
     }
 
     /// Bars colored by `quality` at each bin's middle, with a dotted line at each of `marks`.

@@ -1,7 +1,7 @@
 //! Hand timing: what the contacts do around the keyer. With an iambic keyer, how long before the
 //! keyer's decision you release at the end of a character, and how often you press too late to
-//! continue one. With a straight key or sideswiper, each side's dits and dahs, and the weight of
-//! a dit against the gap after it.
+//! continue one. With a straight key or sideswiper, each side's dits and dahs, the weight of a
+//! dit against the gap after it, and how often both sides close in one mark.
 
 use crate::text::Text;
 use crate::ticks;
@@ -20,6 +20,13 @@ pub struct Side {
     pub dah: Moments,
 }
 
+impl Side {
+    /// The dah length over the dit length; 3 is standard.
+    pub fn ratio(&self) -> Option<f32> {
+        Some(self.dah.mean()? / self.dit.mean()?)
+    }
+}
+
 #[derive(Clone, Copy, Default)]
 pub struct Hand {
     /// Dots from your last release to the keyer's decision, once per iambic character.
@@ -35,6 +42,10 @@ pub struct Hand {
     pub sides: [Side; 2],
     /// A straight-keyed dit over the element gap after it: 1 is even, more is heavy.
     pub weight: Moments,
+    /// Straight marks in `sides` during which the other contact closed too.
+    pub overlap: u32,
+    /// The other contact closed during the mark now down.
+    squeezed: bool,
     /// Tick time each contact closed, while closed.
     closed: [Option<u32>; 2],
     released_at: Option<u32>,
@@ -57,6 +68,8 @@ impl Hand {
         if down {
             if self.closed[1 - i].is_none() {
                 self.first_closed = Some((i, at_ms));
+            } else if self.down_at.is_some() {
+                self.squeezed = true;
             }
             self.closed[i] = Some(at_ms);
         } else {
@@ -70,6 +83,7 @@ impl Hand {
         let dots = |ms: u32| ms as f32 / dit_ms as f32;
         if down {
             self.down_at = Some(at_ms);
+            self.squeezed = false;
             let dit = self.last_dit_ms.take();
             match self.up_at.take().map(|up| at_ms.wrapping_sub(up)) {
                 Some(gap) if Kind::gap(dots(gap)) == Kind::ElementGap => {
@@ -94,6 +108,7 @@ impl Hand {
             if iambic {
                 self.pending_stop = Some((at_ms.wrapping_add(dit_ms as u32), dit_ms));
             } else if let Some((side, _)) = self.first_closed.filter(|&(_, at)| at == start) {
+                self.overlap += self.squeezed as u32;
                 let side = &mut self.sides[side];
                 if Kind::mark(dots(len)) == Kind::Dit {
                     side.dit.add(len as f32);
@@ -150,7 +165,8 @@ impl Hand {
             let _ = core::fmt::Write::write_fmt(&mut bins, format_args!(" {n}"));
         }
         let _ = core::fmt::Write::write_str(&mut bins, "\n");
-        iambic.into_iter().chain(sides).chain([moments_line("WEIGHT", &self.weight), bins])
+        let overlap = Text::format(format_args!("OVERLAP {}\n", self.overlap));
+        iambic.into_iter().chain(sides).chain([moments_line("WEIGHT", &self.weight), overlap, bins])
     }
 }
 
@@ -255,6 +271,8 @@ mod tests {
         assert!(near(tip.dit.mean(), 70.0) && near(ring.dah.mean(), 180.0) && near(tip.dah.mean(), 200.0));
         assert_eq!(hand.weight.count, 1);
         assert!(near(hand.weight.mean(), 1.4));
+        assert!(near(tip.ratio(), 200.0 / 70.0) && ring.ratio().is_none());
+        assert_eq!(hand.overlap, 0);
         assert_eq!((hand.release.count, hand.element_gaps), (0, 0), "no keyer decisions");
     }
 
@@ -265,6 +283,10 @@ mod tests {
         let both = Contacts { tip: true, ring: true };
         run(&mut hand, Mode::Straight, &[(TIP, 40), (both, 20), (RING, 40), (NONE, 300)]);
         assert_eq!([hand.sides[0].dit.count, hand.sides[1].dit.count], [1, 0]);
+        assert_eq!(hand.overlap, 1);
+        // The next mark from one side alone does not overlap.
+        run(&mut hand, Mode::Straight, &[(RING, 60), (NONE, 300)]);
+        assert_eq!(hand.overlap, 1);
     }
 
     #[test]
@@ -284,6 +306,7 @@ mod tests {
                 "RING DIT 0 - -\n",
                 "RING DAH 0 - -\n",
                 "WEIGHT 0 - -\n",
+                "OVERLAP 0\n",
                 "BINS RELEASE 3 0 1 0 0 0 0 0 0 0 0 0 0\n",
             ]
         );

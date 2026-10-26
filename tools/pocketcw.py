@@ -309,7 +309,7 @@ def save_timing(lines, path):
             fields = line.split()
             if fields[0] in ('MARK', 'GAP', 'TIP', 'RING'):
                 out.writerow([fields[0].lower(), fields[1].lower(), *('' if v == '-' else v for v in fields[2:])])
-            elif fields[0] in ('RELEASE', 'LATE', 'WEIGHT', 'CLOSE', 'ON_TIME'):
+            elif fields[0] in ('RELEASE', 'LATE', 'WEIGHT', 'CLOSE', 'ON_TIME', 'OVERLAP'):
                 values = ['' if v == '-' else v for v in fields[1:]]
                 out.writerow([fields[0].lower(), '', *values, *[''] * (3 - len(values))])
             elif fields[0] == 'BINS':
