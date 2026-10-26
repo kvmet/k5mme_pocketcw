@@ -82,6 +82,9 @@ pub(super) struct Receive {
     rows: [Option<Row>; ROWS],
     session_right: u16,
     session_total: u16,
+    /// The last group, which got no copy and is not scored yet. A second such group pauses the
+    /// drill, and neither counts.
+    silent: Option<Text<MAX_GROUP>>,
 }
 
 impl Receive {
@@ -106,6 +109,7 @@ impl Receive {
             rows: [None; ROWS],
             session_right: 0,
             session_total: 0,
+            silent: None,
         }
     }
 
@@ -124,6 +128,7 @@ impl Receive {
         }
         self.deadline = None;
         self.copy.clear();
+        self.silent = None;
     }
 }
 
@@ -353,8 +358,16 @@ impl Ui {
         }
     }
 
-    pub(super) fn receive_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {
+    pub(super) fn receive_decoded(&mut self, lcd: &mut Lcd, s: &Settings, decoded: Decoded) {
         let Some(Session::Receive(rx)) = &mut self.session else { return };
+        // The character that ends a pause starts the next group, and is not copy.
+        if rx.state == State::Paused {
+            if decoded != Decoded::Space {
+                self.play_group(lcd, s, false);
+                self.draw(lcd, s);
+            }
+            return;
+        }
         // Head copy holds the item in your head until it ends.
         let head_playing = rx.drill.kind == Kind::Head && rx.state == State::Playing;
         if !matches!(rx.state, State::Copying | State::Waiting | State::Playing) || head_playing {
@@ -391,20 +404,45 @@ impl Ui {
             self.draw_receive_now(lcd);
             return;
         }
+        if rx.state == State::Waiting && rx.copy.as_str().trim().is_empty() {
+            push_scrolling(&mut rx.rows, Row { sent: rx.group, marks: [Mark::Missed; MAX_GROUP], right: 0, scored: false });
+            if rx.silent.is_some() {
+                rx.pause();
+                self.draw(lcd, s);
+                self.status(lcd, "NO COPY FOR 2 GROUPS: PAUSED");
+                return;
+            }
+            rx.silent = Some(rx.group);
+            rx.state = State::Between;
+            rx.deadline = Some(now_ms.wrapping_add(NEXT_GROUP_MS));
+            self.draw_receive_rows(lcd);
+            self.draw_receive_now(lcd);
+            return;
+        }
+        // A lone silent group counts as missed once you copy the next one. Its row is the last.
+        let missed = rx.silent.take().map(|sent| rx.drill.score(sent.as_str(), "", &mut self.letters));
+        if let Some(missed) = missed
+            && let Some(row) = rx.rows.iter_mut().flatten().last()
+        {
+            *row = Row { marks: missed.marks, right: missed.right, scored: true, ..*row };
+        }
         let score = rx.drill.score(rx.group.as_str(), rx.copy.as_str(), &mut self.letters);
         self.letters.level = rx.drill.level;
         self.koch_window = (rx.drill.level, rx.drill.window());
         s.head_rung = rx.drill.rung();
-        self.history.copied(score.right, score.len as u8);
-        rx.session_right += score.right as u16;
-        rx.session_total += score.len as u16;
+        for scored in missed.iter().chain([&score]) {
+            self.history.copied(scored.right, scored.len as u8);
+            rx.session_right += scored.right as u16;
+            rx.session_total += scored.len as u16;
+        }
+        let level_up = score.level_up || missed.is_some_and(|missed| missed.level_up);
         push_scrolling(&mut rx.rows, Row { sent: rx.group, marks: score.marks, right: score.right, scored: true });
         rx.copy.clear();
         rx.state = State::Between;
         rx.deadline = Some(now_ms.wrapping_add(NEXT_GROUP_MS));
         self.draw_receive_rows(lcd);
         self.draw_receive_now(lcd);
-        if score.level_up {
+        if level_up {
             self.draw_receive_info(lcd);
             let mut line = Text::<COLS>::new();
             if let Some(Session::Receive(rx)) = &self.session {

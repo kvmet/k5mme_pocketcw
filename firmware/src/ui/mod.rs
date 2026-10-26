@@ -500,7 +500,7 @@ impl Ui {
             Screen::Qso => self.qso_decoded(lcd, decoded),
             Screen::Hunt => self.hunt_decoded(lcd, decoded),
             Screen::Settings => self.settings_decoded(lcd, s, decoded),
-            Screen::Receive => self.receive_decoded(lcd, decoded),
+            Screen::Receive => self.receive_decoded(lcd, s, decoded),
             Screen::Ragchew => self.ragchew_decoded(lcd, s, decoded),
             Screen::Menu | Screen::System | Screen::Letters | Screen::Progress | Screen::Radio => {}
         }

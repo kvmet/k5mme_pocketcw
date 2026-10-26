@@ -78,6 +78,7 @@ These lines show on the KEYER screen. See [Memories](memories.md). The first fou
 
 | Message | Meaning |
 | - | - |
+| `NO COPY FOR 2 GROUPS: PAUSED` | Two drill groups in a row passed with no copy, so the drill paused and scored neither. Key a character or press GO to go on. See [Receive drills](receive.md). |
 | `LEVEL UP: ADDED X` | You moved up a Koch level, and the drill now sends character X too. See [Receive drills](receive.md). |
 
 ## The red error screen

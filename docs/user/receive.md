@@ -21,7 +21,7 @@ The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the
 3. While you key, the status shows `KEYING`. When you stop keying for three word gaps, your copy ends.
 4. The device scores your copy and shows it in the list. The next group starts after about 1 second.
 
-If you do not start to key within 5 seconds, the group counts as missed.
+If you do not start to key within 5 seconds, the group counts as missed when you copy the next one. After two such groups in a row, the drill pauses, and neither group counts: the status line shows `NO COPY FOR 2 GROUPS: PAUSED`. Key any character, or press F3 (GO), to go on. The character you key does not count as copy.
 
 To hear the group again, key `?` alone as your copy.
 
@@ -86,7 +86,7 @@ The device keeps your level and your progress toward the next level while you us
 | - | - |
 | F1 (SET) | Pauses the drill and opens the settings at the RECEIVE section, or at DRILLS from NINJA. F4 (BACK) there returns, and the next group plays at the new settings. |
 | F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused. |
-| F3 (STOP or GO) | Pauses the drill, or starts it again. |
+| F3 (STOP or GO) | Pauses the drill, or starts it again. While the drill is paused, a character you key also starts it again. |
 | F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial turn on `LEVEL` | KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
