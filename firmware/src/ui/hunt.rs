@@ -8,7 +8,7 @@ use pocketcw_logic::{
     hunt::{Hunt, Logged, Phase},
     input::Action,
     player::{Keying, MAX_TEXT},
-    qso::{Options, Program, Tx},
+    qso::{Options, Program, Tx, ends_with_turn},
     settings::Settings,
 };
 
@@ -87,7 +87,7 @@ impl Hunting {
         let a = &bot.activator;
         let mut step = Text::new();
         let _ = match bot.phase {
-            _ if !self.over.is_empty() => write!(step, "YOUR OVER ENDS WHEN YOU PAUSE"),
+            _ if !self.over.is_empty() => write!(step, "END YOUR OVER WITH K, OR PAUSE"),
             Phase::Calling if self.hint => write!(step, "SEND: {}  OR  P2P {0}", bot.my_call()),
             Phase::Calling => write!(step, "SEND YOUR CALL"),
             Phase::Working { heard, .. } if self.hint && heard.as_str() != bot.my_call() => {
@@ -184,14 +184,23 @@ impl Ui {
         }
     }
 
-    pub(super) fn hunt_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {
+    pub(super) fn hunt_decoded(&mut self, lcd: &mut Lcd, s: &Settings, decoded: Decoded) {
         let Some(Session::Hunt(h)) = &mut self.session else { return };
-        if decoded.write_to(&mut h.over) {
+        let written = decoded.write_to(&mut h.over);
+        let ended = decoded == Decoded::Space && ends_with_turn(h.over.as_str());
+        if ended {
+            h.over_deadline = None;
+        }
+        if written {
             self.draw_hunt_over(lcd);
+        }
+        if ended {
+            let now_ms = self.now_ms;
+            self.hunt_over_done(lcd, s, now_ms);
         }
     }
 
-    /// Your key went down or up; the over ends after a long enough silence.
+    /// Your key went down or up; the over ends after a long enough silence, or at K.
     pub(super) fn hunt_key(&mut self, down: bool, at_ms: u32, dit_ms: u16) {
         let Some(Session::Hunt(h)) = &mut self.session else { return };
         h.cq_deadline = None;

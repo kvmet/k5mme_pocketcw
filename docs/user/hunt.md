@@ -6,7 +6,7 @@ Open ON AIR in the [menu](menu.md), then HUNT. The header shows HUNT and the RCV
 
 ## Work a QSO
 
-Your over ends when you stop keying for three word gaps. The footer tells you what to send next.
+Your over ends one word gap after a last word of `K`, `BK` or `KN`, or when you stop keying for three word gaps. The footer tells you what to send next.
 
 1. The activator calls CQ, such as `CQ POTA DE K1ABC K1ABC K`. While you are quiet, the activator calls again 3.5 seconds after each CQ. When you start to key, the CQs stop.
 2. Send your callsign. For a park to park QSO (P2P), send `P2P`, then your callsign. With HINT on, the footer shows both forms. The activator sends your callsign, your report and its state, such as `K5XYZ GM UR 5NN CA CA BK`. An activator in Canada sends its province, such as `ON`. An activator outside the US and Canada sends no state.

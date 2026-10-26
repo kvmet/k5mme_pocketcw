@@ -13,7 +13,7 @@ Set your callsign first in the CALLSIGN section of the [settings](settings.md#ca
 
 ## Work a QSO
 
-Your over ends when you stop keying for three word gaps. The footer tells you what to send next.
+Your over ends one word gap after a last word of `K`, `BK` or `KN`, or when you stop keying for three word gaps. The footer tells you what to send next.
 
 1. Call CQ: `CQ POTA DE <your call> K`. With an empty pileup, one to three hunters call you. Each hunter sends its callsign once or twice.
 2. Send the callsign of one hunter, then a report: `K1ABC 5NN`. That hunter sends your report and its state, such as `RR TU 559 CA CA 72`. A hunter in Canada sends its province, such as `ON`. A hunter outside the US and Canada sends no state.

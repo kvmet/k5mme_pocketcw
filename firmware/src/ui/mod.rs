@@ -497,8 +497,8 @@ impl Ui {
                 }
                 self.draw_timing_stats(lcd, s);
             }
-            Screen::Qso => self.qso_decoded(lcd, decoded),
-            Screen::Hunt => self.hunt_decoded(lcd, decoded),
+            Screen::Qso => self.qso_decoded(lcd, s, decoded),
+            Screen::Hunt => self.hunt_decoded(lcd, s, decoded),
             Screen::Settings => self.settings_decoded(lcd, s, decoded),
             Screen::Receive => self.receive_decoded(lcd, s, decoded),
             Screen::Ragchew => self.ragchew_decoded(lcd, s, decoded),

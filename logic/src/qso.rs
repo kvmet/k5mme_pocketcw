@@ -473,6 +473,11 @@ const W_2X3_SECOND: &[u8] = b"ABDEFGIJNOQSUVWXYZ";
 /// First suffix letters of a 2x3 call: never X.
 const SUFFIX_2X3_FIRST: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWYZ";
 
+/// The over's last word hands the turn back: K, BK or KN, as letters or as a prosign.
+pub fn ends_with_turn(over: &str) -> bool {
+    matches!(over.split_whitespace().last(), Some("K" | "BK" | "KN" | "<BK>" | "<KN>"))
+}
+
 /// A random US call in call area `digit`, in a form the FCC sequential system issues to the
 /// mainland: 1x2, 1x3, 2x1 and 2x2 from K, N, W or AA..AK; 2x3 from K or W only.
 pub fn us_call(digit: u8, rng: &mut Rng) -> Text<CALL_LEN> {
@@ -802,6 +807,16 @@ mod tests {
         assert_eq!(bot.pile_size(), 1);
         let again = heard(&mut bot, "AGN");
         assert!(again.len() <= 1 && again.iter().all(|t| t.wpm == 12 && t.fist == 0), "{:?}", texts(&again));
+    }
+
+    #[test]
+    fn k_bk_and_kn_end_an_over_only_as_its_last_word() {
+        for over in ["CQ POTA DE K5MME K", "K1ABC 5NN BK ", "TU <BK>", "QRZ KN", "QRZ <KN>"] {
+            assert!(ends_with_turn(over), "{over}");
+        }
+        for over in ["", "K5MME", "TU CA 72 E E", "K 5NN", "CQ POTA DE K5MME K5"] {
+            assert!(!ends_with_turn(over), "{over}");
+        }
     }
 
     #[test]
