@@ -194,6 +194,8 @@ pub struct Ui {
     say: Option<Text<WORD_TEXT>>,
     /// A PLAY from the serial port is sounding.
     serial_play: bool,
+    /// A practice screen's transmission is sounding, which counts as practice time.
+    listening: bool,
     seed: u32,
     system: SystemInfo,
     /// None when the ADC did not answer.
@@ -260,6 +262,7 @@ impl Ui {
             play: None,
             say: None,
             serial_play: false,
+            listening: false,
             seed: settings.boot_count as u32 * 7919 + 1,
             system,
             battery: None,
@@ -587,6 +590,7 @@ impl Ui {
     /// screen's sounding, so each screen checks that its own transmission was.
     pub fn played(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
         self.serial_play = false;
+        self.listening = false;
         match self.screen {
             Screen::Qso => self.qso_played(),
             Screen::Hunt => self.hunt_played(now_ms),
@@ -603,10 +607,9 @@ impl Ui {
         if core::mem::take(&mut self.stop) {
             return Some(Command::Stop);
         }
-        if let Some(play) = self.play.take() {
-            return Some(Command::Play(play));
-        }
-        self.qso_next_play(s).or_else(|| self.hunt_next_play(s)).map(Command::Play)
+        let play = self.play.take().or_else(|| self.qso_next_play(s)).or_else(|| self.hunt_next_play(s))?;
+        self.listening = matches!(self.screen, Screen::Receive | Screen::Ragchew | Screen::Qso | Screen::Hunt);
+        Some(Command::Play(play))
     }
 
     /// Text for the voice to say now; run it after the players' commands, since a stop also
@@ -627,6 +630,7 @@ impl Ui {
         self.stop = true;
         self.play = None;
         self.say = None;
+        self.listening = false;
     }
 
     /// Band noise plays: practice while it runs, the SOUND tab, so you hear the noise level you

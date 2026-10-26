@@ -188,6 +188,9 @@ impl Ui {
     pub fn poll(&mut self, lcd: &mut Lcd, reading: Option<Reading>, now_ms: u32) {
         self.battery = reading;
         self.now_ms = now_ms;
+        if self.listening {
+            self.history.active(now_ms);
+        }
         if let Some(r) = reading {
             let was_low = self.gauge.low();
             self.gauge.update(r.raw, r.supply_mv, now_ms);

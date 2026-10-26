@@ -10,7 +10,7 @@ The device keeps the last 32 sessions. A session starts to count at the first th
 
 | Column | What it counts |
 | - | - |
-| TIME | Time while you key, on any screen. Time between two key presses counts when the gap is 60 seconds or less. |
+| TIME | Time while you key, on any screen, and while a drill, ragchew, POTA, SOTA or HUNT sends to you. A gap between the two counts when it is 60 seconds or less. |
 | SENT | Characters you sent on the key, on any screen. |
 | COPY | Percent right in [receive drills](receive.md) and [ragchew](ragchew.md) quizzes. |
 | QSOS | QSOs you logged when you [activate](activate.md) or [hunt](hunt.md). |

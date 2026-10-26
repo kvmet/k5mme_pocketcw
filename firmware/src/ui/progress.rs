@@ -119,7 +119,7 @@ impl Ui {
                 text(lcd, *x, y, cell.as_str(), t.fg, t.bg);
             }
         }
-        tiny(lcd, 2, TABLE_Y + 12 + 2 * TABLE_STEP + 4, "TIME COUNTS ONLY WHILE YOU KEY", t.muted, t.bg);
+        tiny(lcd, 2, TABLE_Y + 12 + 2 * TABLE_STEP + 4, "TIME COUNTS KEYING AND LISTENING", t.muted, t.bg);
     }
 
     /// The copy accuracy marker: a hollow square.
