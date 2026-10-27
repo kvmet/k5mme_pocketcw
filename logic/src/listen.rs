@@ -158,8 +158,7 @@ impl Listener {
             follow(&mut self.dash_ms, dash);
         }
         self.dot_ms = self.dot_ms.clamp(MIN_DOT_MS, MAX_DOT_MS);
-        // `clamp` with bounds known only at run time keeps an assert that formats f32: about 12 KB.
-        self.dash_ms = self.dash_ms.max(MIN_DASH_DOTS * self.dot_ms).min(MAX_DASH_DOTS * self.dot_ms);
+        self.dash_ms = self.dash_ms.clamp(MIN_DASH_DOTS * self.dot_ms, MAX_DASH_DOTS * self.dot_ms);
         if new_speed {
             // Gaps measured at the old speed say nothing about the spacing now.
             self.letter_gap_dots = START_LETTER_GAP_DOTS;
