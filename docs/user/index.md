@@ -17,7 +17,7 @@ This manual tells you how to install PocketCW and how to use it.
 - [Keyer](keyer.md): the main screen.
 - [Memories](memories.md): store four messages and send them on your radio.
 - [Timing](timing.md): a close look at your keying.
-- [Receive drills](receive.md): Koch, words and callsigns.
+- [Receive drills](receive.md): Koch, words, callsigns, and the content pack drills NINJA and HEAD.
 - [Ragchew](ragchew.md): copy a full QSO between two stations.
 - [Activate a park or summit](activate.md): work a pileup of hunters.
 - [Hunt](hunt.md): work activators on parks and summits.

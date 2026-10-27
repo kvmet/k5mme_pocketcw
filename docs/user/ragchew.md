@@ -2,7 +2,7 @@
 
 In a ragchew, two stations hold a full QSO for you to copy. One station calls CQ, the other answers, and they trade signal reports, names, cities (QTH), rigs, antennas, weather (WX), years licensed, ages and jobs. Then they sign off with 73, and the station that called CQ sends the last `E E`. After 11 overs, two new stations start a new QSO.
 
-Each station has its own way to word its overs, such as `NAME` or `OP`, and `HW?` or `HW CPY?`. Most stations are in the US. Some are in Canada or other countries: these send temperatures in Celsius and antenna heights in meters, and a station outside the US and Canada sends a city with no state.
+Each station has its own way to word its overs, such as `NAME` or `OP`, and `HW?` or `HW CPY?`. Most stations are in the US. Some are in Canada or other countries: these send temperatures in Celsius and antenna heights in meters, and a station outside the US and Canada sends a city with no state. It adds its country when the line is short enough, such as `QTH ROME ITALY`.
 
 Open ON AIR in the [menu](menu.md), then CHEW or QUIZ. The header shows which one:
 
