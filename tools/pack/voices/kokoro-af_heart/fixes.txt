@@ -1,7 +1,7 @@
 # What this voice says for a clip, over the said or meaning column of tools/pack/words: text,
 # clip (char, word or meaning), then a respelling, or misaki phonemes between slashes such as /bˈYzi/.
 B	char	/bˈii./
-C	char	/sˈii./
+C	char	/sˈiː./
 E	char	/ˈii./
 P	char	/pˈii./
 U	char	/juu./
@@ -28,7 +28,6 @@ FT	meaning	/fˈiːt./
 CWOPS	word	/sˈi dˈʌbᵊljˌu ˈɑps./
 BOISE	word	/bˈY zˈi/
 CONCORD	word	/kˌoŋkæɹd/
-DIEGO	word	/dɪˈAɡOː/
 EDMONTON	word	/ˈɛdmɛntən/
 EUGENE	word	/jˈuʤiin/
 FRESNO	word	/fɹˈɛznO,/
@@ -36,7 +35,6 @@ KYOTO	word	/kIˈOːTOː,/
 MILAN	word	/mɪlˈɔn/
 OMAHA	word	/ˈOməhɑ/
 OSAKA	word	/O:sˈɑkə,/
-PASO	word	/pˈæsOː/
 QUEBEC	word	/kᵻbˈɛk/
 RENO	word	/ɹˈinOː/
 TOLEDO	word	/tolˈidOː/

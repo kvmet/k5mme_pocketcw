@@ -25,13 +25,13 @@ const NAMES: [&str; 44] = [
 
 /// Cities and their states by call area digit, at most 10 letters without spaces for the quiz.
 const CITIES_BY_AREA: [&[(&str, &str)]; 10] = [
-    &[("DENVER", "CO"), ("WICHITA", "KS"), ("OMAHA", "NE"), ("DES MOINES", "IA"), ("ST PAUL", "MN"), ("FARGO", "ND")],
+    &[("DENVER", "CO"), ("WICHITA", "KS"), ("OMAHA", "NE"), ("FARGO", "ND")],
     &[("BOSTON", "MA"), ("PORTLAND", "ME"), ("BURLINGTON", "VT"), ("HARTFORD", "CT"), ("CONCORD", "NH")],
     &[("ALBANY", "NY"), ("BUFFALO", "NY"), ("TRENTON", "NJ"), ("NEWARK", "NJ")],
     &[("PITTSBURGH", "PA"), ("ERIE", "PA"), ("DOVER", "DE"), ("BALTIMORE", "MD"), ("WASHINGTON", "DC")],
     &[("RICHMOND", "VA"), ("RALEIGH", "NC"), ("ATLANTA", "GA"), ("TAMPA", "FL"), ("NASHVILLE", "TN"), ("MOBILE", "AL")],
-    &[("AUSTIN", "TX"), ("EL PASO", "TX"), ("TULSA", "OK"), ("SANTA FE", "NM"), ("JACKSON", "MS")],
-    &[("FRESNO", "CA"), ("SAN DIEGO", "CA"), ("OAKLAND", "CA"), ("REDDING", "CA")],
+    &[("AUSTIN", "TX"), ("TULSA", "OK"), ("JACKSON", "MS")],
+    &[("FRESNO", "CA"), ("OAKLAND", "CA"), ("REDDING", "CA")],
     &[("SEATTLE", "WA"), ("EUGENE", "OR"), ("BOISE", "ID"), ("RENO", "NV"), ("TUCSON", "AZ"), ("BOZEMAN", "MT")],
     &[("DETROIT", "MI"), ("TOLEDO", "OH"), ("DAYTON", "OH"), ("WHEELING", "WV")],
     &[("CHICAGO", "IL"), ("PEORIA", "IL"), ("MADISON", "WI"), ("GARY", "IN")],

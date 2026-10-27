@@ -2,7 +2,7 @@
 # bad), the speech key the mark was given for, and a note. A mark whose key differs from the clip's is stale.
 A	char	good	f8365f731e7853c6e868de06
 B	char	good	db74b7cd99268e178df3226d
-C	char	good	5243d86ca710e24c45dfae4c
+C	char	good	aa0e67c0abd53cd44a954b43
 D	char	good	e2547c38b357a8fd5ae9506d
 E	char	good	40d0183b03bab51f9b1a64bb
 F	char	good	1c4aea7cdaaa3a22125ba337
@@ -239,16 +239,12 @@ CALGARY	word	good	09f1ff0955da5351e1366a6a
 CONCORD	word	good	422fb021236e93b71a754c5e
 DAYTON	word	good	3d405e6f068c4188f2748553
 DENVER	word	good	f566e42fc06f6e23a568e65a
-DES	word	good	cb70c8dac0a20244faeff3f7
 DETROIT	word	good	499452a68fd7a5fad2ad0c40
-DIEGO	word	good	8285409a696dcb1a22bc9bd5
 DOVER	word	good	c45f94e18ec4b1be18e7534b
 EDMONTON	word	good	4ca41476f1222b9af1071693
-EL	word	good	ab4ba91e56cd3c057ac93bc7
 ERIE	word	good	4f9b1199008072bc00dbff13
 EUGENE	word	good	77df7ec8174e9bf565ce48fc
 FARGO	word	good	0b8fcbeca1cf5e232891ff7f
-FE	word	good	86e7a9c87f597af92332ef2a
 FRESNO	word	good	9243b006fb49e37ef87ff320
 HALIFAX	word	good	2e994e29e49f2e524febcadd
 HAMBURG	word	good	7c7b62a7031da7a05ff41faf
@@ -261,7 +257,6 @@ MADISON	word	good	9b3caf7ccd2a59b98f11b527
 MADRID	word	good	99f57ef430eceb208663bc24
 MELBOURNE	word	good	80d2ce8f3a4821ace8cf5028
 MILAN	word	good	643d498b20317c1b8d249f3f
-MOINES	word	good	0c1ea2c7643f26623a46fd03
 MONCTON	word	good	bb5accdf090ff370e8d6b70d
 MONTREAL	word	good	a1a50640bf38939c0211461c
 MUNICH	word	good	a2a91352cf1a98bf154e64e5
@@ -271,7 +266,6 @@ OAKLAND	word	good	17d48966b941ad353f22d19a
 OMAHA	word	good	88fd11340d8cb77a4418f03c
 OSAKA	word	good	eb3e11f0b0c5a1e11064d30a
 OTTAWA	word	good	d946a21a0f48b61897c52720
-PASO	word	good	cb522203537537249c0d6203
 PEORIA	word	good	0e0cdeac9bded2aabcb31450
 PERTH	word	good	3e96933d5373d9835530bf68
 PITTSBURGH	word	good	30c11eb0821d64e5a6669cf5
@@ -285,7 +279,6 @@ RICHMOND	word	good	5665cef672b983dfd4726a7b
 ROME	word	good	ef0190b971e81b266b7552e7
 SASKATOON	word	good	5fcca8017a2008a932e253a1
 SEATTLE	word	good	bcf9acd930ee77ababaaeece
-ST	word	good	b1b5f6ce304354a645ac46ba
 TAMPA	word	good	df26c6da6fcc485ec1194549
 TOKYO	word	good	057c7b11a307e7eddd295063
 TOLEDO	word	good	ee84342412572f96aa19765c
@@ -1192,7 +1185,6 @@ LEVELS	word	good	87ef044ca5e6fe79fce2467a
 MANAGER	word	good	81325bdcdec92c76646c1ca3
 PHOTO	word	good	4ae199ec933d7b201c86b602
 SAFETY	word	good	fe0144e62c02b287fbe1a72c
-SAN	word	good	6ecc5da6d7c043459998c1cd
 SOLD	word	good	19a6dd5caca12da612f664b5
 SOUNDS	word	good	aca19eaae383310f6cab4bbe
 SPEND	word	good	13b60e36b6714df72729b442

@@ -198,7 +198,7 @@ RON	ron
 SUE	sue
 ZOE	zoe
 
-# City and country names the ragchew drill sends; a city of two words has an entry for each
+# City and country names the ragchew drill sends
 ALBANY	albany
 AMSTERDAM	amsterdam
 ATLANTA	atlanta
@@ -214,16 +214,12 @@ CALGARY	calgary
 CONCORD	concord
 DAYTON	dayton
 DENVER	denver
-DES	duh
 DETROIT	detroit
-DIEGO	diego
 DOVER	dover
 EDMONTON	edmonton
-EL	el
 ERIE	erie
 EUGENE	eugene
 FARGO	fargo
-FE	fay
 FRESNO	fresno
 HALIFAX	halifax
 HAMBURG	hamburg
@@ -236,7 +232,6 @@ MADISON	madison
 MADRID	madrid
 MELBOURNE	melbourne
 MILAN	milan
-MOINES	moyn
 MONCTON	moncton
 MONTREAL	montreal
 MUNICH	munich
@@ -246,7 +241,6 @@ OAKLAND	oakland
 OMAHA	omaha
 OSAKA	osaka
 OTTAWA	ottawa
-PASO	paso
 PEORIA	peoria
 PERTH	perth
 PITTSBURGH	pittsburgh
@@ -260,7 +254,6 @@ RICHMOND	richmond
 ROME	rome
 SASKATOON	saskatoon
 SEATTLE	seattle
-ST	saint
 TAMPA	tampa
 TOKYO	tokyo
 TOLEDO	toledo
