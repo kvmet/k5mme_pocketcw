@@ -1,6 +1,6 @@
 # USB keyboard
 
-The device can show up on a computer, phone or tablet as a USB keyboard and a serial port. Set USB OUT in the DEVICE section of the [settings](settings.md#device).
+The device can show up on a computer, phone or tablet as a USB keyboard, a MIDI port and a serial port. Set USB OUT in the DEVICE section of the [settings](settings.md#device).
 
 | USB OUT | What the computer gets |
 | - | - |
@@ -75,6 +75,28 @@ The screen shows `HOTLINE ON` when VBand connects, and `HOTLINE OFF` when it dis
 - A space longer than 3 seconds goes to VBand as 3 seconds. VBand takes that as the start of a new over.
 - If `HOTLINE ON` never shows, the browser has no serial port support, or VBand changed how it connects.
 
+## MIDI
+
+Every USB OUT setting but OFF also has a MIDI port named PocketCW. It sends what keys the radio as notes: your keying, `SEND` text from the serial port, and memories.
+
+- Each mark is one Note On and one Note Off, on channel 1 at full velocity.
+- The note is the one nearest your TONE setting, so a synthesizer or music program plays your keying at your sidetone pitch.
+- The device ignores the notes and other messages the computer sends.
+
+### Vail
+
+[Vail](https://vail.woozle.org) takes your keying from the MIDI port, as it does from the Vail adapter.
+
+1. Plug the device into a computer. USB OUT can be any setting but OFF.
+2. Open Vail in Chrome or Edge, and allow it to use MIDI devices.
+
+The screen shows `VAIL ON` when Vail's page loads. Until you unplug the device or set USB OUT to OFF:
+
+- The device sends note 0, which Vail reads as a straight key in every one of its keyer modes. Every MODE works, since the device times the elements.
+- In VBAND, the device sends no Ctrl keys, so Vail never gets your keying twice.
+
+Keep the Vail tab in front: Chrome slows the timers of a hidden tab.
+
 ## WinKeyer
 
 A logging program can key through the device as if it were a K1EL WinKeyer. The program sends text, and the device keys it on the func jack and the sidetone. Every setting but OFF has the serial port, but SERIAL types nothing, so it is the one to use.
@@ -96,4 +118,4 @@ The screen shows `WINKEYER OPEN` when the program takes the port, and `WINKEYER 
 
 ## Status message
 
-`n USB KEYS LOST` means the device lost `n` characters or key changes on their way to the computer. See [Status messages](status-messages.md).
+`n USB KEYS LOST` means the device lost `n` characters, key changes or notes on their way to the computer. See [Status messages](status-messages.md).

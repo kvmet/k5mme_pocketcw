@@ -68,6 +68,7 @@ mod app {
         board,
         keyer::{Contacts, Jack, Keyer, MAX_WPM, MIN_WPM, Mode, Output, output_lines},
         listen::Listener,
+        midi,
         morse,
         player::Player,
         sender,
@@ -110,6 +111,8 @@ mod app {
         Winkeyer(bool),
         /// The WinKeyer host set the keyer speed; 0 keeps it.
         Speed(u8),
+        /// Vail's page sent its hello on MIDI.
+        Vail,
     }
 
     const CHUNK_LEN: usize = 64;
@@ -159,6 +162,12 @@ mod app {
     static PLAYS_STARTED: AtomicU32 = AtomicU32::new(0);
     /// Sidetone pitch for your own keying; the player sends at its own pitch.
     static USER_TONE: AtomicU16 = AtomicU16::new(700);
+    /// The MIDI note nearest USER_TONE.
+    static TONE_NOTE: AtomicU8 = AtomicU8::new(0);
+    /// The line that keys the radio, for MIDI out.
+    static KEYED: AtomicBool = AtomicBool::new(false);
+    /// Vail's page sent its hello on MIDI: notes in place of Ctrl keys until USB detaches.
+    static VAIL: AtomicBool = AtomicBool::new(false);
     /// The RADIO screen is open: decode the decoder board's tone line.
     static LISTENING: AtomicBool = AtomicBool::new(false);
     /// The USB OUT setting, as `UsbOut as u8`.
@@ -167,8 +176,8 @@ mod app {
     static USB_READY: AtomicBool = AtomicBool::new(false);
     /// The Ctrl keys VBand output holds down.
     static VBAND_KEYS: AtomicU8 = AtomicU8::new(0);
-    /// Characters the typing queue had no room for, and reports USB refused for a reason other
-    /// than a busy endpoint; shown on screen when nonzero.
+    /// Characters the typing queue had no room for, and keyboard reports and MIDI packets USB
+    /// refused for a reason other than a busy endpoint; shown on screen when nonzero.
     static USB_KEYS_LOST: AtomicU16 = AtomicU16::new(0);
     /// Serial port reads and writes USB refused for a reason other than a busy or empty endpoint;
     /// shown on screen when nonzero.
@@ -316,6 +325,7 @@ mod app {
         gpio::set(b, SPEAKER_AMP, settings.volume > 0);
         store_output(&settings);
         USER_TONE.store(settings.tone_hz, Ordering::Relaxed);
+        TONE_NOTE.store(midi::nearest_note(settings.tone_hz), Ordering::Relaxed);
         KEYER_WPM.store(settings.wpm, Ordering::Relaxed);
 
         let Some(audio_buffer) = cortex_m::singleton!(: audio::Buffer = [0; 32]) else {
@@ -455,6 +465,7 @@ mod app {
             port, command_line, usb_messages, chunks, wk_replies, wk_bytes,
             unsent: Option<Chunk> = None,
             winkeyer: Winkeyer = Winkeyer::new(),
+            midi_out: midi::Out = midi::Out::new(),
         ]
     )]
     fn usb_events(mut cx: usb_events::Context) {
@@ -477,11 +488,38 @@ mod app {
             publish(winkeyer);
         }
         if !ready {
+            *cx.local.midi_out = midi::Out::new();
+            VAIL.store(false, Ordering::Relaxed);
             cx.shared.typist.lock(Typist::clear);
             // Left over, these would land in front of the next screenshot.
             *cx.local.unsent = None;
             while cx.local.chunks.try_recv().is_ok() {}
             return;
+        }
+        let mut packets = [0; 64];
+        match port.read_midi(&mut packets) {
+            Ok(n) => {
+                for packet in packets[..n].chunks_exact(4) {
+                    if midi::is_vail_hello(&[packet[0], packet[1], packet[2], packet[3]]) && !VAIL.swap(true, Ordering::Relaxed) {
+                        send(Message::Vail);
+                    }
+                }
+            }
+            Err(_) => {
+                USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        let note = if VAIL.load(Ordering::Relaxed) { midi::VAIL_NOTE } else { TONE_NOTE.load(Ordering::Relaxed) };
+        let keyed = KEYED.load(Ordering::Relaxed);
+        while let Some(packet) = cx.local.midi_out.next(keyed, note) {
+            match port.send_midi(packet) {
+                Ok(true) => cx.local.midi_out.sent(packet),
+                Ok(false) => break,
+                Err(_) => {
+                    USB_KEYS_LOST.fetch_add(1, Ordering::Relaxed);
+                    break;
+                }
+            }
         }
         let mut received = [0; CHUNK_LEN];
         match port.read_serial(&mut received) {
@@ -739,6 +777,8 @@ mod app {
         if keyed != *cx.local.keyed {
             *cx.local.keyed = keyed;
             gpio::set(port_b(), LED, keyed);
+            KEYED.store(keyed, Ordering::Relaxed);
+            rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
         }
         let hotline = HOTLINE.load(Ordering::Relaxed);
         if hotline && !core::mem::replace(cx.local.hotline, hotline) {
@@ -799,7 +839,7 @@ mod app {
             }
         }
         if out == UsbOut::Vband {
-            let keys = if hotline { 0 } else { keyboard::vband(mode, dit, dah, down) };
+            let keys = if hotline || VAIL.load(Ordering::Relaxed) { 0 } else { keyboard::vband(mode, dit, dah, down) };
             if VBAND_KEYS.swap(keys, Ordering::Relaxed) != keys {
                 rtic::pend(pac::Interrupt::USBFS_L_CAN1_RX0);
             }
@@ -1098,6 +1138,7 @@ mod app {
             Message::Serial(_) => unreachable!("the UI loop answers serial commands, since replies wait on USB"),
             Message::Sent => {}
             Message::Winkeyer(open) => ui.status(lcd, if open { "WINKEYER OPEN" } else { "WINKEYER CLOSED" }),
+            Message::Vail => ui.status(lcd, "VAIL ON"),
             Message::Speed(0) => {}
             Message::Speed(wpm) => {
                 settings.wpm = wpm.clamp(MIN_WPM, MAX_WPM);
@@ -1296,6 +1337,7 @@ mod app {
         }
         store_output(after);
         USER_TONE.store(after.tone_hz, Ordering::Relaxed);
+        TONE_NOTE.store(midi::nearest_note(after.tone_hz), Ordering::Relaxed);
         KEYER_WPM.store(after.wpm, Ordering::Relaxed);
     }
 

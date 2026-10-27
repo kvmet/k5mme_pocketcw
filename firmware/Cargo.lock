@@ -447,6 +447,7 @@ dependencies = [
  "stm32-usbd",
  "usb-device",
  "usbd-hid",
+ "usbd-midi",
  "usbd-serial",
 ]
 
@@ -810,6 +811,15 @@ dependencies = [
  "serde",
  "syn 3.0.9",
  "usbd-hid-descriptors",
+]
+
+[[package]]
+name = "usbd-midi"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "096029e35e9e46252d48043b98819125581746b989a8612f397da81d35b2c206"
+dependencies = [
+ "usb-device",
 ]
 
 [[package]]

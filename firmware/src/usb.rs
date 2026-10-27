@@ -3,12 +3,14 @@
 
 use at32f4xx_pac::at32f403a as pac;
 use pocketcw_logic::keyboard::{NO_KEYS, Report};
+use pocketcw_logic::midi::Packet;
 use stm32_usbd::{MemoryAccess, UsbBus, UsbPeripheral};
 use usb_device::UsbError;
 use usb_device::bus::UsbBusAllocator;
 use usb_device::device::{StringDescriptors, UsbDevice, UsbDeviceBuilder, UsbDeviceState, UsbVidPid};
 use usbd_hid::descriptor::{KeyboardReport, SerializedDescriptor};
 use usbd_hid::hid_class::HIDClass;
+use usbd_midi::UsbMidiClass;
 use usbd_serial::SerialPort;
 
 use crate::clock;
@@ -16,6 +18,9 @@ use crate::clock;
 /// Artery's VID and the PID of its keyboard and serial port composite example: the chip maker's
 /// ID for this class of device, as the vendor bootloader uses Artery's mass storage example ID.
 pub const VID_PID: UsbVidPid = UsbVidPid(0x2E3C, 0x5750);
+
+/// Raised whenever the interfaces change, so a computer that saw the old ones reads them again.
+const DEVICE_RELEASE: u16 = 0x0011;
 
 /// How long the host sees no device before `attach`. USB needs only 2.5 us; the margin covers
 /// hosts that poll their ports slowly.
@@ -75,9 +80,10 @@ fn registers() -> &'static pac::usbfs::RegisterBlock {
 
 pub type Bus = UsbBusAllocator<UsbBus<Usb>>;
 
-/// The USB device: a keyboard that sends one report at a time, and a serial port.
+/// The USB device: a MIDI port, a keyboard that sends one report at a time, and a serial port.
 pub struct Port {
     device: UsbDevice<'static, UsbBus<Usb>>,
+    midi: UsbMidiClass<'static, UsbBus<Usb>>,
     // No boot subclass: usbd-hid refuses every report from a boot keyboard in Report mode.
     hid: HIDClass<'static, UsbBus<Usb>>,
     serial: SerialPort<'static, UsbBus<Usb>>,
@@ -88,19 +94,22 @@ pub struct Port {
 impl Port {
     /// The device stays off the bus until `attach`.
     pub fn new(bus: &'static Bus, product: &'static str) -> Port {
+        // First, so it takes interfaces 0 and 1: usbd-midi names interface 1 as its streaming one.
+        let midi = UsbMidiClass::new(bus, 1, 1).unwrap_or_else(|_| unreachable!("one jack each way"));
         let hid = HIDClass::new_ep_in(bus, KeyboardReport::desc(), 1);
         let serial = SerialPort::new(bus);
         let device = UsbDeviceBuilder::new(bus, VID_PID)
             .composite_with_iads()
             .strings(&[StringDescriptors::default().manufacturer("PocketCW").product(product)])
             .unwrap_or_else(|_| unreachable!("one language fits"))
+            .device_release(DEVICE_RELEASE)
             .build();
-        Port { device, hid, serial, sent: NO_KEYS }
+        Port { device, midi, hid, serial, sent: NO_KEYS }
     }
 
     /// Answers the host; true while it has the device configured.
     pub fn poll(&mut self) -> bool {
-        self.device.poll(&mut [&mut self.hid, &mut self.serial]);
+        self.device.poll(&mut [&mut self.midi, &mut self.hid, &mut self.serial]);
         let configured = self.device.state() == UsbDeviceState::Configured;
         if !configured {
             self.sent = NO_KEYS;
@@ -134,6 +143,21 @@ impl Port {
             Err(error) => Err(error),
         }
     }
+    /// MIDI packets the computer sent, into `bytes`: how many bytes. Read it on every poll: the
+    /// endpoint holds the USB interrupt until its packet is read.
+    pub fn read_midi(&mut self, bytes: &mut [u8; 64]) -> Result<usize, UsbError> {
+        none_on_block(self.midi.read(bytes))
+    }
+
+    /// Ok(true) when the computer took `packet`, Ok(false) when the last is still in flight.
+    pub fn send_midi(&mut self, packet: Packet) -> Result<bool, UsbError> {
+        match self.midi.send_bytes(packet) {
+            Ok(_) => Ok(true),
+            Err(UsbError::WouldBlock) => Ok(false),
+            Err(error) => Err(error),
+        }
+    }
+
     /// Bytes the computer sent on the serial port, into `bytes`: how many.
     pub fn read_serial(&mut self, bytes: &mut [u8]) -> Result<usize, UsbError> {
         none_on_block(self.serial.read(bytes))

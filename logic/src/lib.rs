@@ -21,6 +21,7 @@ pub mod listen;
 pub mod log;
 mod math;
 pub mod memories;
+pub mod midi;
 pub mod morse;
 pub mod pack;
 pub mod panel;

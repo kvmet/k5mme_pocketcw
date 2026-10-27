@@ -33,7 +33,7 @@ When a save fails at power off, the device waits 3 seconds before it turns off, 
 | `DIT STUCK ON: CHECK PLUG` | A contact of the key jack stayed closed too long, and stopped keying until it opens. The message names DIT, DAH, TIP or RNG. See [Keys and jacks](keys.md). |
 | `CODEC DID NOT ANSWER` | The audio chip did not take a new volume. |
 | `n INPUTS LOST` | Button presses, key changes or decoded characters came faster than the screen could handle them, and the device lost `n` of them. |
-| `n USB KEYS LOST` | The device lost `n` characters or key changes on their way to the computer. See [USB keyboard](usb.md). |
+| `n USB KEYS LOST` | The device lost `n` characters, key changes or notes on their way to the computer. See [USB keyboard](usb.md). |
 | `n SERIAL ERRORS` | USB refused `n` reads or writes on the serial port. |
 | `n SERIAL LINES LOST` | The serial port had no room for `n` lines to the computer. The computer was not reading them. |
 | `SCREENSHOT NOT SENT` | The computer stopped taking a screenshot for 0.5 s. |
@@ -60,6 +60,7 @@ These messages show when VBand's page connects to the device as a CW Hotline. Se
 | - | - |
 | `HOTLINE ON` | VBand took the serial port. The device sends your keying to it, and types nothing. |
 | `HOTLINE OFF` | VBand let the serial port go, or the browser closed it. |
+| `VAIL ON` | Vail's page loaded with the MIDI port. The device sends your keying to it as note 0, and no Ctrl keys. See [USB keyboard](usb.md#vail). |
 
 ## Memories
 
