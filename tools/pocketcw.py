@@ -383,8 +383,6 @@ KEYER_QSO = ['CQ CQ CQ DE {call} {call} K', 'K1ABC DE {call} TNX FER CALL UR 5NN
 OVER_S = 45
 # Long enough for a QSO to send its first text.
 QSO_S = 4
-# Long enough for the pileup to answer a CQ, or the hunt's activator to send its CQ.
-ANSWER_S = 8
 # After the answer: the copy ends three word gaps after it, and the score shows.
 SCORED_S = 2
 
@@ -483,7 +481,11 @@ class Screens:
             if name in ('POTA', 'SOTA'):
                 time.sleep(QSO_S)
                 d.send(f'CQ {name} DE {call} K')
-            time.sleep(OVER_S if name in ('CHEW', 'QUIZ') else ANSWER_S)
+            if name in ('CHEW', 'QUIZ'):
+                time.sleep(OVER_S)
+            else:
+                # The first caller's or the activator's row fills when its call ends.
+                d.expect('PLAYED$')
             self.shot(name.lower())
             d.press('F4')
         d.press('F4')
