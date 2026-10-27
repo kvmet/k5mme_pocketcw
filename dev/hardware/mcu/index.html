@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1147,6 +1149,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1194,7 +1224,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1216,14 +1246,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1705,6 +1735,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1808,6 +1865,7 @@
 <li>FAP = 0xA5, so flash read protection is off. A running app or an SWD probe can read the bootloader.</li>
 <li>Data0 and Data1 hold the board version. See <a href="../board-variants/">Board variants</a>.</li>
 <li>WRP0 = 0xE0 write-protects the bootloader. See <a href="../flash-layout/">Flash layout and bootloader</a>.</li>
+<li>EOPB0 = 0xFE. It likely selects 224 KB of SRAM with 128 KB of zero wait flash, 0x08000000 to 0x08020000; this is not checked against Artery's documents. Code past 0x08020000 runs much slower: the sample interrupt measured 2661 cycles with its code there and 1092 with it inside the first 128 KB, on board 2.64. <code>firmware/memory.x</code> puts the <code>.fast_text</code> section right after the vector table for this.</li>
 </ul>
 <p>PocketCW reads Data1 at 0x1FFFF806.</p>
 <h2 id="clock">Clock<a class="headerlink" href="#clock" title="Permanent link">&para;</a></h2>

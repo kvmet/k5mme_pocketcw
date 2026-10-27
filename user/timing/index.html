@@ -729,10 +729,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#histograms" class="md-nav__link">
+  <a href="#bars-view" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Histograms
+        BARS view
       
     </span>
   </a>
@@ -740,10 +740,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#averages" class="md-nav__link">
+  <a href="#hand-view" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Averages
+        HAND view
       
     </span>
   </a>
@@ -1085,6 +1085,8 @@
       
         
       
+        
+      
     
     
     
@@ -1257,6 +1259,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1300,7 +1330,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1322,14 +1352,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1720,6 +1750,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1770,10 +1827,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#histograms" class="md-nav__link">
+  <a href="#bars-view" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Histograms
+        BARS view
       
     </span>
   </a>
@@ -1781,10 +1838,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#averages" class="md-nav__link">
+  <a href="#hand-view" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Averages
+        HAND view
       
     </span>
   </a>
@@ -1828,8 +1885,8 @@
 
 
 <h1 id="timing">Timing<a class="headerlink" href="#timing" title="Permanent link">&para;</a></h1>
-<p>The TIMING screen gives a close look at your keying. The header shows TIMING, the keyer mode and your speed.</p>
-<p>The screen measures every mark and gap against the dot length the decoder uses: the dot length of your set speed in the iambic modes, or of the speed you actually send in STRAIGHT mode. It grades each mark and gap as good, off or bad. See <a href="../keyer/#timing-grades">Timing grades</a>.</p>
+<p>The TIMING screen gives a close look at your keying. Open it with F3 (TMNG) on the KEYER screen, or from the <a href="../menu/">menu</a>. The header shows TIMING, the keyer mode, and the SND and VOL values.</p>
+<p>The screen measures every mark and gap against the dot length the decoder uses: the dot length of your set speed in the iambic modes, or of the speed you actually send in STRAIGHT mode. A unit is that dot length. The screen grades each mark and gap as good, off or bad. See <a href="../keyer/#timing-grades">Timing grades</a>.</p>
 <h2 id="what-the-screen-shows">What the screen shows<a class="headerlink" href="#what-the-screen-shows" title="Permanent link">&para;</a></h2>
 <h3 id="zoomed-tape">Zoomed tape<a class="headerlink" href="#zoomed-tape" title="Permanent link">&para;</a></h3>
 <p>The tape draws time from left to right, 8 pixels per dot length.</p>
@@ -1840,7 +1897,9 @@
 <li>Under the marks, each decoded character shows, and each gap between characters or words shows its length in units.</li>
 <li>A gap inside a character that is off or bad gets an underline in its grade.</li>
 </ul>
-<h3 id="histograms">Histograms<a class="headerlink" href="#histograms" title="Permanent link">&para;</a></h3>
+<p>Under the tape, F3 switches between two views: BARS, and HAND.</p>
+<h3 id="bars-view">BARS view<a class="headerlink" href="#bars-view" title="Permanent link">&para;</a></h3>
+<p><img alt="The TIMING screen in the BARS view" src="../img/timing.png" /></p>
 <table>
 <thead>
 <tr>
@@ -1863,7 +1922,6 @@
 </tbody>
 </table>
 <p>Each bar counts the marks or gaps of that length, in the color of the grade a mark or gap of that length gets.</p>
-<h3 id="averages">Averages<a class="headerlink" href="#averages" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1886,7 +1944,65 @@
 </tr>
 </tbody>
 </table>
-<p>The statistics collect your keying on every screen since the device was turned on, or since you last pressed F2 (CLR). The KEYER screen shows the same statistics.</p>
+<h3 id="hand-view">HAND view<a class="headerlink" href="#hand-view" title="Permanent link">&para;</a></h3>
+<p><img alt="The TIMING screen in the HAND view, in IAMBIC B" src="../img/timing-hand.png" /></p>
+<p>The HAND view shows what your paddle or key does, not what the keyer sends. It shows the statistics for the MODE in use.</p>
+<p>In IAMBIC A and IAMBIC B, the keyer decides one unit after each element whether to send another. A paddle closed at that moment, or pressed during the element, sends one.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RELEASE BEFORE THE KEYER DECIDES</td>
+<td>A histogram from 0 to 3 units: at the end of each character, how long before the keyer's decision you let go. A bar under half a unit is red: a little later, and the keyer would have sent one more element.</td>
+</tr>
+<tr>
+<td>RELEASE</td>
+<td>The average and standard deviation of that time, in units.</td>
+</tr>
+<tr>
+<td>CLOSE</td>
+<td>The percent of characters you let go less than half a unit before the decision, and how many characters it counts.</td>
+</tr>
+<tr>
+<td>LATE</td>
+<td>The percent of gaps inside characters you started after the keyer's decision, how many gaps it counts, and how late they came on average, in units. A late press makes a gap longer than one unit. LATE counts only the gaps that still read as inside a character; a press late enough to split the character shows as a short gap between characters in the BARS view.</td>
+</tr>
+</tbody>
+</table>
+<p>In STRAIGHT, for a straight key or a sideswiper:</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TIP, RING</td>
+<td>For each contact, the average length and standard deviation of the dots and dashes it keyed, in milliseconds. A mark counts for the contact that closed first. A straight key uses only the tip.</td>
+</tr>
+<tr>
+<td>WEIGHT</td>
+<td>Each dot over the gap after it inside a character, on average, with its standard deviation. 1.00 is even; more is heavy, less is light.</td>
+</tr>
+<tr>
+<td>RATIO</td>
+<td>For each contact, its average dash over its average dot. 3.0 is standard.</td>
+</tr>
+<tr>
+<td>OVERLAP</td>
+<td>The percent of marks during which the other contact closed too, and how many marks it counts. On a sideswiper, the second contact holds the key down, so the mark runs long.</td>
+</tr>
+</tbody>
+</table>
+<p>Keying that <code>SEND</code> sends over USB counts in BARS, but not in HAND.</p>
+<p>The statistics collect your keying on every screen since the device was turned on, or since you last held F2 (CLEAR). The KEYER screen shows the BARS statistics.</p>
 <h2 id="controls">Controls<a class="headerlink" href="#controls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1898,27 +2014,27 @@
 <tbody>
 <tr>
 <td>F1 (SET)</td>
-<td>Opens the settings at the KEYER tab.</td>
+<td>Opens the settings at the KEYER section.</td>
 </tr>
 <tr>
-<td>F2 (CLR)</td>
+<td>F2 hold (CLEAR)</td>
 <td>Clears the statistics and the tape.</td>
 </tr>
 <tr>
-<td>F3</td>
-<td>Nothing.</td>
+<td>F3 (HAND or BARS)</td>
+<td>Switches the view under the tape.</td>
 </tr>
 <tr>
 <td>F4 (BACK)</td>
-<td>Opens the KEYER screen.</td>
+<td>Opens the <a href="../menu/">menu</a>, with TIMING selected.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>Nothing.</td>
+<td>Changes the focused header value. See <a href="../controls/#header-values">Header values</a>.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Nothing.</td>
+<td>Moves the focus to the next header value.</td>
 </tr>
 <tr>
 <td>Dial hold</td>

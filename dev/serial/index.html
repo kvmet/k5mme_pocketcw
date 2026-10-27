@@ -1,0 +1,2391 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://kvmet.github.io/k5mme_pocketcw/dev/serial/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Serial interface - PocketCW</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#serial-interface" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PocketCW" class="md-header__button md-logo" aria-label="PocketCW" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PocketCW
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Serial interface
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kvmet/k5mme_pocketcw" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PocketCW" class="md-nav__button md-logo" aria-label="PocketCW" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PocketCW
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kvmet/k5mme_pocketcw" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PocketCW
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../user/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User manual
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User manual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/stock-firmware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go back to the stock firmware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/controls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Controls and power
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/keys/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keys and jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/usb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    USB keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/menu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menu
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/keyer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/memories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/timing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Timing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/receive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Receive drills
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/ragchew/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ragchew
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/activate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Activate a park or summit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/hunt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hunt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/letters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Letters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/progress/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Progress
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/radio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Radio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/status-messages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Status messages
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer docs
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer docs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../building/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build and flash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fonts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fonts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../hardware/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Hardware reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/mcu/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCU and clock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/flash-layout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flash layout and bootloader
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/pins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/buttons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Buttons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/jacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Key and func jacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/display/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/audio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Audio
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/battery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Battery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/power/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/decoder-board/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decoder board
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/board-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Board variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/vendor-firmware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vendor firmware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-port" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The port
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#send" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#play" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Play
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Edges
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vband-hotline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VBand Hotline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stats
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Events
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#screenshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Screenshot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#winkeyer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WinKeyer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="WinKeyer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bytes-to-the-host" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bytes to the host
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="serial-interface">Serial interface<a class="headerlink" href="#serial-interface" title="Permanent link">&para;</a></h1>
+<p>PocketCW has a USB serial port that a computer uses to press the buttons, key and play text, read what the device decodes and plays, read and change the settings, read the stats and the key timing, and read the screen. <a href="../building/#remote-control-and-screenshots">Remote control and screenshots</a> covers the harness that uses it.</p>
+<h2 id="the-port">The port<a class="headerlink" href="#the-port" title="Permanent link">&para;</a></h2>
+<p>The device is a composite USB device: a keyboard and a CDC-ACM serial port, with Artery's composite example ID, 2E3C:5750. It is on USB while USB OUT is anything but OFF. SERIAL gives the port alone, with no typing. With USB OUT set to OFF, the device detaches and the port goes away.</p>
+<p>The port shows up as <code>/dev/cu.usbmodem*</code> on macOS and <code>/dev/ttyACM*</code> on Linux. The device ignores the baud rate and the other line settings.</p>
+<p>The port has two modes. It starts in text mode, which the sections below up to <a href="#winkeyer">WinKeyer</a> describe. A 0x00 byte switches it to <a href="#winkeyer">WinKeyer</a> mode.</p>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
+<p>Each command is one line of up to 55 bytes, ended by <code>\n</code> or <code>\r</code>. Commands are upper case, except the two that VBand sends; text and values may be lower case. The device skips empty lines, answers a line it does not know with <code>ERROR UNKNOWN</code>, and answers a longer line, or text over 48 characters, with <code>ERROR TOO LONG</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Device</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PRESS F1</code> to <code>PRESS F4</code></td>
+<td>Presses and releases that soft key. No reply.</td>
+</tr>
+<tr>
+<td><code>HOLD F1</code> to <code>HOLD F4</code></td>
+<td>Presses that soft key, holds it past its hold time, and releases it. No reply. The dial cannot be held, since a held click turns the device off.</td>
+</tr>
+<tr>
+<td><code>PRESS LEFT</code>, <code>PRESS RIGHT</code></td>
+<td>Turns the dial one step. No reply.</td>
+</tr>
+<tr>
+<td><code>PRESS CLICK</code></td>
+<td>Presses and releases the dial. No reply.</td>
+</tr>
+<tr>
+<td><code>SEND TEXT</code></td>
+<td>Keys up to 48 characters of text. See <a href="#send">Send</a>.</td>
+</tr>
+<tr>
+<td><code>PLAY TEXT</code></td>
+<td>Sounds up to 48 characters of text. See <a href="#play">Play</a>.</td>
+</tr>
+<tr>
+<td><code>SAY TEXT</code></td>
+<td>Speaks up to 48 characters from the content pack: each word the pack has a clip for, and every other word, such as <code>QTH</code>, spelled a character at a time. One abbreviation on its own also gets its meaning: <code>SAY QTH</code> says "Q T H. location", and <code>SAY QTH IS</code> says "Q T H is". Answers <code>OK SAY TEXT</code>, or <code>ERROR SAY: NO PACK</code>, or <code>ERROR SAY: NOTHING TO SAY</code>. Speech stops at about 3.7 s or 32 clips. A screen change, or a drill's STOP, also stops it. Lower case counts as upper case; a prosign is written as <code>&lt;BK&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>STOP</code></td>
+<td>Stops the text of <code>SEND</code> and <code>PLAY</code>, and anything else the device is sounding. No reply.</td>
+</tr>
+<tr>
+<td><code>SHOT</code></td>
+<td>Sends the screen. See <a href="#screenshot">Screenshot</a>.</td>
+</tr>
+<tr>
+<td><code>INFO</code></td>
+<td>Answers <code>INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS PACK=3131 AUDIO=1900/4096</code>: the firmware version, the screen, the panel (<code>IPS</code> or <code>ILI9341</code>), the content pack's word count, or <code>NONE</code>, <code>OLD</code> for a pack of an earlier format, or <code>BAD</code> for a corrupt one, and the sample interrupt's longest run since the last <code>INFO</code> against its budget, in CPU cycles.</td>
+</tr>
+<tr>
+<td><code>GET NAME</code>, <code>GET</code></td>
+<td>Sends a setting or memory, or all of them. See <a href="#settings">Settings</a>.</td>
+</tr>
+<tr>
+<td><code>SET NAME VALUE</code></td>
+<td>Changes a setting or memory. See <a href="#settings">Settings</a>.</td>
+</tr>
+<tr>
+<td><code>EDGE ON</code>, <code>EDGE OFF</code></td>
+<td>Starts or stops the key timing lines. See <a href="#edges">Edges</a>.</td>
+</tr>
+<tr>
+<td><code>VBand On</code>, <code>VBand Off</code></td>
+<td>Starts or stops the CW Hotline lines, in this mixed case. See <a href="#vband-hotline">VBand Hotline</a>. No reply.</td>
+</tr>
+<tr>
+<td><code>STATS LETTERS</code>, <code>STATS PROGRESS</code>, <code>STATS TIMING</code></td>
+<td>Sends the letter stats, the practice sessions, or your keying timing. See <a href="#stats">Stats</a>.</td>
+</tr>
+</tbody>
+</table>
+<p>Every command goes to the screen through one queue, in the order it came, so a screenshot after a press shows the result of the press. A press skips the debounce, so it cannot hold a button: <code>PRESS CLICK</code> does not power off. More than about 30 commands sent at once can fill the queue; the device then shows <code>n INPUTS LOST</code>.</p>
+<p>The screen waits for room in the serial queue for each reply line, for up to 0.5 s; a line that waits longer is lost, with the rest of its reply, and counts in <code>n SERIAL LINES LOST</code>. Event lines can come between the lines of a reply.</p>
+<h2 id="send">Send<a class="headerlink" href="#send" title="Permanent link">&para;</a></h2>
+<p><code>SEND</code> keys its text as a straight key with perfect timing, at the keyer speed. Lower case counts as upper case, and a prosign is written in angle brackets, such as <code>&lt;AR&gt;</code>. A character with no Morse code is skipped.</p>
+<p>The keying takes the same path as the paddle: the decoder, the screen, the sidetone and the LED. Every screen sees it as your keying, so it answers drills and works QSOs. KEY OUT keys the radio when it is ON and OUT TYPE is STRAIGHT. Touching the key or sending a memory stops the text. The text stops a memory that is sending or waiting to repeat.</p>
+<p>One word gap after the text ends, the device sends <code>SENT</code>. By then the decoder has sent the last character and the word gap as <code>KEY</code> lines. A <code>SEND</code> before the <code>SENT</code> of the one before gets <code>BUSY</code> and is not keyed.</p>
+<h2 id="play">Play<a class="headerlink" href="#play" title="Permanent link">&para;</a></h2>
+<p><code>PLAY</code> sounds its text as the receive drills do: at CHAR SPEED and FARNSWORTH, on TONE, with NOISE and FADING on every screen while it sounds. Lower case counts as upper case, and a prosign is written in angle brackets. It does not key the radio, and the decoder does not hear it. The <code>PLAY</code> event line comes when it starts, and <code>PLAYED</code> when everything the device is sounding has finished. A <code>PLAY</code> while a drill sounds plays beside it on a free voice.</p>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
+<p>A name is a settings row with <code>_</code> for each space: <code>MODE</code>, <code>PADDLES</code>, <code>SPEED</code>, <code>KEY_OUT</code>, <code>OUT_TYPE</code>, <code>OUT_LINES</code>, <code>USB_OUT</code>, <code>TONE</code>, <code>VOLUME</code>, <code>WAVE</code>, <code>NOISE</code>, <code>FADING</code>, <code>CHAR_SPEED</code>, <code>FARNSWORTH</code>, <code>CHEW_SHOWS</code>, <code>NINJA_WORDS</code>, <code>DECODER_BOARD</code>, <code>PILEUP</code>, <code>FIST</code>, <code>SPEED_SPREAD</code>, <code>STYLE</code>, <code>PALETTE</code>, <code>BRIGHTNESS</code> and <code>F1_HOLD</code>. A value is what the row shows, without <code>WPM</code>, <code>HZ</code> or <code>%</code>: <code>IAMBIC B</code>, <code>ON</code>, <code>25</code>, <code>MATCH</code>.</p>
+<p>The memories have their own names:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CALL</code></td>
+<td>Your callsign: up to 10 of A to Z, 0 to 9 and <code>/</code>.</td>
+</tr>
+<tr>
+<td><code>M1</code> to <code>M4</code></td>
+<td>A memory's text, up to 48 characters, with a prosign written as <code>&lt;AR&gt;</code>. Repeated spaces drop out.</td>
+</tr>
+<tr>
+<td><code>MEM_EVERY</code></td>
+<td>Seconds between repeats of a held memory, 2 to 30.</td>
+</tr>
+<tr>
+<td><code>MEM_STAY_OPEN</code></td>
+<td><code>ON</code> or <code>OFF</code>.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Reply</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET SPEED</code></td>
+<td><code>VALUE SPEED 25</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td>A <code>VALUE</code> line for every name, then <code>END</code>.</td>
+</tr>
+<tr>
+<td><code>SET SPEED 25</code></td>
+<td><code>OK SPEED 25</code>. The device redraws the screen and saves the change as it does from the dial.</td>
+</tr>
+<tr>
+<td><code>SET SPEED 70</code></td>
+<td><code>ERROR SPEED: 5 TO 60</code>. Nothing changes. The reason lists the values the setting takes.</td>
+</tr>
+</tbody>
+</table>
+<p><code>SET</code> cannot turn USB off: <code>SET USB_OUT OFF</code>, and <code>SET DECODER_BOARD OFF</code> while USB OUT is RADIO, answer an error. Set them on the device.</p>
+<h2 id="edges">Edges<a class="headerlink" href="#edges" title="Permanent link">&para;</a></h2>
+<p>After <code>EDGE ON</code>, the device sends a line for each change on the key and paddle lines, until <code>EDGE OFF</code> or the computer closes the port:</p>
+<div class="highlight"><pre><span></span><code>EDGE KEY 1 123456 4021
+</code></pre></div>
+<p>The line is <code>KEY</code> for the keyed signal, from the paddles or a <code>SEND</code>, and <code>TIP</code> and <code>RING</code> for the paddle contacts. <code>1</code> is closed or down and <code>0</code> open or up. The third field is the time on the device's millisecond count.</p>
+<p>The last field is the sequence number. The device counts every change on these lines, sent or not, and the count wraps after 2^32 - 1 to 0. A jump of more than one between two lines means lines were lost between them: in a full queue to the screen, or in a full serial queue, which counts in <code>n SERIAL LINES LOST</code>.</p>
+<p><code>EDGE ON</code> answers with the settings a replay of the lines needs, and the device sends them again whenever one changes while edge lines are on:</p>
+<div class="highlight"><pre><span></span><code>VALUE MODE IAMBIC B
+VALUE PADDLES NORMAL
+VALUE SPEED 25
+</code></pre></div>
+<h2 id="vband-hotline">VBand Hotline<a class="headerlink" href="#vband-hotline" title="Permanent link">&para;</a></h2>
+<p>VBand's page can read keying from a serial port, as it does from a CW Hotline. It opens the port at 115200 baud and writes <code>VBand On</code>; when its Disconnect button is clicked, it writes <code>VBand Off</code>. In between, the device sends one line for each mark of the signal that keys the radio: your keying, <code>SEND</code> text and memories.</p>
+<div class="highlight"><pre><span></span><code>SM,3000,60
+SM,60,180
+</code></pre></div>
+<p>The first field is the space before the mark and the second is the mark, both in ms and at most 3000. The first mark after <code>VBand On</code>, and any mark after a longer space, has a space of 3000, which VBand plays as the start of an over. A line comes when its mark ends. VBand skips every other line, so the event lines can go on beside these.</p>
+<p>While the Hotline is on, the device sends no keyboard reports. It ends on <code>VBand Off</code>, or when the computer closes the port.</p>
+<h2 id="stats">Stats<a class="headerlink" href="#stats" title="Permanent link">&para;</a></h2>
+<p><code>STATS LETTERS</code> sends <code>LEVEL n</code>, the number of Koch characters in play, then one line for each Koch character in Koch order, then the mixups, most common first, then <code>END</code>:</p>
+<div class="highlight"><pre><span></span><code>LETTER K 15 80 KNOWN
+MIXUP A N 3
+</code></pre></div>
+<p>A <code>LETTER</code> line gives the character, its tries, the percent copied right, and <code>KNOWN</code>, <code>UNSURE</code>, <code>WEAK</code>, or <code>NEW</code> for a character not yet sent. A <code>MIXUP</code> line gives the character sent, the one copied, and how often.</p>
+<p><code>STATS PROGRESS</code> sends one line for each practice session, oldest first, then <code>END</code>:</p>
+<div class="highlight"><pre><span></span><code>SESSION 12 600 3 120 100 450
+</code></pre></div>
+<p>The fields are the session number, the seconds of practice, the contacts logged, the characters sent in receive drills, how many of those you copied right, and the characters you keyed.</p>
+<p><code>STATS TIMING</code> sends the timing of your keying since power on, or since you last cleared the TIMING screen, then <code>END</code>:</p>
+<div class="highlight"><pre><span></span><code>MARK DIT 120 62.40 4.10
+MARK DAH 118 190.25 9.80
+GAP ELEMENT 210 1.02 0.15
+GAP CHAR 40 3.10 0.42
+GAP WORD 9 7.80 1.25
+RATIO 3.05
+WPM 19.60
+BINS MARK 4 0 0 0 1 12 ...
+BINS GAP 8 0 2 ...
+RELEASE 40 1.12 0.45
+CLOSE 3
+LATE 5 0.21 0.10
+ON_TIME 95
+TIP DIT 0 - -
+TIP DAH 0 - -
+RING DIT 0 - -
+RING DAH 0 - -
+WEIGHT 0 - -
+OVERLAP 0
+BINS RELEASE 3 0 3 2 5 ...
+</code></pre></div>
+<ul>
+<li>A <code>MARK</code> or <code>GAP</code> line gives the count, the mean and the standard deviation. Marks are in ms; gaps are in dots of the keyer speed at the time. The standard deviation divides by the count, so one sample gives 0. <code>-</code> stands for a value that needs at least one sample.</li>
+<li><code>RATIO</code> is the dah length over the dit length; 3 is standard. <code>WPM</code> is the speed your timing works out to. Each line comes only once its value is known.</li>
+<li>A <code>BINS</code> line is a histogram: the range in dots, then the count in each of its equal bins from 0: 24 for <code>MARK</code> and <code>GAP</code>, 12 for <code>RELEASE</code>. The last bin also holds everything longer than the range.</li>
+<li>The lines from <code>RELEASE</code> on measure the paddle or key contacts. See <a href="../../user/timing/#hand-view">Timing</a>. <code>RELEASE</code> is the time from your last release to the keyer's decision at the end of each iambic character, in dots. <code>CLOSE</code> counts the releases under half a dot. <code>LATE</code> is how far past the decision you pressed, in dots, for each gap inside a character you started late; <code>ON_TIME</code> counts the others. <code>TIP</code> and <code>RING</code> are the dots and dashes in ms each contact keyed in STRAIGHT mode, and <code>WEIGHT</code> is each such dot over the gap after it. <code>OVERLAP</code> counts those marks during which the other contact closed too.</li>
+<li>Numbers have two decimals.</li>
+<li>Marks in ms mix speeds when SPEED changes after a clear. Text that <code>SEND</code> keys counts in the <code>MARK</code> and <code>GAP</code> lines, since it keys the same line, but has no contacts for the lines after them.</li>
+</ul>
+<h2 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h2>
+<p>While the computer has the port open (holds DTR), the device sends a line for each of these:</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KEY C</code></td>
+<td>The decoder read character <code>C</code> from your keying. A word gap is <code>KEY</code> and one space; a pattern with no character is <code>KEY *</code>; a prosign is <code>KEY &lt;AR&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>HEARD C</code></td>
+<td>The decoder board's tone line gave character <code>C</code>, written as for <code>KEY</code>.</td>
+</tr>
+<tr>
+<td><code>PLAY TEXT</code></td>
+<td>The device started to sound <code>TEXT</code>: a drill group, a station's line, or a memory.</td>
+</tr>
+<tr>
+<td><code>PLAYED</code></td>
+<td>Everything the device was sounding has finished.</td>
+</tr>
+<tr>
+<td><code>SENT</code></td>
+<td>The text of a <code>SEND</code> has finished.</td>
+</tr>
+<tr>
+<td><code>BUSY</code></td>
+<td>A <code>SEND</code> came before the last one finished.</td>
+</tr>
+<tr>
+<td><code>EDGE LINE 1 MS SEQ</code></td>
+<td>A key or paddle line changed, after <code>EDGE ON</code>. See <a href="#edges">Edges</a>.</td>
+</tr>
+<tr>
+<td><code>VALUE NAME VALUE</code></td>
+<td>After <code>EDGE ON</code>, a keyer setting at the start and when it changes. See <a href="#edges">Edges</a>.</td>
+</tr>
+<tr>
+<td><code>SM,SPACE,MARK</code></td>
+<td>A mark ended, after <code>VBand On</code>. See <a href="#vband-hotline">VBand Hotline</a>.</td>
+</tr>
+</tbody>
+</table>
+<p><code>PLAY</code> gives a drill group before you hear it, so a script can answer it. Event lines never break into a screenshot: the screen sends them in turn with its other work. An event line that finds the serial queue full is lost, and the screen shows <code>n SERIAL LINES LOST</code>.</p>
+<h2 id="screenshot">Screenshot<a class="headerlink" href="#screenshot" title="Permanent link">&para;</a></h2>
+<p>The device answers <code>SHOT</code> with a header line, then the screen:</p>
+<div class="highlight"><pre><span></span><code>SHOT 320 240 RGB666\n
+</code></pre></div>
+<p>After the header come 240 rows, top to bottom, each 320 pixels left to right: 230400 bytes. Each pixel is 3 bytes, red, green, blue, with the channel in the top 6 bits of its byte. To make an 8-bit channel from byte <code>b</code>, copy the top bits down: <code>b &amp; 0xFC | b &gt;&gt; 6</code>.</p>
+<p>The bytes are the panel's memory, read back over SPI with RAMRD. See <a href="../hardware/display/#memory-read">Memory read</a>. The screen stops for under a second while a screenshot sends.</p>
+<table>
+<thead>
+<tr>
+<th>Answer or status</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SHOT UNCHECKED PANEL</code> and a line end, in place of the header</td>
+<td>The board has the ILI9341 panel, whose memory read is not checked. No rows follow.</td>
+</tr>
+<tr>
+<td><code>SCREENSHOT NOT SENT</code> on the screen</td>
+<td>USB took nothing for 0.5 s, so the device stopped sending.</td>
+</tr>
+</tbody>
+</table>
+<p>A screenshot that stops early can leave its bytes queued. The device drops them only when USB detaches, so closing the port keeps them. A reader looks for <code>SHOT</code> to find the next header.</p>
+<h2 id="winkeyer">WinKeyer<a class="headerlink" href="#winkeyer" title="Permanent link">&para;</a></h2>
+<p>The device answers the K1EL WinKeyer host protocol as a WK2 with firmware 23, so logging programs can key through it. K1EL's WinKeyer 3 datasheet (rev 1.3) defines the protocol; this section lists what the device does with it.</p>
+<p>No text command starts with 0x00, so a 0x00 byte starts the WinKeyer parser. Until host open, the parser takes only admin commands (<code>00 nn</code>). Host open (<code>00 02</code>) answers 23 and starts WinKeyer mode. Host close (<code>00 03</code>), reset (<code>00 01</code>), the computer dropping DTR, and USB detaching all end it: the queued text is dropped, the port goes back to text mode, and event lines start again. Text mode sends no event lines while WinKeyer mode is on.</p>
+<p>Text bytes go to the same sender as <code>SEND</code>, which keys them in the same path. A queue holds 128 characters and buffered commands. Upper case letters, digits and the signs in <code>morse</code> key as themselves. The WinKeyer prosign signs key as merged pairs, such as <code>&lt;</code> for AR and <code>=</code> for BT. <code>|</code> is half a dot of silence. Lower case and other bytes above <code>]</code> are ignored, as on a WinKeyer.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Device</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>00 04 nn</code> echo test</td>
+<td>Sends back <code>nn</code>.</td>
+</tr>
+<tr>
+<td><code>00 05</code>, <code>00 06</code>, <code>00 07</code>, <code>00 15</code>, <code>00 18</code></td>
+<td>Sends back 0.</td>
+</tr>
+<tr>
+<td><code>00 09</code> firmware major revision</td>
+<td>Sends back 23.</td>
+</tr>
+<tr>
+<td><code>00 0A</code> set WK1 mode</td>
+<td>Stops the pushbutton bytes.</td>
+</tr>
+<tr>
+<td><code>00 0B</code> set WK2 mode</td>
+<td>Starts the pushbutton bytes.</td>
+</tr>
+<tr>
+<td><code>00 17</code> firmware minor revision</td>
+<td>Sends back 0.</td>
+</tr>
+<tr>
+<td><code>02 nn</code> speed</td>
+<td>Sets SPEED to <code>nn</code> WPM, clamped to 5 to 60, and saves it; 0 keeps it.</td>
+</tr>
+<tr>
+<td><code>05 min range x</code> speed pot setup</td>
+<td>Sets the lowest speed of the pot reply.</td>
+</tr>
+<tr>
+<td><code>06 nn</code> pause</td>
+<td>Holds the queue while <code>nn</code> is not 0.</td>
+</tr>
+<tr>
+<td><code>07</code> get speed pot</td>
+<td>Sends back <code>0x80</code> plus SPEED less the pot's lowest speed, at most 31.</td>
+</tr>
+<tr>
+<td><code>08</code> backspace</td>
+<td>Drops the newest queued item.</td>
+</tr>
+<tr>
+<td><code>0A</code> clear buffer</td>
+<td>Stops and drops the queue.</td>
+</tr>
+<tr>
+<td><code>0B nn</code> key immediate</td>
+<td>Holds the key down while <code>nn</code> is not 0.</td>
+</tr>
+<tr>
+<td><code>0E nn</code> WinKeyer mode</td>
+<td>Bit 2 turns serial echo on, bit 6 paddle echo. The other bits are ignored.</td>
+</tr>
+<tr>
+<td><code>0F</code> load defaults (15 values)</td>
+<td>Takes the mode, the speed and the pot's lowest speed.</td>
+</tr>
+<tr>
+<td><code>15</code> request status</td>
+<td>Sends back the status byte.</td>
+</tr>
+<tr>
+<td><code>1B a b</code> merge letters</td>
+<td>Keys <code>a</code> and <code>b</code> as one character.</td>
+</tr>
+<tr>
+<td><code>1C nn</code> buffered speed</td>
+<td>Keys the queued items after it at <code>nn</code> WPM.</td>
+</tr>
+<tr>
+<td><code>1E</code> cancel buffered speed</td>
+<td>Goes back to SPEED.</td>
+</tr>
+</tbody>
+</table>
+<p>The device reads the parameter bytes of every other command and ignores them, so the bytes after them keep their meaning. <code>00 0D</code> load EEPROM skips its 256 bytes; <code>00 0C</code> dump EEPROM sends nothing back.</p>
+<h3 id="bytes-to-the-host">Bytes to the host<a class="headerlink" href="#bytes-to-the-host" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Byte</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Status, <code>0xC0</code> with flags</td>
+<td>On request, and on each change. Bit 2 BUSY: the queue is keying or holds text. Bit 1 BREAKIN: the paddles keyed within a word gap. Bit 0 XOFF: the queue is over 2/3 full.</td>
+</tr>
+<tr>
+<td>Speed pot, <code>0x80</code> plus SPEED less the pot's lowest speed</td>
+<td>On request, and when SPEED changes on the device. A speed the host set sends none.</td>
+</tr>
+<tr>
+<td>Pushbutton, <code>0xC8</code> with a bit for the button down</td>
+<td>In WK2 mode, when F1 to F4 go down and up: bit 0 for F1, 1 for F2, 2 for F3, 4 for F4. The screen does not see them then.</td>
+</tr>
+<tr>
+<td>Serial echo</td>
+<td>Each text byte, once its last mark ends, while serial echo is on. A prosign sign such as <code>&lt;</code> echoes itself; a <code>1B</code> merge echoes nothing.</td>
+</tr>
+<tr>
+<td>Paddle echo</td>
+<td>Each character the decoder reads from the paddles, and a space for a word gap, while paddle echo is on. A prosign with a WinKeyer sign echoes the sign, such as <code>+</code> for AR; one with no sign echoes nothing.</td>
+</tr>
+</tbody>
+</table>
+<p>A byte that finds the queue to the host full is lost, and the screen shows <code>n WINKEYER BYTES LOST</code>. So is a text byte that finds the key queue full.</p>
+<p>The text keys with perfect timing, at the WinKeyer speed. The paddles keep the device's MODE and PADDLES, and the sidetone keeps TONE and VOLUME. Touching the key clears the queue, as on a WinKeyer.</p>
+<h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h2>
+<p><code>n SERIAL ERRORS</code> on the screen counts the serial reads and writes that USB refused. A refused write drops the rest of its 64-byte piece. A full USB buffer is not an error: the device tries again on the next poll.</p>
+<h2 id="code">Code<a class="headerlink" href="#code" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Command lines and their parse</td>
+<td><code>logic/src/serial.rs</code></td>
+</tr>
+<tr>
+<td>Settings and memories by name, for <code>GET</code> and <code>SET</code></td>
+<td><code>logic/src/config.rs</code></td>
+</tr>
+<tr>
+<td>Replies to <code>INFO</code>, <code>GET</code>, <code>SET</code>, <code>PLAY</code> and <code>STATS</code></td>
+<td><code>firmware/src/ui/serial.rs</code>, and <code>answer</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>The sender that keys <code>SEND</code> and WinKeyer text</td>
+<td><code>logic/src/sender.rs</code></td>
+</tr>
+<tr>
+<td>The WinKeyer parser</td>
+<td><code>logic/src/winkeyer.rs</code></td>
+</tr>
+<tr>
+<td>WinKeyer actions, and the bytes to the host</td>
+<td><code>winkeyer_act</code> and <code>wk_chunk</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>The USB device, keyboard and serial port</td>
+<td><code>firmware/src/usb.rs</code></td>
+</tr>
+<tr>
+<td>The USB task, which reads commands and writes the queued bytes</td>
+<td><code>usb_events</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>The serial key, merged with the keyer output</td>
+<td><code>tick</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>Event lines, <code>EDGE</code> lines, <code>SEND</code> and <code>STOP</code></td>
+<td><code>event_line</code>, <code>emit</code> and the <code>ui</code> task in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>Hotline marks and spaces</td>
+<td><code>logic/src/hotline.rs</code>, and <code>tick</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>Pushbutton bytes</td>
+<td><code>tick</code> in <code>firmware/src/main.rs</code></td>
+</tr>
+<tr>
+<td>The screenshot, row by row, from the UI task</td>
+<td><code>send_screen</code> in <code>firmware/src/main.rs</code>, <code>read_row</code> in <code>firmware/src/lcd.rs</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.indexes", "navigation.sections"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

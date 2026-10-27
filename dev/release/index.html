@@ -14,7 +14,7 @@
         <link rel="prev" href="../fonts/">
       
       
-        <link rel="next" href="../hardware/">
+        <link rel="next" href="../roadmap/">
       
       
         
@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1229,6 +1231,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1272,7 +1302,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1294,14 +1324,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1692,6 +1722,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1787,7 +1844,7 @@
 </tr>
 <tr>
 <td><code>F000400.bin</code></td>
-<td>The PocketCW SPI flash file, installed before the firmware on a first install. See <a href="../hardware/flash-layout/">Flash layout</a>.</td>
+<td>The content pack: words and voice clips for the SPI flash, installed before the firmware on a first install or when the pack changed. See <a href="../building/#content-pack">Content pack</a>.</td>
 </tr>
 <tr>
 <td><code>pocketcw-flash</code></td>
@@ -1803,7 +1860,7 @@
 </tr>
 <tr>
 <td><code>THIRD-PARTY.txt</code></td>
-<td>The MIT notice of every crate linked into the firmware.</td>
+<td>The MIT notice of every crate linked into the firmware, then the content pack's credits from <code>tools/pack/pack-notice.txt</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -1812,7 +1869,7 @@
 <p>The version comes from <code>version</code> in <code>firmware/Cargo.toml</code>. The firmware reads it at build time, and shows it on the SYSTEM screen in the FIRMWARE row and on the boot screen.</p>
 <p>Both crates have the same version. <code>firmware/Cargo.toml</code> also names the version of its <code>pocketcw-logic</code> dependency.</p>
 <h2 id="steps">Steps<a class="headerlink" href="#steps" title="Permanent link">&para;</a></h2>
-<p>Run these on a Mac. <code>release.sh</code> needs <code>clang</code> with the macOS frameworks.</p>
+<p>Run these on a Mac. <code>release.sh</code> needs <code>clang</code> with the macOS frameworks, and the voice tools <code>tools/pack/setup.py</code> sets up, to build the content pack. See <a href="../building/#content-pack">Content pack</a>. With a full clip cache in <code>firmware/target/clip-cache</code>, the pack builds in about a minute; with only the saved speech, in about 4 minutes; with none, in about 15 minutes. <code>cargo clean</code> deletes the cache.</p>
 <ol>
 <li>Set the new version in three places: <code>version</code> in <code>firmware/Cargo.toml</code>, <code>version</code> in <code>logic/Cargo.toml</code>, and the <code>pocketcw-logic</code> dependency in <code>firmware/Cargo.toml</code>.</li>
 <li>Build once, so the <code>Cargo.lock</code> files take the new version. Commit everything.</li>
@@ -1827,7 +1884,7 @@
 git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>vX.Y.Z
 </code></pre></div>
 <ol>
-<li>Make a GitHub release for the tag, and upload every file in <code>dist/</code>. With the GitHub CLI:</li>
+<li>Make a GitHub release for the tag, and upload every file in <code>dist/</code>. The release notes name the release that last changed the content pack, such as "Content pack: changed in v0.4.0". Users who skip releases need this: the install script and the install page tell users to install the pack when it changed since their last install. With the GitHub CLI:</li>
 </ol>
 <div class="highlight"><pre><span></span><code>gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>vX.Y.Z<span class="w"> </span>dist/*
 </code></pre></div>
@@ -1836,14 +1893,15 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 </ol>
 <h2 id="what-releasesh-does">What release.sh does<a class="headerlink" href="#what-releasesh-does" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Stops with an error when <code>firmware/Cargo.toml</code> does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.</li>
-<li>Runs <code>tools/mkimage.sh</code> and copies the image to <code>dist/A000014.bin</code>.</li>
-<li>Writes <code>dist/F000400.bin</code>.</li>
+<li>Stops with an error when the voice tools are not set up, when <code>firmware/Cargo.toml</code> does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.</li>
+<li>Runs <code>tools/mkimage.sh</code> and copies the image to <code>dist/A000014.bin</code>. Keeps the ELF in <code>symbols/A000014-VERSION.elf</code> for <code>tools/panic.sh</code>; the ELF holds local paths, so it is not uploaded.</li>
 <li>Copies <code>LICENSE</code> and <code>firmware/src/B612-OFL.txt</code> to <code>dist/</code>.</li>
+<li>Builds the content pack into <code>dist/F000400.bin</code> with <code>tools/pack/pack.py</code>. It prints how many common words fit.</li>
 <li>Builds <code>dist/pocketcw-flash</code> for Apple and Intel Macs, macOS 10.15 or later.</li>
-<li>Writes <code>dist/THIRD-PARTY.txt</code> with <code>tools/notices.py</code>.</li>
-<li>Lists <code>dist/</code> and prints the tag and upload steps.</li>
+<li>Writes <code>dist/THIRD-PARTY.txt</code> with <code>tools/notices.py</code> and <code>tools/pack/pack-notice.txt</code>.</li>
+<li>Lists <code>dist/</code>, prints the content pack's SHA-256 for the release notes, and prints the tag and upload steps.</li>
 </ol>
+<p>A pack built on another machine can differ: the clip cache key covers the Kokoro version, model and voice, and how clips are made, but not espeak-ng or FFmpeg. So the SHA-256 in the release notes records which pack shipped.</p>
 <p>Git ignores <code>dist/</code> and <code>tools/pocketcw-flash</code>.</p>
 
 

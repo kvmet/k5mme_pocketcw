@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1147,6 +1149,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1194,7 +1224,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1216,14 +1246,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1705,6 +1735,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1814,25 +1871,26 @@
 <td>The app. The app must set VTOR to 0x08005000.</td>
 </tr>
 <tr>
-<td>SPI flash 0x000000</td>
+<td>SPI flash 0x000000 to 0x025FFF</td>
 <td>Vendor boot screen, file <code>F000000.bin</code>.</td>
 </tr>
 <tr>
-<td>SPI flash 0x030000</td>
+<td>SPI flash 0x030000 to 0x0C5FFF</td>
 <td>Vendor UI images, file <code>F0000C0.bin</code>.</td>
 </tr>
 <tr>
-<td>SPI flash 0x100000</td>
-<td>PocketCW file <code>F000400.bin</code>, 4 KB.</td>
+<td>SPI flash 0x100000 up</td>
+<td>PocketCW content pack, file <code>F000400.bin</code>, up to 8,372,224 bytes.</td>
 </tr>
 <tr>
-<td>SPI flash 0xE00000</td>
+<td>SPI flash 0xE00000 to 0xFECFFF</td>
 <td>Vendor fonts, file <code>F003800.bin</code>.</td>
 </tr>
 </tbody>
 </table>
-<p>PocketCW runs from the MCU app area. It never reads the SPI flash.</p>
-<p><code>F000400.bin</code> is <code>PocketCW</code>, a format version byte (1), then 0xFF to 4 KB. <code>tools/release.sh</code> writes it. The vendor files leave 0x0C5080 to 0xDFFFFF empty, and the bootloader takes a file at this offset.</p>
+<p>The vendor ranges are the used 4 KB sectors in a scan of a 2.64 unit. Every other sector read blank: 0x026000 to 0x02FFFF, 0x0C6000 to 0xDFFFFF, and 0xFED000 to 0xFFFFFF.</p>
+<p>PocketCW runs from the MCU app area and reads the content pack from the SPI flash.</p>
+<p><code>tools/pack/pack.py</code> builds <code>F000400.bin</code>; <code>logic/src/pack.rs</code> gives the format. <code>tools/release.sh</code> builds it into each release.</p>
 <p><code>firmware/memory.x</code> gives the app 236 KB from 0x08005000, and <code>cortex-m-rt</code> sets VTOR from its <code>set-vtor</code> feature.</p>
 <h2 id="update-files">Update files<a class="headerlink" href="#update-files" title="Permanent link">&para;</a></h2>
 <p>An update file name is a hex offset in KB, after a letter: <code>A</code> for MCU flash, <code>F</code> for SPI flash. <code>A000014.bin</code> is MCU flash plus 0x14 KB, which is 0x08005000.</p>
@@ -1841,9 +1899,12 @@
 <p>To start it: hold F1 and F4, then hold the dial until the update screen shows. Plug in USB after that.</p>
 <p>The bootloader routes file data by the name in the root directory entry. So the directory entry must reach the device before the data, as Windows writes it. macOS and mtools write the data first, and the data goes to the wrong place.</p>
 <p>On macOS, PocketCW installs with <code>tools/pocketcw-flash.c</code>. The tool blocks the mount of the update drive, so macOS writes nothing to it. Then it writes the raw disk in the order the bootloader needs: directory entry, data, FAT, directory entry again.</p>
+<p>The update drive is FAT16 with 2 KB sectors, 8 KB clusters and 51,200 sectors (100 MB). Confirmed on 2.64; <code>pocketcw-flash</code> prints the cluster size. <code>pocketcw-flash</code> writes the whole FAT in one sector, so a file holds at most 1022 clusters: 8,372,224 bytes.</p>
+<p>An SPI flash install erases and programs the 4 KB sectors its file covers. Confirmed on 2.64 with a 2,093,056 byte file at 0x100000, the largest tested: every sector of it read back. A 5.97 MB content pack also installed and played to its last clip, and an 8.37 MB one installed and played its first and last clips. Tags written beforehand in the sector just past its end, 4 KB, 64 KB and 1 MB past it, and at 0xC00000 and 0xDFF000 all survived.</p>
+<p>Drive writes that are not part of an update file can also land in the SPI flash. On 2.64, after a session with several installs, 0x101000 to 0x103FFF held a FAT directory cluster (first entry <code>.</code>, attribute 0x12) in place of the test file data. The sectors were erased before the write. Likely: macOS wrote to the drive while it was mounted, and the bootloader routed the write to the SPI flash beside the last F file. So data that PocketCW keeps in the SPI flash checks its own frames, and the install path never lets macOS mount the drive.</p>
 <p>After a finished write, the status file reads <code>Success</code> for about 1 second. Then the drive drops off USB and comes back as <code>Ready</code>.</p>
 <p>A failed write leaves the bootloader in update mode at every power on, until a write finishes. The vendor upgrade notes say so, and a 2.64 unit did it. Likely cause on that unit: macOS mounted the drive when it came back <code>Ready</code> after <code>Success</code>, and wrote its own files to it. So the tool counts a write as done only when it reads <code>Success</code>, and it blocks the mount until the drive is back.</p>
-<p>On first installs, every user who installed only <code>A000014.bin</code> saw the device stay in update mode. Installing an <code>F</code> file first, then <code>A000014.bin</code>, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: <code>F000000.bin</code>, then <code>A000014.bin</code>. The cause is not known; no dump of the bootloader exists. So a first install writes <code>F000400.bin</code> before <code>A000014.bin</code>, and the stock install always writes <code>F0000C0.bin</code> before <code>A000014.bin</code>.</p>
+<p>On first installs, every user who installed only <code>A000014.bin</code> saw the device stay in update mode. Installing an <code>F</code> file first, then <code>A000014.bin</code>, fixed it. The vendor V5.03 notes give the same fix for a failed upgrade: <code>F000000.bin</code>, then <code>A000014.bin</code>. The cause is not known; no dump of the bootloader exists. So a first install writes <code>F000400.bin</code>, the content pack, before <code>A000014.bin</code>. The install script asks whether to write it, since an update needs it only when the pack changed. The stock install always writes <code>F0000C0.bin</code> before <code>A000014.bin</code>. <code>pocketcw-flash</code> writes both files in one update mode session, as a Windows copy does: after <code>Success</code> on the F file, it waits for the drive to come back <code>Ready</code>, then writes the A file. A retry starts again at the F file.</p>
 <h2 id="write-protection">Write protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
 <p>The vendor app has a one-time activation routine at 0x08018014, keyed to the chip UID. It writes these option bytes: Data0 and Data1 = <code>F2 60</code>, WRP0 = 0xE0, EOPB0 = 0xFE, Data3 and Data4 = <code>D</code>, <code>y</code>.</p>
 <p>WRP0 = 0xE0 write-protects 0x08000000 to 0x08004FFF exactly. So on an activated unit, a flash write cannot overwrite the bootloader.</p>

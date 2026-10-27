@@ -725,34 +725,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Edit the memories">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#controls-on-a-memory-row" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Controls on a memory row
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#controls-on-repeat-every-and-after-send" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Controls on REPEAT EVERY and AFTER SEND
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1102,6 +1074,8 @@
       
         
       
+        
+      
     
     
     
@@ -1274,6 +1248,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1317,7 +1319,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1339,14 +1341,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1737,6 +1739,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1811,34 +1840,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Edit the memories">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#controls-on-a-memory-row" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Controls on a memory row
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#controls-on-repeat-every-and-after-send" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Controls on REPEAT EVERY and AFTER SEND
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
     </ul>
@@ -1862,7 +1863,7 @@
 
 
 <h1 id="memories">Memories<a class="headerlink" href="#memories" title="Permanent link">&para;</a></h1>
-<p>The device stores four messages, M1 to M4. You key each message in once on the MEM tab of the settings. Then you send it with one press from the KEYER screen. A memory can repeat, for calling CQ until a station answers.</p>
+<p>The device stores four messages, M1 to M4. You key each message in once in the MEMORIES section of the settings. Then you send it with one press from the KEYER screen. Hold the button instead to send the memory again and again, for calling CQ until a station answers.</p>
 <p>The first time PocketCW starts, the memories hold messages for a POTA activation with your callsign:</p>
 <table>
 <thead>
@@ -1874,7 +1875,7 @@
 <tbody>
 <tr>
 <td>M1</td>
-<td><code>CQ POTA DE &lt;your call&gt; &lt;your call&gt; K</code>, set to repeat</td>
+<td><code>CQ POTA DE &lt;your call&gt; &lt;your call&gt; K</code></td>
 </tr>
 <tr>
 <td>M2</td>
@@ -1891,14 +1892,17 @@
 </tbody>
 </table>
 <h2 id="send-a-memory">Send a memory<a class="headerlink" href="#send-a-memory" title="Permanent link">&para;</a></h2>
+<p><img alt="The KEYER screen with the memory row open" src="../img/keyer-mem.png" /></p>
 <ol>
-<li>On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. A lit label marks a memory that repeats. The labels of F1 to F4 change to M1 to M4.</li>
-<li>Press F1 to F4 to send M1 to M4. An empty memory sends nothing, and the status line shows <code>M1 IS EMPTY (SETTINGS, MEM)</code>.</li>
+<li>On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. The labels of F1 to F4 change to M1 to M4, and the footer says <code>HOLD REPEATS  CLICK CLOSES</code>.</li>
+<li>Press F1 to F4 to send M1 to M4 once. Hold the button to send the memory again and again. An empty memory sends nothing, and the status line shows <code>M1 IS EMPTY (SETTINGS)</code>.</li>
 </ol>
-<p>The memory sends at your keyer speed and tone. The status line shows <code>SENDING M1  KEY TO STOP</code>. A repeating memory waits for the REPEAT EVERY time after it ends, then sends again. The status line then shows the time to the next send, such as <code>M1 AGAIN IN 6S  KEY TO STOP</code>.</p>
-<p>A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. With OUT TYPE PADDLE, the memory plays only as a tone, and the status line says <code>M1 TONE ONLY: OUT IS PADDLE</code>.</p>
+<p>The memory sends at your keyer speed and tone. The footer shows <code>SENDING M1  KEY TO STOP</code>. A held memory waits for the REPEAT EVERY time after it ends, then sends again. Between sends, the footer shows <code>M1 REPEATS EVERY 6S  KEY TO STOP</code>.</p>
+<p>With F1 HOLD set to MEM ROW, holding F1 on any screen opens the KEYER screen with the memory row open. See <a href="../controls/#held-buttons">Held buttons</a>.</p>
+<p>A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. Otherwise the memory plays only as a tone, and the footer says why: <code>M1 TONE ONLY: OUT TYPE PADDLE</code> or <code>M1 TONE ONLY: KEY OUT OFF</code>.</p>
 <h3 id="stop-a-memory">Stop a memory<a class="headerlink" href="#stop-a-memory" title="Permanent link">&para;</a></h3>
-<p>Touch your key, or leave the KEYER screen. While the memory row is closed, any F button or a dial click also stops the memory. A dial turn does not stop it.</p>
+<p>Touch your key, press any F button, or leave the KEYER screen. While the memory row is closed, a dial click also stops the memory. An F button stops it as the button goes down, and does nothing else: press again to send a memory. A dial turn does not stop it.</p>
+<p>Keying from a logging program over USB also stops a memory, so the two never key the radio together. A memory you send stops the program's keying.</p>
 <h3 id="controls-with-the-memory-row-open">Controls with the memory row open<a class="headerlink" href="#controls-with-the-memory-row-open" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1910,7 +1914,11 @@
 <tbody>
 <tr>
 <td>F1 to F4 (M1 to M4)</td>
-<td>Sends that memory, in place of a memory that is sending. With AFTER SEND set to CLOSE, the memory row closes.</td>
+<td>Sends that memory once. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, a press of any button only stops it. With the row open, the sending memory's button shows STOP; with the row closed, all four buttons show STOP.</td>
+</tr>
+<tr>
+<td>F1 to F4 hold (REPEAT)</td>
+<td>Sends that memory again and again, until you stop it.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
@@ -1931,49 +1939,22 @@
 </tbody>
 </table>
 <h2 id="edit-the-memories">Edit the memories<a class="headerlink" href="#edit-the-memories" title="Permanent link">&para;</a></h2>
-<p>Open the settings, and press F1 (TAB) until the MEM tab shows. The tab has six rows: M1 to M4, REPEAT EVERY and AFTER SEND.</p>
+<p>Open the settings, and press F3 (NEXT) until the MEMORIES section shows. The section has six rows: M1 to M4, REPEAT EVERY and AFTER SEND. See <a href="../settings/#memories">MEMORIES</a> for their values.</p>
+<p>To edit a memory, select its row and click the dial. Then key the message. Click again to end. While you edit, the line under the list shows how many characters are left.</p>
 <table>
 <thead>
 <tr>
-<th>Row</th>
-<th>Values</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>M1 to M4</td>
-<td>The message, up to 48 characters. A prosign such as <code>&lt;AR&gt;</code> takes 4. <code>RPT</code> marks a memory that repeats.</td>
-</tr>
-<tr>
-<td>REPEAT EVERY</td>
-<td>The silence between two sends of a repeating memory: 2 to 30 seconds. The default is 6 seconds.</td>
-</tr>
-<tr>
-<td>AFTER SEND</td>
-<td>CLOSE closes the memory row after a send. STAY OPEN keeps the memory row open, for one QSO after another.</td>
-</tr>
-</tbody>
-</table>
-<p>A hint line under the rows tells you how to use the selected row. On a memory row, it shows how many characters are left.</p>
-<h3 id="controls-on-a-memory-row">Controls on a memory row<a class="headerlink" href="#controls-on-a-memory-row" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Control</th>
+<th>Control while you edit a memory</th>
 <th>Action</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>F1 (TAB)</td>
-<td>Opens the next tab.</td>
-</tr>
-<tr>
 <td>F2 (DEL)</td>
 <td>Deletes the last character. A prosign goes as one character.</td>
 </tr>
 <tr>
-<td>F3 (CLR)</td>
+<td>F3 hold (CLEAR)</td>
 <td>Clears the memory.</td>
 </tr>
 <tr>
@@ -1982,11 +1963,11 @@
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>Selects another row.</td>
+<td>Nothing.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Turns repeat on or off for this memory.</td>
+<td>Ends editing.</td>
 </tr>
 <tr>
 <td>Dial hold</td>
@@ -1998,45 +1979,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="controls-on-repeat-every-and-after-send">Controls on REPEAT EVERY and AFTER SEND<a class="headerlink" href="#controls-on-repeat-every-and-after-send" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Control</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>F1 (TAB)</td>
-<td>Opens the next tab.</td>
-</tr>
-<tr>
-<td>F2 (-), F3 (+)</td>
-<td>REPEAT EVERY: one second less or more. AFTER SEND: changes the value.</td>
-</tr>
-<tr>
-<td>F4 (BACK)</td>
-<td>Leaves the settings.</td>
-</tr>
-<tr>
-<td>Dial turn</td>
-<td>Selects another row. While you edit REPEAT EVERY, the dial changes the value.</td>
-</tr>
-<tr>
-<td>Dial click</td>
-<td>REPEAT EVERY: starts or ends editing. AFTER SEND: changes the value.</td>
-</tr>
-<tr>
-<td>Dial hold</td>
-<td>Turns the device off.</td>
-</tr>
-<tr>
-<td>Key</td>
-<td>Nothing more.</td>
-</tr>
-</tbody>
-</table>
+<p>REPEAT EVERY and AFTER SEND work as the other value rows do: click the dial, turn it to change the value, and click again.</p>
 <p>The device saves the memories when you leave the settings screen.</p>
 
 

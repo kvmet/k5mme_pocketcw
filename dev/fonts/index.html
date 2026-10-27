@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1229,6 +1231,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1272,7 +1302,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1294,14 +1324,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1692,6 +1722,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1799,13 +1856,15 @@
 </tr>
 </tbody>
 </table>
-<p>Each font holds the printable ASCII characters, from space to <code>~</code>.</p>
+<p><code>SMALL</code> holds the printable ASCII characters, from space to <code>~</code>. <code>TINY</code> holds the same set without <code>a</code> to <code>z</code>, and draws a lowercase letter as its capital. Both fonts set the baseline from all of ASCII, so they line up the same way.</p>
 <h2 id="glyph-format">Glyph format<a class="headerlink" href="#glyph-format" title="Permanent link">&para;</a></h2>
 <p><code>firmware/src/font.rs</code> defines <code>Font</code>:</p>
 <ul>
 <li><code>width</code>, <code>height</code>: the cell size. Every glyph has the same cell.</li>
 <li><code>chars</code>: the characters, sorted by byte value. <code>Font::draw</code> finds a glyph by binary search.</li>
-<li><code>pixels</code>: 4 bits of coverage per pixel, 0 to 15, high nibble first, <code>width * height</code> pixels per glyph.</li>
+<li><code>boxes</code>: per glyph, the left, top, width and height of its inked pixels inside the cell. A space has an empty box.</li>
+<li><code>offsets</code>: per glyph, where its pixels start in <code>pixels</code>, plus one entry for the end of the last glyph.</li>
+<li><code>pixels</code>: 4 bits of coverage per pixel, 0 to 15, high nibble first, each glyph's box row by row. Pixels outside the box are 0.</li>
 </ul>
 <p><code>Font::draw</code> blends from the background color to the text color by coverage. A character that is not in the font draws as a solid cell, so the gap shows on the screen.</p>
 <p>A prosign draws as its two letters under a bar. <code>ui/mod.rs</code> does this in <code>draw_char</code>, so the fonts need no prosign glyphs.</p>
@@ -1815,7 +1874,7 @@ cargo<span class="w"> </span>build<span class="w"> </span>-r
 target/release/fontgen<span class="w"> </span>B612Mono-Regular.ttf<span class="w"> </span>../../firmware/src/fonts.rs
 </code></pre></div>
 <p><code>fontgen</code> is its own crate, with <code>fontdue</code> as its only dependency. It builds for your computer.</p>
-<p>The sizes and cells are in <code>SPECS</code> in <code>tools/fontgen/src/main.rs</code>. When a glyph has visible pixels outside its cell, the tool prints how many and writes nothing. When you change a cell size, change <code>CHAR_W</code>, <code>CHAR_H</code>, <code>TINY_W</code> and <code>TINY_H</code> in <code>firmware/src/gfx.rs</code> too. Asserts there stop the build when the two do not match.</p>
+<p>The sizes and cells are in <code>SPECS</code> in <code>tools/fontgen/src/main.rs</code>. When a glyph has visible pixels outside its cell, the tool prints how many and writes nothing. The tool also checks that each cropped glyph unpacks to its full cell. When you change a cell size, change <code>CHAR_W</code>, <code>CHAR_H</code>, <code>TINY_W</code> and <code>TINY_H</code> in <code>firmware/src/gfx.rs</code> too. Asserts there stop the build when the two do not match.</p>
 <p>The hardware probe uses the <code>FONT_6X10</code> font of <code>embedded-graphics</code>, not these fonts.</p>
 
 

@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1240,6 +1242,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1283,7 +1313,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1305,14 +1335,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1703,6 +1733,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1865,6 +1922,14 @@
 <td>Mixes the sidetone, up to four stations, band noise and fading into one signal. Maps volume levels to codec registers.</td>
 </tr>
 <tr>
+<td><code>adpcm</code></td>
+<td>Decodes voice clips, plays several in turn, and raises their sample rate by a whole factor.</td>
+</tr>
+<tr>
+<td><code>pack</code></td>
+<td>The content pack format: header, word list and voice clips.</td>
+</tr>
+<tr>
 <td><code>drill</code>, <code>letters</code>, <code>ragchew</code></td>
 <td>Receive drills, Koch levels, letter statistics, and ragchew QSOs.</td>
 </tr>
@@ -1885,12 +1950,32 @@
 <td>The EEPROM record frame and its CRC.</td>
 </tr>
 <tr>
+<td><code>sfdp</code></td>
+<td>Reads the table a serial flash chip gives about itself: size, page size, erase types and times.</td>
+</tr>
+<tr>
 <td><code>battery</code>, <code>panel</code>, <code>board</code></td>
-<td>The battery gauge, the choice of screen type, and the decoder board protocol.</td>
+<td>The battery gauge, the choice of screen type and its memory read framing, and the decoder board protocol.</td>
+</tr>
+<tr>
+<td><code>serial</code></td>
+<td>Commands from the computer on the USB serial port.</td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td>Settings and memories by name, for the serial port's GET and SET.</td>
+</tr>
+<tr>
+<td><code>sender</code>, <code>winkeyer</code></td>
+<td>The sender that keys text from the serial port, and the WinKeyer host protocol.</td>
 </tr>
 <tr>
 <td><code>buttons</code>, <code>input</code>, <code>ticks</code>, <code>rng</code>, <code>math</code></td>
 <td>Button debounce and events, button actions, tick arithmetic, random numbers, and math helpers.</td>
+</tr>
+<tr>
+<td><code>dial</code></td>
+<td>What the dial sets on each screen, and the hold on dial turns while you key.</td>
 </tr>
 </tbody>
 </table>
@@ -1928,6 +2013,14 @@
 <td>The I2C bus, the EEPROM, and where each record lives.</td>
 </tr>
 <tr>
+<td><code>spi_flash</code></td>
+<td>The 16 MB SPI flash, which shares SPI1 with the screen.</td>
+</tr>
+<tr>
+<td><code>pack</code>, <code>speech</code></td>
+<td>Opens the content pack, and speaks text through the synth: the pack's words, and other words spelled.</td>
+</tr>
+<tr>
 <td><code>battery</code></td>
 <td>ADC readings of the battery and the supply.</td>
 </tr>
@@ -1937,19 +2030,19 @@
 </tr>
 <tr>
 <td><code>usb</code></td>
-<td>The USB device peripheral for <code>stm32-usbd</code>, and the USB keyboard.</td>
+<td>The USB device peripheral for <code>stm32-usbd</code>, and the USB keyboard and serial port.</td>
 </tr>
 <tr>
 <td><code>ui/</code></td>
-<td>One file per screen, plus shared parts: <code>exchange</code> and <code>transcript</code> for the QSO screens, <code>tape</code> for the timing tape.</td>
+<td>One file per screen, plus shared parts: <code>dial</code> for the header values, <code>exchange</code> and <code>transcript</code> for the QSO screens, <code>tape</code> for the timing tape, <code>serial</code> for the serial commands the screen answers.</td>
 </tr>
 <tr>
 <td><code>text</code></td>
 <td>A re-export of the fixed size string type.</td>
 </tr>
 <tr>
-<td><code>bin/probe.rs</code>, <code>bin/usbprobe.rs</code></td>
-<td>Separate hardware and USB probe images. See <a href="../building/">Build and flash</a>.</td>
+<td><code>bin/probe.rs</code>, <code>bin/usbprobe.rs</code>, <code>bin/voiceprobe.rs</code>, <code>bin/flashprobe.rs</code>, <code>bin/popprobe.rs</code></td>
+<td>Separate hardware, USB, voice, SPI flash and audio pop probe images. See <a href="../building/">Build and flash</a>.</td>
 </tr>
 </tbody>
 </table>

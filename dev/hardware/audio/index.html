@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1147,6 +1149,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1194,7 +1224,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1216,14 +1246,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1744,6 +1774,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1878,9 +1935,15 @@
 <p>PA8 makes the audio. It goes into input 1 of the audio codec, and the codec's analog bypass sends it to the speaker and the headphone jack. The speaker amplifier needs PB12 high.</p>
 <ul>
 <li>The vendor sends a square wave on PA8 at the tone pitch, from TMR1 channel 1 PWM. Confirmed on 2.64.</li>
-<li>PocketCW uses PA8 as a 1 bit DAC: a 281 kHz pulse train whose duty changes 17,578 times a second. The codec input and the headphones smooth the pulses into sine tones and noise. Confirmed on 2.64.</li>
+<li>PocketCW uses PA8 as a 1 bit DAC: a 281 kHz pulse train with a new duty on every pulse, for 17,578 samples a second. The codec input and the headphones smooth the pulses into sine tones and noise. Confirmed on 2.64.</li>
 </ul>
-<p>PocketCW timing (<code>firmware/src/audio.rs</code>): TMR1 counts 256 steps per pulse at 72 MHz, which is 281.25 kHz. The duty changes every 16 pulses. Between sounds the duty stays at half, the silent level, so a new sound does not pop, and the sample interrupt stops.</p>
+<p>PocketCW timing (<code>firmware/src/audio.rs</code>): TMR1 counts 256 steps per pulse at 72 MHz, which is 281.25 kHz. Each sample lasts 16 pulses.</p>
+<ul>
+<li>At each TMR1 overflow, DMA2 channel 1 copies the next duty from a buffer of 32 pulses into the channel 1 compare register. The request reaches DMA2 through its flexible mapping, ID 0x37. The fixed mapping also wires TMR1 overflow to DMA1 channel 5, the decoder board link's receive channel, so DMA1 runs on flexible mapping too, with channel 5 on USART1 RX (ID 0x19).</li>
+<li>The DMA interrupts at each half of the buffer. The sample interrupt then fills the half just played: one synth sample, as 16 duties.</li>
+<li>Rounding a duty to a whole count leaves an error. <code>logic/src/pwm.rs</code> feeds each error into the next two pulses, so the rounding noise follows (1 - z^-1)^2 at the pulse rate, far above the audio band. Below 8 kHz the rounding noise is 46 to 48 dB under that of one duty held for the whole sample.</li>
+<li>Between sounds the duty stays at half, the silent level, so a new sound does not pop. Once both halves of the buffer are silent, the DMA and the sample interrupt stop.</li>
+</ul>
 <h2 id="codecs">Codecs<a class="headerlink" href="#codecs" title="Permanent link">&para;</a></h2>
 <p>The board has one of two codecs on I2C2. PocketCW tries the ES8388 address first, then the WM8978 address, and uses the one that answers.</p>
 <table>
@@ -2034,7 +2097,40 @@
 <li>A plug in the headphone jack cuts the speaker whatever the codec setup, so the jack switch is in the speaker path. The switch reaches no MCU input, so the firmware cannot tell which output is in use.</li>
 </ul>
 <h2 id="volume">Volume<a class="headerlink" href="#volume" title="Permanent link">&para;</a></h2>
-<p><code>logic/src/volume.rs</code> maps the VOLUME setting. Level 0 mutes. Levels 1 to 44 go from -60 dB to +4.5 dB in 1.5 dB steps. On the ES8388, the output stage cuts first, down to -45 dB. Below that, the mixer input cuts in 3 dB steps. A cut before the output stage raises the hiss relative to the tone.</p>
+<p><code>logic/src/volume.rs</code> maps the VOLUME setting. Level 0 mutes, and level 44 is +4.5 dB.</p>
+<table>
+<thead>
+<tr>
+<th>Output</th>
+<th>Level 1</th>
+<th>Step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ES8388 headphones (OUT2)</td>
+<td>-60 dB</td>
+<td>1.5 dB</td>
+</tr>
+<tr>
+<td>ES8388 speaker (OUT1)</td>
+<td>-38.5 dB</td>
+<td>1 dB</td>
+</tr>
+<tr>
+<td>WM8978 speaker and headphones</td>
+<td>-60 dB</td>
+<td>1.5 dB</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Through the speaker, a tone below about -39 dB is lost in a quiet room, and the headphones are still clear at -60 dB. The firmware cannot tell which output is in use, so it sets both.</li>
+<li>The ES8388 output stage steps 1.5 dB. The synth makes the speaker's levels between those steps: it cuts the whole signal by 0 dB, 0.5 dB or 1 dB, easing over 5 ms so the change does not click. The headphones hear that cut too, so they land within 0.5 dB of their level.</li>
+<li>On the ES8388, the output stage cuts first, down to -45 dB. Below that, the mixer input cuts in 3 dB steps. A cut before the output stage raises the hiss relative to the tone. The mixer feeds both outputs, and the speaker's output stage makes up its cut.</li>
+<li>Through the speaker, a sine tone is clean at 0 dB and starts to sound harsh at +1.5 dB. Speech still sounds clean at +3 dB, since it reaches its peak far less often than a tone.</li>
+<li>Each volume change pops on both outputs, also in silence and with PA8 floating, so the pop does not come from PA8. The ES8388's analog volume registers have no zero cross or soft ramp setting.</li>
+</ul>
 <h2 id="speaker-amplifier">Speaker amplifier<a class="headerlink" href="#speaker-amplifier" title="Permanent link">&para;</a></h2>
 <p>PB12 enables the speaker amplifier.</p>
 <ul>
@@ -2045,6 +2141,7 @@
 <p><code>logic/src/synth.rs</code> mixes five voices into one signal: your sidetone and four players, so stations can overlap.</p>
 <ul>
 <li>Key edges rise and fall over 5 ms on a raised cosine, so they do not click.</li>
+<li>WAVE SQUARE plays 7.5 dB under a sine's peak: at the same peak, it sounds 7.5 dB louder, by ear on the speaker and the headphones.</li>
 <li>WAVE SQUARE sums the odd harmonics up to 31. At 17.6 kHz this reaches the Nyquist frequency for pitches down to 284 Hz. A lower pitch loses its top harmonics.</li>
 <li>Band noise has a 500 Hz bandwidth, like a receiver CW filter. Its 10 levels are 2.5 dB apart, up to an RMS of 0.35.</li>
 <li>Fading goes down to a tenth at the top level. Each player fades at its own rate, so stations fade apart.</li>

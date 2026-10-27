@@ -465,6 +465,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-content-pack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The content pack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#is-it-safe" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1151,6 +1162,8 @@
       
         
       
+        
+      
     
     
     
@@ -1323,6 +1336,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1366,7 +1407,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1388,14 +1429,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1786,6 +1827,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1817,6 +1885,17 @@
     <span class="md-ellipsis">
       
         What you need
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-content-pack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The content pack
       
     </span>
   </a>
@@ -1960,16 +2039,26 @@
 
 
 <h1 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h1>
-<p>This page installs PocketCW on a HamCube. On Windows and Linux, you copy one file to the device. On macOS, an install script does the copy, because macOS writes its own files to the device, and those files break the install.</p>
+<p>This page installs PocketCW on a HamCube. An install writes the firmware, and when it needs it, the <a href="#the-content-pack">content pack</a> with the words and voice before it. On Windows and Linux, you copy them to the device. On macOS, an install script does the copy, because macOS writes its own files to the device, and those files break the install.</p>
 <p>PocketCW was tested on a Mini with board version 2.64. Other board versions and the Pro may work, but nobody has tried them yet.</p>
 <h2 id="what-you-need">What you need<a class="headerlink" href="#what-you-need" title="Permanent link">&para;</a></h2>
 <ul>
 <li>A computer with Windows, Linux, or macOS 10.15 or later on an Intel or Apple chip.</li>
 <li>A USB cable that carries data. Some cables only charge. If the computer never finds the device, try a different cable.</li>
-<li>About 5 minutes.</li>
+<li>About 10 minutes. The content pack is about 8 MB and takes several minutes to install.</li>
 </ul>
+<h2 id="the-content-pack">The content pack<a class="headerlink" href="#the-content-pack" title="Permanent link">&para;</a></h2>
+<p>The content pack holds the voice and the words for the drills. Install it:</p>
+<ul>
+<li>on the first PocketCW install on a device. Without an F file first, a first install stops on the update screen.</li>
+<li>when the device stays on the update screen after an install.</li>
+<li>when the content pack changed since you last installed it. The notes of each <a href="https://github.com/kvmet/k5mme_pocketcw/releases">release</a> name the release that last changed it.</li>
+<li>when NINJA or HEAD shows <code>CONTENT PACK MISSING: INSTALL IT</code>.</li>
+</ul>
+<p>Otherwise, install the firmware alone.</p>
+<p>If you might go back to the <a href="../stock-firmware/">stock firmware</a>, know this first: the content pack can write over the stock firmware's contact log, and that log is then lost. Where the stock firmware keeps its log is not known yet. A first install needs the content pack all the same.</p>
 <h2 id="is-it-safe">Is it safe?<a class="headerlink" href="#is-it-safe" title="Permanent link">&para;</a></h2>
-<p>The device has a small built-in program, the bootloader, that installs firmware. This install never touches the bootloader: the PocketCW file installs after it, and the macOS install tool refuses any file that would write over it. If an install goes wrong, the bootloader still works, and you can run the install again.</p>
+<p>The device has a small built-in program, the bootloader, that installs firmware. This install never touches the bootloader: PocketCW's files install after it, and the macOS install tool refuses any file that would write over it. If an install goes wrong, the bootloader still works, and you can run the install again.</p>
 <p>To go back to the original firmware, see <a href="../stock-firmware/">Go back to the stock firmware</a>. That page installs the published stock version, V5.03. Some devices come from the factory with a newer, unpublished version, and the install replaces it for good. On board 2.64, V5.03 has no sound.</p>
 <h2 id="update-mode">Update mode<a class="headerlink" href="#update-mode" title="Permanent link">&para;</a></h2>
 <p>The device takes new firmware in update mode. To start update mode:</p>
@@ -1983,12 +2072,11 @@
 <p>In update mode, the device shows up on the computer as a drive named POKEMON-2 or HAM MODULE. The drive holds one file, <code>READY.TXT</code>.</p>
 <h2 id="windows-and-linux">Windows and Linux<a class="headerlink" href="#windows-and-linux" title="Permanent link">&para;</a></h2>
 <p>Nobody has tested a Linux install yet. The bootloader needs the file's name to reach the drive before the file's data. Windows writes the name first. If a Linux install does not work, report it on the <a href="https://github.com/kvmet/k5mme_pocketcw/issues">issue tracker</a>.</p>
-<p>The first install on a device also needs <code>F000400.bin</code>, a small PocketCW file. Without it, the first install can leave the device on the update screen. Also do the first install steps after you go back to the stock firmware.</p>
 <ol>
-<li>Download <code>A000014.bin</code> from the newest <a href="https://github.com/kvmet/k5mme_pocketcw/releases/latest">release</a>. For a first install, also download <code>F000400.bin</code>.</li>
+<li>Download <code>A000014.bin</code> from the newest <a href="https://github.com/kvmet/k5mme_pocketcw/releases/latest">release</a>. If you install the <a href="#the-content-pack">content pack</a>, download <code>F000400.bin</code> too.</li>
 <li>Put the device in <a href="#update-mode">update mode</a>.</li>
 <li>Plug the USB cable into the device and the computer. The drive opens.</li>
-<li>For a first install, copy <code>F000400.bin</code> to the drive. Wait until the drive closes and opens again with only <code>READY.TXT</code>. Then hold F4 to reset the drive.</li>
+<li>To install the content pack, copy <code>F000400.bin</code> to the drive. Wait until the drive closes and opens again with only <code>READY.TXT</code>. This can take several minutes. Then hold F4 to reset the drive. Without the content pack, go to step 5.</li>
 <li>Copy <code>A000014.bin</code> to the drive.</li>
 <li>Wait about 10 seconds. The drive closes, then opens again with only <code>READY.TXT</code>.</li>
 <li>Unplug the device, then click the dial to turn it on.</li>
@@ -2004,17 +2092,19 @@
 </ol>
 <div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://kvmet.github.io/k5mme_pocketcw/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
 </code></pre></div>
-<p>The script downloads the newest PocketCW release and the install tool. Then it asks whether this is the first PocketCW install on the device. If you are not sure, press Return for yes.</p>
-<p>A first install installs two files: a small PocketCW file, then the firmware. You put the device in update mode once for each file. Without the first file, the first install can leave the device on the update screen. Also answer yes after you go back to the stock firmware.</p>
+<p>The script downloads the newest PocketCW release and the install tool. It asks:</p>
+<div class="highlight"><pre><span></span><code>Install the content pack? [y/N]
+</code></pre></div>
+<p>Type <code>y</code> and press Return to install the <a href="#the-content-pack">content pack</a>, then the firmware. Both install in one update mode session, so you put the device in update mode only once. Press Return alone to install only the firmware.</p>
 <p>The script then says "Waiting for the device".</p>
 <h3 id="plug-in-the-device">Plug in the device<a class="headerlink" href="#plug-in-the-device" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Put the device in <a href="#update-mode">update mode</a>. If it already shows the firmware update screen, go to the next step.</li>
 <li>Plug the USB cable into the device and the Mac. After a few seconds, the script says "Found the device".</li>
-<li>macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that.</li>
+<li>macOS asks for your password. Type your Mac login password, and click OK. The install writes directly to the device, and macOS asks for your password before it allows that. macOS can ask again for the second file.</li>
 </ol>
 <h3 id="finish">Finish<a class="headerlink" href="#finish" title="Permanent link">&para;</a></h3>
-<p>After about 10 seconds, the script shows this when the install works:</p>
+<p>The content pack takes several minutes, and the firmware about 10 seconds. The script shows this when the install works:</p>
 <div class="highlight"><pre><span></span><code>Finished. Unplug the device.
 Then click the dial to turn it on.
 </code></pre></div>
@@ -2045,7 +2135,7 @@ Then click the dial to turn it on.
 </tr>
 <tr>
 <td><code>F000400.bin</code></td>
-<td>A small PocketCW file for the device's memory chip, installed before the firmware on a first install.</td>
+<td>The content pack: the words and voice for the drills, for the device's memory chip. When an install needs it, it installs before the firmware. See <a href="#the-content-pack">The content pack</a>.</td>
 </tr>
 <tr>
 <td><code>pocketcw-flash</code></td>
@@ -2061,7 +2151,7 @@ Then click the dial to turn it on.
 </tr>
 <tr>
 <td><code>THIRD-PARTY.txt</code></td>
-<td>The licenses of the code libraries in the firmware.</td>
+<td>The licenses of the code libraries in the firmware, and the credits for the word list and voice in the content pack.</td>
 </tr>
 </tbody>
 </table>

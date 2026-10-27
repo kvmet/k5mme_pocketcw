@@ -1057,6 +1057,8 @@
       
         
       
+        
+      
     
     
     
@@ -1229,6 +1231,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1272,7 +1302,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1294,14 +1324,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1692,6 +1722,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1772,18 +1829,19 @@
 
 
 <h1 id="radio">Radio<a class="headerlink" href="#radio" title="Permanent link">&para;</a></h1>
-<p>The Pro model has a decoder board that listens to the audio of a radio. The RADIO screen shows the Morse code the board hears, as text.</p>
-<p>No one has tried PocketCW on a Pro model yet. This screen follows the vendor firmware, but it is not tested on a board.</p>
+<p>The RADIO screen shows Morse code the device hears, as text: from the decoder board of the Pro model, which listens to the audio of a radio, or from a computer that sends it as <a href="../usb/#midi">MIDI notes</a>, such as Vail.</p>
+<p>Open it from the ON AIR list of the menu, or hold F3 on the KEYER screen. The menu shows RADIO while DECODER BOARD is ON or USB OUT is not OFF.</p>
+<p>No one has tried PocketCW on a Pro model yet. The board parts of this screen follow the vendor firmware, but they are not tested on a board.</p>
 <h2 id="turn-the-decoder-board-on">Turn the decoder board on<a class="headerlink" href="#turn-the-decoder-board-on" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Open the settings, and go to the RECV tab. See <a href="../settings/">Settings</a>.</li>
+<li>Open the settings, and go to the DEVICE section. See <a href="../settings/">Settings</a>.</li>
 <li>Set DECODER BOARD to ON. The device powers the decoder board.</li>
-<li>The menu now shows row 11 RADIO. Open it.</li>
+<li>The ON AIR list of the menu now shows the RADIO row. Open it.</li>
 </ol>
 <p>On a model without a decoder board, keep DECODER BOARD OFF. The setting is OFF by default.</p>
 <p>Connect the radio's audio to the AUX1 port of the decoder board. Headphones or a powered speaker go in AUX2. The VOLUME setting also sets the volume of AUX2.</p>
 <h2 id="what-the-screen-shows">What the screen shows<a class="headerlink" href="#what-the-screen-shows" title="Permanent link">&para;</a></h2>
-<p>The top line shows the state of the board:</p>
+<p>The top line shows the state of the board, or <code>MIDI IN</code> while DECODER BOARD is OFF:</p>
 <table>
 <thead>
 <tr>
@@ -1792,6 +1850,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>MIDI IN</td>
+<td>DECODER BOARD is OFF, so the text comes only from MIDI notes.</td>
+</tr>
 <tr>
 <td>BOARD OK or NO REPLY</td>
 <td>BOARD OK: the board announced itself after it got power. NO REPLY: the board did not announce itself yet.</td>
@@ -1815,7 +1877,7 @@
 </tbody>
 </table>
 <p>Under the top line, nine lines show the text the device decodes.</p>
-<p>The device decodes only while the RADIO screen is open. Each time you open the screen, the decoder starts at 20 WPM and then follows the speed it hears, from 5 to 60 WPM. The text stays when you leave the screen.</p>
+<p>The device decodes only while the RADIO screen is open, or on every screen while USB OUT is RADIO. With the board on and MIDI notes coming in, both go to the same lines. See <a href="../usb/#radio">USB keyboard</a>. Each time decoding starts, the decoder starts at 20 WPM and then follows the speed it hears, from 5 to 60 WPM. The text stays when you leave the screen.</p>
 <h2 id="controls">Controls<a class="headerlink" href="#controls" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1827,27 +1889,27 @@
 <tbody>
 <tr>
 <td>F1 (SET)</td>
-<td>Opens the settings at the RECV tab. F4 (BACK) there returns to this screen.</td>
+<td>Opens the settings at the DEVICE section. F4 (BACK) there returns to this screen.</td>
 </tr>
 <tr>
 <td>F2 (FILT)</td>
-<td>Changes the filter setting of the board: 0, 1, 2, then 0 again.</td>
+<td>Changes the filter setting of the board: 0, 1, 2, then 0 again. Only while DECODER BOARD is ON.</td>
 </tr>
 <tr>
 <td>F3 (NR)</td>
-<td>Changes the noise reduction level of the board: 0 to 6, then 0 again.</td>
+<td>Changes the noise reduction level of the board: 0 to 6, then 0 again. Only while DECODER BOARD is ON.</td>
 </tr>
 <tr>
 <td>F4 (BACK)</td>
-<td>Opens the <a href="../menu/">menu</a>.</td>
+<td>Opens the ON AIR list of the <a href="../menu/">menu</a>.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>Nothing.</td>
+<td>Changes the focused header value. See <a href="../controls/#header-values">Header values</a>.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Clears the text.</td>
+<td>Moves the focus to the next header value.</td>
 </tr>
 <tr>
 <td>Dial hold</td>

@@ -1019,6 +1019,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#winkeyer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WinKeyer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vband-hotline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VBand Hotline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#memories" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1078,6 +1100,8 @@
       
         
           
+        
+      
         
       
         
@@ -1262,6 +1286,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1305,7 +1357,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1327,14 +1379,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1725,6 +1777,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1785,6 +1864,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#winkeyer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WinKeyer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vband-hotline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VBand Hotline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#memories" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1838,7 +1939,7 @@
 
 
 <h1 id="status-messages">Status messages<a class="headerlink" href="#status-messages" title="Permanent link">&para;</a></h1>
-<p>The status line at the bottom of the screen shows short messages. In this list, <code>n</code> is a number and <code>X</code> is a character.</p>
+<p>Short messages show on the bottom line of the screen, brighter than the screen's own footer. Most show for 5 seconds, and then the footer comes back. A stuck contact, <code>RELEASE TO POWER OFF</code> and <code>BATTERY EMPTY: POWERING OFF</code> stay until the state ends. In this list, <code>n</code> is a number and <code>X</code> is a character.</p>
 <h2 id="power-and-battery">Power and battery<a class="headerlink" href="#power-and-battery" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1850,7 +1951,7 @@
 <tbody>
 <tr>
 <td><code>RELEASE TO POWER OFF</code></td>
-<td>You held the dial for 1.5 seconds. Let go of the dial to turn the device off.</td>
+<td>You held the dial for 1 second. Let go of the dial to turn the device off, or press an F button or turn the dial to stay on.</td>
 </tr>
 <tr>
 <td><code>BATTERY LOW: PLUG IN USB</code></td>
@@ -1919,12 +2020,36 @@
 </tr>
 <tr>
 <td><code>n USB KEYS LOST</code></td>
-<td>The device lost <code>n</code> characters or key changes on their way to the computer. See <a href="../usb/">USB keyboard</a>.</td>
+<td>The device lost <code>n</code> characters, key changes or notes on their way to the computer. See <a href="../usb/">USB keyboard</a>.</td>
+</tr>
+<tr>
+<td><code>n SERIAL ERRORS</code></td>
+<td>USB refused <code>n</code> reads or writes on the serial port.</td>
+</tr>
+<tr>
+<td><code>n SERIAL LINES LOST</code></td>
+<td>The serial port had no room for <code>n</code> lines to the computer. The computer was not reading them.</td>
+</tr>
+<tr>
+<td><code>SCREENSHOT NOT SENT</code></td>
+<td>The computer stopped taking a screenshot for 0.5 s.</td>
+</tr>
+<tr>
+<td><code>KEY OUT ON</code>, <code>KEY OUT OFF</code></td>
+<td>You held F1 and turned KEY OUT on or off. See <a href="../controls/#held-buttons">Controls</a>.</td>
+</tr>
+<tr>
+<td><code>KEY OUT ON: NOT ON THIS SCREEN</code></td>
+<td>You held F1 and turned KEY OUT on, on a screen where your key does not key the radio. It keys the radio on the KEYER, TIMING and RADIO screens.</td>
+</tr>
+<tr>
+<td><code>NOTHING TO RESUME</code></td>
+<td>You held F1 with F1 HOLD set to RESUME, and you have not opened a drill or QSO yet.</td>
 </tr>
 </tbody>
 </table>
-<h2 id="memories">Memories<a class="headerlink" href="#memories" title="Permanent link">&para;</a></h2>
-<p>These messages show on the KEYER screen. See <a href="../memories/">Memories</a>.</p>
+<h2 id="winkeyer">WinKeyer<a class="headerlink" href="#winkeyer" title="Permanent link">&para;</a></h2>
+<p>These messages show while a logging program uses the device as a WinKeyer. See <a href="../usb/#winkeyer">USB keyboard</a>.</p>
 <table>
 <thead>
 <tr>
@@ -1934,32 +2059,80 @@
 </thead>
 <tbody>
 <tr>
-<td><code>CLICK CLOSES</code></td>
-<td>The memory row is open. A dial click closes it.</td>
+<td><code>WINKEYER OPEN</code></td>
+<td>A logging program took the serial port as a WinKeyer.</td>
 </tr>
 <tr>
-<td><code>LIT M REPEATS  CLICK CLOSES</code></td>
-<td>The memory row is open, and a lit label marks a memory that repeats.</td>
+<td><code>WINKEYER CLOSED</code></td>
+<td>The logging program let the serial port go, or the computer closed it. Text it had not sent yet is dropped.</td>
+</tr>
+<tr>
+<td><code>WINKEYER n WPM</code></td>
+<td>The logging program set SPEED to <code>n</code> WPM.</td>
+</tr>
+<tr>
+<td><code>n WINKEYER BYTES LOST</code></td>
+<td>The device dropped <code>n</code> bytes to or from the logging program, because its queue was full.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="vband-hotline">VBand Hotline<a class="headerlink" href="#vband-hotline" title="Permanent link">&para;</a></h2>
+<p>These messages show when VBand's page connects to the device as a CW Hotline. See <a href="../usb/#vband-cw-hotline">USB keyboard</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HOTLINE ON</code></td>
+<td>VBand took the serial port. The device sends your keying to it, and types nothing.</td>
+</tr>
+<tr>
+<td><code>HOTLINE OFF</code></td>
+<td>VBand let the serial port go, or the browser closed it.</td>
+</tr>
+<tr>
+<td><code>VAIL ON</code></td>
+<td>Vail's page loaded with the MIDI port. The device sends your keying to it as note 0, and no Ctrl keys. See <a href="../usb/#vail">USB keyboard</a>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="memories">Memories<a class="headerlink" href="#memories" title="Permanent link">&para;</a></h2>
+<p>These lines show on the KEYER screen. See <a href="../memories/">Memories</a>. The first four are the footer: they stay while their state lasts, in the footer's color.</p>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HOLD REPEATS  CLICK CLOSES</code></td>
+<td>The memory row is open. Hold an F button to send its memory again and again. A dial click closes the row.</td>
 </tr>
 <tr>
 <td><code>SENDING Mn  KEY TO STOP</code></td>
 <td>Memory n is sending. Touch your key to stop it.</td>
 </tr>
 <tr>
-<td><code>Mn AGAIN IN nS  KEY TO STOP</code></td>
-<td>Memory n repeats after the time shown.</td>
+<td><code>Mn REPEATS EVERY nS  KEY TO STOP</code></td>
+<td>Memory n waits that long after each send, then sends again.</td>
 </tr>
 <tr>
-<td><code>Mn TONE ONLY: OUT IS PADDLE</code></td>
-<td>Memory n plays as a tone and does not key the func jack, because OUT TYPE is PADDLE.</td>
+<td><code>Mn TONE ONLY: OUT TYPE PADDLE</code> or <code>Mn TONE ONLY: KEY OUT OFF</code></td>
+<td>Memory n plays as a tone and does not key the func jack.</td>
 </tr>
 <tr>
-<td><code>Mn IS EMPTY (SETTINGS, MEM)</code></td>
-<td>Memory n holds no message. Key one in on the MEM tab of the settings.</td>
+<td><code>Mn IS EMPTY (SETTINGS)</code></td>
+<td>Memory n holds no message. Key one in, in the MEMORIES section of the settings.</td>
 </tr>
 <tr>
 <td><code>MEMORY FULL</code></td>
-<td>On the MEM tab: the memory has no room for the last character you keyed. A memory holds up to 48 characters, and a prosign such as <code>&lt;AR&gt;</code> takes 4.</td>
+<td>In the settings: the memory has no room for the last character you keyed. A memory holds up to 48 characters, and a prosign such as <code>&lt;AR&gt;</code> takes 4.</td>
 </tr>
 </tbody>
 </table>
@@ -1973,12 +2146,12 @@
 </thead>
 <tbody>
 <tr>
-<td><code>LEVEL UP: ADDED X</code></td>
-<td>You moved up a Koch level, and the drill now sends character X too. See <a href="../receive/">Receive drills</a>.</td>
+<td><code>NO COPY FOR 2 GROUPS: PAUSED</code></td>
+<td>Two drill groups in a row passed with no copy, so the drill paused and scored neither. Key a character or press GO to go on. See <a href="../receive/">Receive drills</a>.</td>
 </tr>
 <tr>
-<td><code>CLR AGAIN TO ERASE STATS</code></td>
-<td>On the LETTERS screen: press F2 (CLR) again to erase your letter statistics. See <a href="../letters/">Letters</a>.</td>
+<td><code>LEVEL UP: ADDED X</code></td>
+<td>You moved up a Koch level, and the drill now sends character X too. See <a href="../receive/">Receive drills</a>.</td>
 </tr>
 </tbody>
 </table>

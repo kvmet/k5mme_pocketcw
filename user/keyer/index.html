@@ -1096,6 +1096,8 @@
       
         
       
+        
+      
     
     
     
@@ -1268,6 +1270,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1311,7 +1341,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1333,14 +1363,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1731,6 +1761,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1852,6 +1909,7 @@
 <h1 id="keyer">Keyer<a class="headerlink" href="#keyer" title="Permanent link">&para;</a></h1>
 <p>The KEYER screen is the main screen. It opens after the boot screen. The header shows KEYER and the keyer mode.</p>
 <h2 id="what-the-screen-shows">What the screen shows<a class="headerlink" href="#what-the-screen-shows" title="Permanent link">&para;</a></h2>
+<p><img alt="The KEYER screen after keying CQ" src="../img/keyer.png" /></p>
 <table>
 <thead>
 <tr>
@@ -1874,7 +1932,7 @@
 </tr>
 <tr>
 <td>OUT</td>
-<td>KEY OUT: ON when the func jack keys, OFF when it does not.</td>
+<td>KEY OUT: ON when your key keys the func jack, OFF when it does not. While it is ON, the header shows <code>TX</code>.</td>
 </tr>
 <tr>
 <td>DIT</td>
@@ -1894,16 +1952,16 @@
 </tr>
 <tr>
 <td>Decode</td>
-<td>Five lines of what your keying decodes to.</td>
+<td>Four lines of what your keying decodes to.</td>
 </tr>
 </tbody>
 </table>
-<p>A small mark under a value shows which value the dial sets: speed, tone or volume.</p>
+<p>A small mark under a value shows which value the dial sets: speed, volume or tone.</p>
 <h3 id="timing-tape">Timing tape<a class="headerlink" href="#timing-tape" title="Permanent link">&para;</a></h3>
 <p>The tape draws time from left to right, 4 pixels per dot length.</p>
 <ul>
 <li>The KEY row shows the keyer output. In STRAIGHT mode, each mark has the color and shape of its timing grade.</li>
-<li>The two rows under it show the two contacts of your key: DIT and DAH, or TIP and RNG in STRAIGHT mode.</li>
+<li>The two rows under it show the two contacts of your key: DIT and DAH, or TIP and RNG in STRAIGHT mode. While both contacts are closed, a bar joins the two rows.</li>
 <li>Under the rows, each decoded character shows under its marks.</li>
 <li>Each gap between characters or words shows its length in units, in the color of its grade. A thin tick shows where the ideal gap would end.</li>
 </ul>
@@ -1938,7 +1996,7 @@
 </table>
 <p>Each grade also has its own shape, so you can read the grades without color.</p>
 <h3 id="statistics-line">Statistics line<a class="headerlink" href="#statistics-line" title="Permanent link">&para;</a></h3>
-<p><code>CHR</code> and <code>WRD</code> are your average character gap and word gap in units (ideal: 3 and 7). <code>RATIO</code> is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. F2 (CLR) on the <a href="../timing/">Timing</a> screen clears these statistics.</p>
+<p><code>CHR</code> and <code>WRD</code> are your average character gap and word gap in units (ideal: 3 and 7). <code>RATIO</code> is your average dash length over your average dot length (ideal: 3). The last value is the speed your timing works out to. Dashes in place of a value mean no data yet. Hold F2 (CLEAR) on the <a href="../timing/">Timing</a> screen to clear these statistics.</p>
 <h3 id="decode">Decode<a class="headerlink" href="#decode" title="Permanent link">&para;</a></h3>
 <p>Each character has an underline in its grade: a thin line for good, a dashed line for off, a thick bar for bad. The grade is the worst timing in the character: its marks, its gaps, and the gap before it. <code>*</code> is a pattern that is not a character. A prosign shows as its two letters under a bar.</p>
 <h2 id="controls">Controls<a class="headerlink" href="#controls" title="Permanent link">&para;</a></h2>
@@ -1952,15 +2010,19 @@
 <tbody>
 <tr>
 <td>F1 (SET)</td>
-<td>Opens the settings at the KEYER tab.</td>
+<td>Opens the settings at the KEYER section.</td>
 </tr>
 <tr>
 <td>F2 (MEM)</td>
 <td>Opens the memory row. See <a href="../memories/">Memories</a>.</td>
 </tr>
 <tr>
-<td>F3 (OUT)</td>
-<td>Turns KEY OUT on or off.</td>
+<td>F3 (TMNG)</td>
+<td>Opens the <a href="../timing/">TIMING</a> screen.</td>
+</tr>
+<tr>
+<td>F3 hold (RADIO)</td>
+<td>Opens the <a href="../radio/">RADIO</a> screen, when the menu shows it.</td>
 </tr>
 <tr>
 <td>F4 (MENU)</td>
@@ -1968,11 +2030,11 @@
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>Changes the marked value: speed, tone or volume.</td>
+<td>Changes the marked value: speed, volume or tone. A turn does nothing while you key, and for one word gap after you stop.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Moves the mark to the next value: speed, then tone, then volume.</td>
+<td>Moves the mark to the next value: speed, then volume, then tone.</td>
 </tr>
 <tr>
 <td>Dial hold</td>

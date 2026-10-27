@@ -549,6 +549,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#held-buttons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Held buttons
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#turn-on" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -575,6 +586,17 @@
     <span class="md-ellipsis">
       
         The screen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#header-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Header values
       
     </span>
   </a>
@@ -1079,6 +1101,8 @@
       
         
       
+        
+      
     
     
     
@@ -1251,6 +1275,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1294,7 +1346,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1316,14 +1368,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1714,6 +1766,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1752,6 +1831,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#held-buttons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Held buttons
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#turn-on" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1778,6 +1868,17 @@
     <span class="md-ellipsis">
       
         The screen
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#header-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Header values
       
     </span>
   </a>
@@ -1827,7 +1928,11 @@
 <tbody>
 <tr>
 <td>F1 to F4</td>
-<td>The four buttons beside the screen, F1 at the top. Press a button to use it. The right edge of the screen shows what each button does on the current screen. A blank label means the button does nothing there.</td>
+<td>The four buttons beside the screen, F1 at the top. Press a button and let go to use it. The column at the right edge, under the header, shows what each button does on the current screen. A blank label means the button does nothing there.</td>
+</tr>
+<tr>
+<td>F hold</td>
+<td>Keep an F button down for half a second. The button does its second action as soon as the half second ends, and nothing more when you let go. The small label in the button's box names the second action. A button with no second action does its usual action when you let go.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
@@ -1835,11 +1940,11 @@
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Press the dial and let go within 1.5 seconds.</td>
+<td>Press the dial and let go within 1 second.</td>
 </tr>
 <tr>
 <td>Dial hold</td>
-<td>Press the dial and keep it down for 1.5 seconds. This turns the device off on every screen after the boot screen.</td>
+<td>Press the dial and keep it down for 1 second. This turns the device off on every screen after the boot screen.</td>
 </tr>
 <tr>
 <td>Key</td>
@@ -1848,19 +1953,150 @@
 </tbody>
 </table>
 <p>Each screen page in this manual has a table of what these controls do on that screen.</p>
-<p>On every screen, your key sounds the sidetone, keys the func jack when KEY OUT is ON, and types or keys VBand over USB when USB OUT is TEXT or VBAND. The Key row of each table lists what else the key does on that screen.</p>
+<h2 id="held-buttons">Held buttons<a class="headerlink" href="#held-buttons" title="Permanent link">&para;</a></h2>
+<p>Two held buttons work on every screen:</p>
+<table>
+<thead>
+<tr>
+<th>Hold</th>
+<th>Label</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td>Set by F1 HOLD</td>
+<td>Does what F1 HOLD in the DEVICE section of the <a href="../settings/#device">settings</a> sets. The default is KEY OUT.</td>
+</tr>
+<tr>
+<td>F4</td>
+<td><code>HOME</code></td>
+<td>Opens the KEYER screen. A drill or QSO you were in pauses: RESUME in the <a href="../menu/">menu</a> goes on with it.</td>
+</tr>
+</tbody>
+</table>
+<p>On KEYER, F4 has no hold. With the memory row open, every hold sends its memory again and again instead. See <a href="../memories/">Memories</a>.</p>
+<p>F1 HOLD has four values:</p>
+<table>
+<thead>
+<tr>
+<th>F1 HOLD</th>
+<th>Label</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KEY OUT</td>
+<td><code>KEYOUT</code></td>
+<td>Turns KEY OUT on or off. The status line shows <code>KEY OUT ON</code> or <code>KEY OUT OFF</code>. On a screen where your key does not key the radio, it shows <code>KEY OUT ON: NOT ON THIS SCREEN</code>. See <a href="../keys/#the-func-jack">The func jack</a>.</td>
+</tr>
+<tr>
+<td>RESUME</td>
+<td><code>RESUME</code></td>
+<td>Goes on with the drill or QSO you paused. With nothing paused, it starts the last one you opened again. With no last one, the status line shows <code>NOTHING TO RESUME</code>.</td>
+</tr>
+<tr>
+<td>MEM ROW</td>
+<td><code>MEM</code></td>
+<td>Opens the KEYER screen with the <a href="../memories/">memory</a> row open.</td>
+</tr>
+<tr>
+<td>TIMING</td>
+<td><code>TIMING</code></td>
+<td>Opens the <a href="../timing/">TIMING</a> screen.</td>
+</tr>
+</tbody>
+</table>
+<p>Some screens have more held buttons:</p>
+<table>
+<thead>
+<tr>
+<th>Screen</th>
+<th>Hold</th>
+<th>Label</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KEYER, memory row open</td>
+<td>F1 to F4</td>
+<td><code>REPEAT</code></td>
+<td>Sends that memory again and again. See <a href="../memories/">Memories</a>.</td>
+</tr>
+<tr>
+<td>LETTERS</td>
+<td>F2</td>
+<td><code>CLEAR</code></td>
+<td>Erases your letter statistics. See <a href="../letters/">Letters</a>.</td>
+</tr>
+<tr>
+<td>TIMING</td>
+<td>F2</td>
+<td><code>CLEAR</code></td>
+<td>Clears the statistics and the tape. See <a href="../timing/">Timing</a>.</td>
+</tr>
+<tr>
+<td>Settings, editing a memory or your callsign</td>
+<td>F3</td>
+<td><code>CLEAR</code></td>
+<td>Clears the text.</td>
+</tr>
+</tbody>
+</table>
+<p>On every screen, your key sounds the sidetone and types or keys VBand over USB when USB OUT is TEXT or VBAND. On the KEYER, TIMING and RADIO screens, it also keys the func jack when KEY OUT is ON. The Key row of each table lists what else the key does on that screen.</p>
 <h2 id="turn-on">Turn on<a class="headerlink" href="#turn-on" title="Permanent link">&para;</a></h2>
 <p>Click the dial. The boot screen shows Morse code falling as rain in the colors of your palette. The rain builds your callsign in large letters. Then a line with the version and your callsign shows, and a list of startup checks, each marked as passed or failed.</p>
 <p>To skip the boot screen, press any F button or turn the dial. The KEYER screen opens after the boot screen.</p>
 <h2 id="turn-off">Turn off<a class="headerlink" href="#turn-off" title="Permanent link">&para;</a></h2>
-<p>Hold the dial. After 1.5 seconds the status line says <code>RELEASE TO POWER OFF</code>. Let go of the dial, and the device saves everything and turns off.</p>
+<p>Hold the dial. After 1 second the status line says <code>RELEASE TO POWER OFF</code>. Let go of the dial, and the device saves everything and turns off.</p>
+<p>To stay on, press an F button or turn the dial before you let go. The status line clears, and the button does nothing else.</p>
 <p>If a save fails, the status line names what was not saved, and the device waits 3 seconds before it turns off.</p>
 <p>When the battery is empty, the device saves everything and turns off by itself. See <a href="../system/">System</a>.</p>
 <h2 id="the-screen">The screen<a class="headerlink" href="#the-screen" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The header at the top names the screen. It also shows details such as the keyer mode or the speed, and a battery icon at the right end.</li>
-<li>The column at the right edge shows the labels of F1 to F4.</li>
-<li>The status line at the bottom shows short messages. A message stays until the screen draws that area again. See <a href="../status-messages/">Status messages</a>.</li>
+<li>The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end. <code>TX</code> shows while your key keys the radio.</li>
+<li>The column at the right edge, under the header, shows the labels of F1 to F4.</li>
+<li>The footer at the bottom shows what the screen waits for or what the selected row does. Short messages show there for 5 seconds, brighter, and then the footer comes back. See <a href="../status-messages/">Status messages</a>.</li>
+</ul>
+<h2 id="header-values">Header values<a class="headerlink" href="#header-values" title="Permanent link">&para;</a></h2>
+<p>On every screen except KEYER, MENU and SETTINGS, the dial sets values that show at the right end of the header. Each screen shows the values it uses.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>What it is</th>
+<th>Setting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VOL 23</code></td>
+<td>The volume.</td>
+<td>VOLUME in the SOUND section</td>
+</tr>
+<tr>
+<td><code>SND 20</code></td>
+<td>Your keyer speed, in WPM.</td>
+<td>SPEED in the KEYER section</td>
+</tr>
+<tr>
+<td><code>RCV 20/15</code></td>
+<td>The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing.</td>
+<td>CHAR SPEED and FARNSWORTH in the RECEIVE section</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A dial click moves the focus to the next value. The focused number shows inverted. On RECEIVE KOCH, the focus also reaches <code>LEVEL</code> under the header.</li>
+<li>A dial turn changes the focused value.</li>
+<li>A dial turn does nothing while you key, and for one word gap after you stop. A brushed dial cannot change a value in the middle of your over.</li>
+<li>Opening a screen puts the focus on RCV where it shows, on SND on TIMING, and on VOL on the others. After F1 (SET) and then F4 (BACK), the focus stays where it was.</li>
+<li>With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the RECEIVE section of the settings.</li>
+<li>Turn the second RCV number down for Farnsworth spacing. Turn it up to the first number to stop the spacing.</li>
+<li>On QSO and HUNT, a new RCV speed moves every station by the same amount: each keeps its offset from RCV and its fist. Any QRS ends.</li>
 </ul>
 <h2 id="what-the-device-saves">What the device saves<a class="headerlink" href="#what-the-device-saves" title="Permanent link">&para;</a></h2>
 <p>The device keeps everything below when it is off. It has no clock, so it does not keep the date or time.</p>

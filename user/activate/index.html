@@ -1068,6 +1068,8 @@
       
         
       
+        
+      
     
     
     
@@ -1240,6 +1242,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1283,7 +1313,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1305,14 +1335,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1703,6 +1733,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1795,7 +1852,7 @@
 
 <h1 id="activate-a-park-or-summit">Activate a park or summit<a class="headerlink" href="#activate-a-park-or-summit" title="Permanent link">&para;</a></h1>
 <p>On this screen you are the activator on a park (POTA) or a summit (SOTA). You call CQ, a pileup of hunters answers, and you work the hunters one at a time. The device reads each over you send and answers the way hunters do on the air.</p>
-<p>Open 04 POTA or 05 SOTA in the <a href="../menu/">menu</a>. The header shows QSO, the program and ACTIVATE.</p>
+<p>Open ON AIR in the <a href="../menu/">menu</a>, then POTA or SOTA. The header shows the program and the RCV, SND and VOL values.</p>
 <table>
 <thead>
 <tr>
@@ -1817,15 +1874,15 @@
 </tr>
 </tbody>
 </table>
-<p>Set your callsign first on the CALL tab of the <a href="../settings/">settings</a>. The hunters listen for it.</p>
+<p>Set your callsign first in the CALLSIGN section of the <a href="../settings/#callsign">settings</a>. The hunters listen for it.</p>
 <h2 id="work-a-qso">Work a QSO<a class="headerlink" href="#work-a-qso" title="Permanent link">&para;</a></h2>
-<p>Your over ends when you stop keying for three word gaps. The footer tells you what to send next.</p>
+<p>Your over ends one word gap after a last word of <code>K</code>, <code>BK</code> or <code>KN</code>, or when you stop keying for three word gaps. The footer tells you what to send next.</p>
 <ol>
 <li>Call CQ: <code>CQ POTA DE &lt;your call&gt; K</code>. With an empty pileup, one to three hunters call you. Each hunter sends its callsign once or twice.</li>
-<li>Send the callsign of one hunter, then a report: <code>K1ABC 5NN</code>. That hunter sends your report and its state, such as <code>RR TU 559 CA CA 72</code>.</li>
-<li>Close the QSO: send TU, the hunter's state, and 72 or 73: <code>TU CA 72 E E</code>. The QSO goes in your log. Then the pileup calls again, and new hunters can join it.</li>
+<li>Send the callsign of one hunter, then a report: <code>K1ABC 5NN</code>. That hunter sends your report and its state, such as <code>RR TU 559 CA CA 72</code>. A hunter in Canada sends its province, such as <code>ON</code>. A hunter outside the US and Canada sends no state.</li>
+<li>Close the QSO: send TU, the hunter's state, and 72 or 73: <code>TU CA 72 E E</code>. To a hunter with no state, send <code>TU 72 E E</code>. The QSO goes in your log, and most hunters send <code>E E</code> or <code>73 E E</code> back. Then the pileup calls again, and new hunters can join it.</li>
 </ol>
-<p>The device counts a QSO as copied when your closing over holds the hunter's state.</p>
+<p>The device counts a QSO as copied when your closing over holds the hunter's state. A QSO with a hunter that sends no state always counts as copied.</p>
 <p>More ways to talk to the hunters:</p>
 <table>
 <thead>
@@ -1856,7 +1913,7 @@
 <td>The last transmission again, 4 WPM slower. Each QRS slows the hunters by 4 WPM more, down to 8 WPM, until the QSO ends.</td>
 </tr>
 <tr>
-<td><code>AGN</code> or <code>?</code></td>
+<td><code>AGN</code>, <code>AGN?</code> or <code>?</code></td>
 <td>The last transmission again.</td>
 </tr>
 <tr>
@@ -1866,7 +1923,8 @@
 </tbody>
 </table>
 <h2 id="what-the-screen-shows">What the screen shows<a class="headerlink" href="#what-the-screen-shows" title="Permanent link">&para;</a></h2>
-<p>The transcript shows each over: YOU for yours, PILE for the pileup, and the hunter's callsign for the hunter you work. What the hunters send shows as a row of dashes until the QSO is in your log, so you copy it by ear. F3 (HINT) shows the text.</p>
+<p><img alt="The POTA screen after a CQ, with the pileup calling" src="../img/pota.png" /></p>
+<p>The transcript shows each over: YOU for yours, PILE for the pileup, and the hunter's callsign for the hunter you work. What the hunters send shows as a row of dashes until the QSO is in your log, so you copy it by ear. F3 (HINT) shows the text, and then reads HIDE.</p>
 <p>Under the transcript:</p>
 <table>
 <thead>
@@ -1878,14 +1936,14 @@
 <tbody>
 <tr>
 <td>NOW or LAST</td>
-<td>NOW during a QSO. LAST after a QSO: the items show the QSO you logged last.</td>
+<td>NOW during a QSO and before your first. LAST after a QSO: the items show the QSO you logged last.</td>
 </tr>
 <tr>
 <td>LOG</td>
 <td>QSOs in your log and the goal, such as <code>LOG 3/10</code>. The count turns green at the goal.</td>
 </tr>
 <tr>
-<td>COPY</td>
+<td>GOOD</td>
 <td>QSOs where you sent the hunter's state back.</td>
 </tr>
 <tr>
@@ -1898,7 +1956,7 @@
 </tr>
 <tr>
 <td>STATE</td>
-<td>The hunter's state. During a QSO, only HINT shows it. After the QSO, the label is COPIED with a green edge, or MISSED with a red edge: whether you sent the state back.</td>
+<td>The hunter's state or province, or DX for a hunter outside the US and Canada. During a QSO, only HINT shows it. After the QSO, the label is COPIED with a green edge, or MISSED with a red edge: whether you sent the state back.</td>
 </tr>
 <tr>
 <td>PILE</td>
@@ -1907,10 +1965,10 @@
 </tbody>
 </table>
 <p><code>...</code> marks an item with no value yet.</p>
-<p>Under the items, your over shows as you key it. The footer shows the next step. With HINT on, the footer shows the exact text to send.</p>
-<p>Band noise and fading play on this screen when you set them on the SOUND tab.</p>
+<p>Under the items, your over shows as you key it. At the right of your over, the state shows <code>LISTEN</code> while the hunters send, <code>YOUR TURN</code> while they wait for you, and <code>KEYING</code> while you key. The footer shows the next step. With HINT on, the footer shows the exact text to send.</p>
+<p>Band noise and fading play on this screen when you set them in the SOUND section of the settings.</p>
 <h2 id="pileup-settings">Pileup settings<a class="headerlink" href="#pileup-settings" title="Permanent link">&para;</a></h2>
-<p>The QSO tab of the <a href="../settings/">settings</a> sets how the hunters behave:</p>
+<p>The QSO section of the <a href="../settings/#qso">settings</a> sets how the hunters behave. Their base speed is CHAR SPEED, with FARNSWORTH for longer gaps, in the <a href="../settings/#receive">RECEIVE</a> section; MATCH uses your keyer speed.</p>
 <table>
 <thead>
 <tr>
@@ -1919,14 +1977,6 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>CHAR SPEED</td>
-<td>The hunters' base speed. MATCH uses your keyer speed.</td>
-</tr>
-<tr>
-<td>FARNSWORTH</td>
-<td>Longer gaps in what the hunters send.</td>
-</tr>
 <tr>
 <td>PILEUP</td>
 <td>OFF: one hunter at a time. TAKE TURNS: up to four hunters, who call one after another. OVERLAP: up to four hunters, who call at the same time.</td>
@@ -1953,27 +2003,27 @@
 <tbody>
 <tr>
 <td>F1 (SET)</td>
-<td>Stops the hunters and opens the settings at the QSO tab. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings.</td>
+<td>Stops the hunters and opens the settings at the QSO section. F4 (BACK) there returns, and the hunters send their last transmission again at the new settings.</td>
 </tr>
 <tr>
 <td>F2 (QRS)</td>
 <td>The same as sending <code>QRS</code>.</td>
 </tr>
 <tr>
-<td>F3 (HINT)</td>
+<td>F3 (HINT or HIDE)</td>
 <td>Shows or hides the hidden text and the exact next step.</td>
 </tr>
 <tr>
 <td>F4 (BACK)</td>
-<td>Opens the <a href="../menu/">menu</a>. The activation ends, and the log starts from zero next time.</td>
+<td>Pauses the activation and opens the ON AIR list of the <a href="../menu/">menu</a>. Click POTA or SOTA, or RESUME, to go on: the hunters send their last transmission again. The log stays while the device is on, until you start other practice.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>Nothing.</td>
+<td>Changes the focused header value. See <a href="../controls/#header-values">Header values</a>.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Nothing.</td>
+<td>Moves the focus to the next header value.</td>
 </tr>
 <tr>
 <td>Dial hold</td>

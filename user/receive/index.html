@@ -756,6 +756,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ninja" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NINJA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#head" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HEAD
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-koch-method" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1068,6 +1090,8 @@
       
         
       
+        
+      
     
     
     
@@ -1240,6 +1264,34 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../dev/roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -1283,7 +1335,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -1305,14 +1357,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1703,6 +1755,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1745,6 +1824,28 @@
     <span class="md-ellipsis">
       
         What the screen shows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ninja" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NINJA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#head" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HEAD
       
     </span>
   </a>
@@ -1795,8 +1896,7 @@
 
 <h1 id="receive-drills">Receive drills<a class="headerlink" href="#receive-drills" title="Permanent link">&para;</a></h1>
 <p>In a receive drill, the device sends a group of characters, and you key back what you copied. The device then shows the group with each character marked right or wrong.</p>
-<p>To start, open 03 RECEIVE in the <a href="../menu/">menu</a>. The Koch drill starts. F2 (KIND) moves to the next drill:</p>
-<p>KOCH, WORDS, CALLS, then the <a href="../ragchew/">ragchew</a> CHEW and QUIZ, then KOCH again.</p>
+<p>To start, open RECEIVE in the <a href="../menu/">menu</a>, then the drill. The header shows the name of the drill. For a ragchew to copy, see <a href="../ragchew/">Ragchew</a> in the ON AIR list.</p>
 <table>
 <thead>
 <tr>
@@ -1817,26 +1917,97 @@
 <td>CALLS</td>
 <td>One US callsign.</td>
 </tr>
+<tr>
+<td>NINJA</td>
+<td>One word from the content pack, then the voice says it. See <a href="#ninja">NINJA</a>.</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td>Words that get longer as you copy them, then two words, then a QSO line. See <a href="#head">HEAD</a>.</td>
+</tr>
 </tbody>
 </table>
-<p>The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECV tab in <a href="../settings/">Settings</a>. The header shows the drill and the speed, such as <code>20WPM</code>, or <code>20/10WPM</code> with Farnsworth spacing.</p>
+<p>The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECEIVE section in <a href="../settings/#receive">Settings</a>. The RCV value in the header shows the speed, such as <code>20/20</code>, or <code>20/10</code> with Farnsworth spacing.</p>
 <h2 id="how-a-drill-runs">How a drill runs<a class="headerlink" href="#how-a-drill-runs" title="Permanent link">&para;</a></h2>
+<p><img alt="The WORDS drill after one scored group" src="../img/receive-words.png" /></p>
 <ol>
-<li>The device sends a group. The status shows <code>LISTEN</code>.</li>
-<li>The status shows <code>YOUR TURN</code>. Start to key what you copied within 5 seconds. You can also start while the group still plays.</li>
-<li>While you key, the status shows <code>PAUSE ENDS</code>: when you stop keying for three word gaps, your copy ends.</li>
+<li>The device sends a group. The state at the right of your copy shows <code>LISTEN</code>.</li>
+<li>The state shows <code>YOUR TURN</code>. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.</li>
+<li>While you key, the state shows <code>KEYING</code>. When you stop keying for three word gaps, your copy ends.</li>
 <li>The device scores your copy and shows it in the list. The next group starts after about 1 second.</li>
 </ol>
-<p>If you do not start to key within 5 seconds, the group counts as missed.</p>
+<p>If you do not start to key within 5 seconds, the group counts as missed when you copy the next one. After two such groups in a row, the drill pauses, and neither group counts: the status line shows <code>NO COPY FOR 2 GROUPS: PAUSED</code>. Key any character, or press F3 (GO), to go on. The character you key does not count as copy.</p>
 <p>To hear the group again, key <code>?</code> alone as your copy.</p>
 <h2 id="what-the-screen-shows">What the screen shows<a class="headerlink" href="#what-the-screen-shows" title="Permanent link">&para;</a></h2>
+<p><img alt="The KOCH drill" src="../img/receive-koch.png" /></p>
 <ul>
-<li>The top line: in KOCH, your level and your progress to the next level, such as <code>LEVEL 5  80% OF 30  NEED 90% OF 50</code>.</li>
-<li>The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. WORDS and CALLS show all 44 characters.</li>
+<li>The top line: in KOCH, your level and your progress to the next level, such as <code>LEVEL 5  30/50 CHARS  80%  NEED 90%</code>: the characters scored at this level, up to the last 50, the percent of them you copied, and the percent the next level needs.</li>
+<li>The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. The other drills show all 44 characters.</li>
+<li>In HEAD, the top line shows your rung and what it sends, such as <code>RUNG 3 OF 8  1 WORD OF 5 CHARS</code>.</li>
 <li>The list of recent groups. Each row shows the group that was sent, then your copy with each character marked: green for right, red and inverted for wrong, <code>_</code> for missed. The score shows at the right, such as <code>4/5</code>.</li>
-<li>Your copy as you key it, with the status at the right.</li>
-<li>The footer: your score for this session, such as <code>SESSION 85%  120 CHARS</code>.</li>
+<li>In HEAD, each item takes two rows: what was sent, then your marked copy under it. The list shows the last 3 items.</li>
+<li>Your copy as you key it, with the state at the right: <code>LISTEN</code>, <code>YOUR TURN</code>, <code>KEYING</code> or <code>PAUSED</code>.</li>
+<li>The footer: your score for this session, such as <code>SESSION 85%  120 CHARS</code>. Before your first score, and while you wait to key, it says what to do. While the drill is paused, it says how to go on.</li>
 </ul>
+<h2 id="ninja">NINJA<a class="headerlink" href="#ninja" title="Permanent link">&para;</a></h2>
+<p><img alt="The NINJA drill" src="../img/receive-ninja.png" /></p>
+<p>NINJA works like <a href="https://morsecode.ninja">Morse Code Ninja</a>: the device sends a word, and then the voice says it. You can just listen, or copy it in your head and key it back first.</p>
+<ol>
+<li>The device sends a word. The state shows <code>LISTEN</code>.</li>
+<li>The state shows <code>YOUR TURN</code>. To be scored, start to key the word within 1.5 seconds.</li>
+<li>If you key, the device scores your copy as in the other drills, then the voice says the word.</li>
+<li>If you do not key, the voice says the word, and the list shows it with no score.</li>
+<li>The next word starts about 1 second after the voice ends.</li>
+</ol>
+<p>The words are the ham words and abbreviations of the content pack, then the most common English words: 500 by default. NINJA WORDS in the DRILLS section of the <a href="../settings/#drills">settings</a> sets how many. An abbreviation on its own comes with its meaning: after <code>QTH</code>, the voice says "Q T H. location".</p>
+<p>NINJA needs the content pack. Without it, the drill shows <code>CONTENT PACK MISSING: INSTALL IT</code> and sends nothing. <a href="../install/">Install</a> again, with the <a href="../install/#the-content-pack">content pack</a>.</p>
+<h2 id="head">HEAD<a class="headerlink" href="#head" title="Permanent link">&para;</a></h2>
+<p><img alt="The HEAD drill" src="../img/receive-head.png" /></p>
+<p>HEAD is a head-copy ladder. You copy each item in your head while it plays, and key it back after it ends. Keying while it plays does not count.</p>
+<table>
+<thead>
+<tr>
+<th>Rung</th>
+<th>What the device sends</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>One word of 2 or 3 characters</td>
+</tr>
+<tr>
+<td>2</td>
+<td>One word of 4</td>
+</tr>
+<tr>
+<td>3</td>
+<td>One word of 5</td>
+</tr>
+<tr>
+<td>4</td>
+<td>One word of 6</td>
+</tr>
+<tr>
+<td>5</td>
+<td>One word of 7 to 10</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Two words of 2 to 4 each</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Two words of 3 to 6 each</td>
+</tr>
+<tr>
+<td>8</td>
+<td>A line of a QSO, such as <code>NAME BOB BOB</code> or <code>RIG IC7300 100W</code></td>
+</tr>
+</tbody>
+</table>
+<p>Three copies in a row all right move you up one rung. Three copies in a row under half right move you down one. An extra character makes a copy not all right. A <code>?</code> repeat does not count.</p>
+<p>The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung, also after you turn it off.</p>
 <h2 id="the-koch-method">The Koch method<a class="headerlink" href="#the-koch-method" title="Permanent link">&para;</a></h2>
 <p>The KOCH drill starts at level 2, with K and M. You move up one level when you copy at least 90 % right over 50 characters. Each level adds the next character in this order:</p>
 <p><code>K M U R E S N A P T L W I . J Z = F O Y , V G 5 / Q 9 2 H 3 8 B ? 4 7 C 1 D 6 0 X &lt;AR&gt; &lt;SK&gt; &lt;KN&gt;</code></p>
@@ -1854,27 +2025,31 @@
 <tbody>
 <tr>
 <td>F1 (SET)</td>
-<td>Pauses the drill and opens the settings at the RECV tab. F4 (BACK) there returns, and the next group plays at the new settings.</td>
+<td>Pauses the drill and opens the settings at the RECEIVE section, or at DRILLS from NINJA. F4 (BACK) there returns, and the next group plays at the new settings.</td>
 </tr>
 <tr>
-<td>F2 (KIND)</td>
-<td>Starts the next drill.</td>
+<td>F2 (AGN)</td>
+<td>While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused.</td>
 </tr>
 <tr>
 <td>F3 (STOP or GO)</td>
-<td>Pauses the drill, or starts it again.</td>
+<td>Pauses the drill, or starts it again. While the drill is paused, a character you key also starts it again.</td>
 </tr>
 <tr>
 <td>F4 (BACK)</td>
-<td>Opens the <a href="../menu/">menu</a>.</td>
+<td>Pauses the drill and opens the RECEIVE list of the <a href="../menu/">menu</a>. Click the drill or RESUME there to go on.</td>
 </tr>
 <tr>
 <td>Dial turn</td>
-<td>KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero.</td>
+<td>Changes the focused header value. See <a href="../controls/#header-values">Header values</a>.</td>
+</tr>
+<tr>
+<td>Dial turn on <code>LEVEL</code></td>
+<td>KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns.</td>
 </tr>
 <tr>
 <td>Dial click</td>
-<td>Nothing.</td>
+<td>Moves the focus to the next header value.</td>
 </tr>
 <tr>
 <td>Dial hold</td>

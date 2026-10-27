@@ -1,7 +1,8 @@
 #!/bin/sh
 # Installs PocketCW, or the stock firmware V5.03, on a HamCube from macOS.
-# A first install writes an F file to SPI flash before the A file: the bootloader can fail an A write
-# that no F write came before.
+# A first install writes an F file to SPI flash before the A file: the bootloader can fail an A
+# write that no F write came before. A PocketCW install asks whether to write the content pack,
+# since most updates leave it unchanged.
 # usage: curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh
 #        curl -fsSL https://kvmet.github.io/k5mme_pocketcw/install.sh | sh -s stock
 # The shell reads this script from its stdin, so prompts and pocketcw-flash read the terminal.
@@ -28,36 +29,38 @@ check() {
     [ "$(shasum -a 256 "$1" | cut -d ' ' -f 1)" = "$2" ] || fail "$(basename "$1") is not the V5.03 file this script expects"
 }
 
+# flash FILE...
 flash() {
-    "$work/pocketcw-flash" "$1" </dev/tty
-}
-
-# flash_pair F_FILE WHAT A_FILE
-flash_pair() {
-    echo
-    echo "Step 1 of 2: $2."
-    flash "$1"
-    echo "Do not turn it on yet."
-    echo
-    echo "Step 2 of 2: the firmware."
-    flash "$3"
+    "$work/pocketcw-flash" "$@" </dev/tty
     echo "Then click the dial to turn it on."
 }
 
 install_pocketcw() {
     mkdir "$work/pocketcw"
     get "$release/A000014.bin" "$work/pocketcw/A000014.bin"
-    echo "A first install on a device writes a small PocketCW file, then the firmware."
-    printf "Is this the first PocketCW install on this device? [Y/n] "
+    echo
+    echo "The content pack holds the voice and the words for the drills. Install it:"
+    echo "  - on the first PocketCW install on this device, or when the device stays on the"
+    echo "    update screen after an install."
+    echo "  - when the content pack changed since you last installed it. The release notes"
+    echo "    name the release that last changed it."
+    echo "  - when NINJA or HEAD shows CONTENT PACK MISSING."
+    echo "Otherwise the firmware alone is enough. The pack is about 8 MB and takes several"
+    echo "minutes to install."
+    echo
+    echo "If you might go back to the stock firmware: the content pack can write over the"
+    echo "stock firmware's contact log, and that log is then lost. A first install needs"
+    echo "the content pack all the same."
+    echo
+    printf "Install the content pack? [y/N] "
     read -r answer </dev/tty
     case $answer in
-    [nN]*)
-        flash "$work/pocketcw/A000014.bin"
-        echo "Then click the dial to turn it on."
+    [yY]*)
+        get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
+        flash "$work/pocketcw/F000400.bin" "$work/pocketcw/A000014.bin"
         ;;
     *)
-        get "$release/F000400.bin" "$work/pocketcw/F000400.bin"
-        flash_pair "$work/pocketcw/F000400.bin" "the PocketCW file" "$work/pocketcw/A000014.bin"
+        flash "$work/pocketcw/A000014.bin"
         ;;
     esac
 }
@@ -68,7 +71,7 @@ install_stock() {
     check "$work/stock/F0000C0.bin" $vendor_f_sha256
     get "$vendor/A000014.bin" "$work/stock/A000014.bin"
     check "$work/stock/A000014.bin" $vendor_a_sha256
-    flash_pair "$work/stock/F0000C0.bin" "the stock screen images" "$work/stock/A000014.bin"
+    flash "$work/stock/F0000C0.bin" "$work/stock/A000014.bin"
 }
 
 main() {

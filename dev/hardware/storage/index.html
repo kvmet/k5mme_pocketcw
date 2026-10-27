@@ -977,6 +977,8 @@
       
         
       
+        
+      
     
     
     
@@ -1147,6 +1149,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1194,7 +1224,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" checked>
         
           
           <div class="md-nav__link md-nav__container">
@@ -1216,14 +1246,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1722,6 +1752,33 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../credits/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -1932,7 +1989,16 @@
 <h3 id="read-failures">Read failures<a class="headerlink" href="#read-failures" title="Permanent link">&para;</a></h3>
 <p>When a read fails at startup, PocketCW starts with defaults for that record and refuses every write until the next power on. A write could otherwise replace a good record with defaults. The EEPROM row of the SYSTEM screen then shows FAIL.</p>
 <h2 id="spi-flash">SPI flash<a class="headerlink" href="#spi-flash" title="Permanent link">&para;</a></h2>
-<p>The SPI flash holds 16 MB. The vendor resources end just under 0x1000000. See <a href="../flash-layout/">Flash layout and bootloader</a> for what lives where. PocketCW never reads the SPI flash.</p>
+<p>A GigaDevice GD25Q128 (JEDEC ID <code>C8 40 18</code>), 16 MB, on SPI1 with the screen: <code>FLASH_CS</code> PB9, <code>LCD_CS</code> PB6, MISO PB4. Confirmed on 2.64 with <code>firmware/src/bin/flashprobe.rs</code>. See <a href="../flash-layout/">Flash layout and bootloader</a> for what lives where.</p>
+<ul>
+<li>Status registers 1 to 3 read <code>00 00 40</code>. No block protection: BP 0, CMP 0, WPS 0.</li>
+<li>SFDP 1.0, with a 9 dword basic table. It lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, and no erase times or page size. Pages are 256 bytes.</li>
+<li>Reads match at 18 MHz and at 4.5 MHz.</li>
+<li>Erasing a 4 KB sector takes 15 ms when it is blank and 45 ms after it was programmed.</li>
+<li>Programming a 256 byte page takes at most 917 µs, with the transfer at 18 MHz.</li>
+<li>One page programmed in 16 pieces of 16 bytes reads back whole. So small records can go into a page one at a time.</li>
+</ul>
+<p><code>firmware/src/spi_flash.rs</code> is the driver: read 0x03, page program 0x02, 4 KB erase 0x20, JEDEC ID 0x9F, SFDP 0x5A, status 0x05, 0x35 and 0x15. The LCD changes the SPI1 divider and PB4, so every flash command sets both. The app reads the content pack (<code>firmware/src/pack.rs</code>) and writes nothing.</p>
 <h2 id="no-clock">No clock<a class="headerlink" href="#no-clock" title="Permanent link">&para;</a></h2>
 <p>The board has no real-time clock. The date and time are lost at power off.</p>
 
