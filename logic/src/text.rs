@@ -148,6 +148,33 @@ impl fmt::Display for Hundredths {
     }
 }
 
+// `str::contains`, `find` and `trim_end_matches` with a `&str` pattern use the Two-Way search,
+// about 2.6 KB. The bots search a line or less, where byte compares at each offset are enough.
+
+/// Byte index of the first `needle` in `hay`.
+pub fn find(hay: &str, needle: &str) -> Option<usize> {
+    if needle.is_empty() {
+        return Some(0);
+    }
+    hay.as_bytes().windows(needle.len()).position(|w| w == needle.as_bytes())
+}
+
+/// Whether `needle` is in `hay`.
+pub fn has(hay: &str, needle: &str) -> bool {
+    find(hay, needle).is_some()
+}
+
+/// `s` with every trailing `pat` removed.
+pub fn trim_end<'a>(mut s: &'a str, pat: &str) -> &'a str {
+    if pat.is_empty() {
+        return s;
+    }
+    while let Some(rest) = s.strip_suffix(pat) {
+        s = rest;
+    }
+    s
+}
+
 /// Splits `s` into lines of at most `cols` characters, breaking at spaces. A word longer than a
 /// line is cut where the line ends.
 pub fn wrap(s: &str, cols: usize) -> impl Iterator<Item = &str> {
@@ -177,6 +204,17 @@ mod tests {
 
     fn lines(s: &str, cols: usize) -> Vec<&str> {
         wrap(s, cols).collect()
+    }
+
+    #[test]
+    fn search_matches_std() {
+        for (hay, needle) in [("ABC", ""), ("", "A"), ("AB", "ABC"), ("TU 73", "73"), ("CQ DE K5MME", " DE "), ("ÉA", "A"), ("AAB", "AB")] {
+            assert_eq!(find(hay, needle), hay.find(needle), "{hay} {needle}");
+            assert_eq!(has(hay, needle), hay.contains(needle), "{hay} {needle}");
+        }
+        for (s, pat) in [("K5MME/P/P", "/P"), ("QTH TX =", " ="), ("=", " ="), ("AB", ""), ("", "X")] {
+            assert_eq!(trim_end(s, pat), s.trim_end_matches(pat), "{s} {pat}");
+        }
     }
 
     #[test]

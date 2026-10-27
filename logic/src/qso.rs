@@ -207,7 +207,7 @@ impl Bot {
         // The over with spaces removed and your call cut out, so calls match however the
         // decoder split or joined the words around them.
         let squashed = Text::<MAX_TEXT>::format(format_args!("{}", Squashed(over)));
-        let names_me = !self.my_call.is_empty() && squashed.as_str().contains(self.my_call.as_str());
+        let names_me = !self.my_call.is_empty() && crate::text::has(squashed.as_str(), self.my_call.as_str());
         let others = cut(squashed.as_str(), self.my_call.as_str());
 
         if has("QRS") {
@@ -277,7 +277,7 @@ impl Bot {
         for h in self.pile.iter().flatten() {
             rest = cut(rest.as_str(), h.call.as_str());
         }
-        ["TU", "73", "72", "TNX", "EE", "<SK>"].iter().any(|w| rest.as_str().contains(w))
+        ["TU", "73", "72", "TNX", "EE", "<SK>"].iter().any(|w| crate::text::has(rest.as_str(), w))
     }
 
     /// Two hunters in three sign off before they go.
@@ -305,7 +305,7 @@ impl Bot {
     /// The pileup hunter whose whole call is in `squashed`; the longest wins, so K5ABC beats
     /// K5AB.
     fn exact_call(&self, squashed: &str) -> Option<usize> {
-        let found = |h: &Option<Hunter>| h.filter(|h| squashed.contains(h.call.as_str())).map(|h| h.call.len());
+        let found = |h: &Option<Hunter>| h.filter(|h| crate::text::has(squashed, h.call.as_str())).map(|h| h.call.len());
         (0..PILE_MAX).filter(|&i| found(&self.pile[i]).is_some()).max_by_key(|&i| found(&self.pile[i]))
     }
 
@@ -323,7 +323,7 @@ impl Bot {
                 let Some(h) = h else { continue };
                 let call = h.call.as_str();
                 let same = call.bytes().zip(fragment.bytes()).filter(|(a, b)| a == b).count();
-                let score = if call.contains(fragment) {
+                let score = if crate::text::has(call, fragment) {
                     fragment.len() + 1
                 } else if call.len() == fragment.len() && same + 1 >= call.len() {
                     same
@@ -525,7 +525,9 @@ fn sent_word(words: &[&str], target: &str) -> bool {
     });
     split
         || words.iter().any(|w| {
-            w.match_indices(target).any(|(at, _)| made_of(&w[..at], &FILLER) && made_of(&w[at + target.len()..], &FILLER))
+            (0..=w.len()).filter(|&at| w.is_char_boundary(at)).any(|at| {
+                w[at..].starts_with(target) && made_of(&w[..at], &FILLER) && made_of(&w[at + target.len()..], &FILLER)
+            })
         })
 }
 
@@ -537,7 +539,7 @@ fn made_of(s: &str, tokens: &[&str]) -> bool {
 /// `s` without the first `part` in it.
 pub(crate) fn cut(s: &str, part: &str) -> Text<MAX_TEXT> {
     let mut out = Text::new();
-    let (before, after) = match s.find(part).filter(|_| !part.is_empty()) {
+    let (before, after) = match crate::text::find(s, part).filter(|_| !part.is_empty()) {
         Some(at) => (&s[..at], &s[at + part.len()..]),
         None => (s, ""),
     };

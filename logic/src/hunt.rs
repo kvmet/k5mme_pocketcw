@@ -32,7 +32,7 @@ pub struct Activator {
 impl Activator {
     /// The call without /P, which is what you log.
     pub fn base_call(&self) -> &str {
-        self.call.as_str().trim_end_matches("/P")
+        crate::text::trim_end(self.call.as_str(), "/P")
     }
 }
 
@@ -140,9 +140,9 @@ impl Hunt {
         let has = |w: &str| words.contains(&w);
         let squashed = Text::<MAX_TEXT>::format(format_args!("{}", Squashed(over)));
         let me = self.my_call.as_str();
-        let names_me = !me.is_empty() && squashed.as_str().contains(me);
+        let names_me = !me.is_empty() && crate::text::has(squashed.as_str(), me);
         let others = cut(cut(squashed.as_str(), me).as_str(), self.activator.base_call());
-        let p2p = others.as_str().contains("P2P");
+        let p2p = crate::text::has(others.as_str(), "P2P");
 
         if has("QRS") {
             self.qrs = self.qrs.saturating_add(QRS_STEP);
@@ -190,7 +190,7 @@ impl Hunt {
     pub fn log(&mut self, copy: &str, my_wpm: u8) -> Option<Logged> {
         let Phase::Closed { busted, p2p } = self.phase else { return None };
         let squashed = Text::<MAX_TEXT>::format(format_args!("{}", Squashed(copy)));
-        let copied = squashed.as_str().contains(self.activator.base_call());
+        let copied = crate::text::has(squashed.as_str(), self.activator.base_call());
         let logged = Logged { activator: self.activator, copied, busted, p2p };
         self.logged = self.logged.saturating_add(1);
         self.good = self.good.saturating_add((copied && !busted) as u8);
@@ -242,7 +242,7 @@ impl Hunt {
             .iter()
             .map(|w| w.trim_end_matches('?'))
             .filter(|w| w.len() >= 2 && !["CQ", "DE", "K", "BK", "P2P"].contains(w))
-            .find(|w| me.contains(w) || w.bytes().any(|b| b.is_ascii_digit()))
+            .find(|w| crate::text::has(me, w) || w.bytes().any(|b| b.is_ascii_digit()))
     }
 
     fn send_exchange(&mut self, heard: Text<CALL_LEN>, p2p: bool, out: Out) {
@@ -283,7 +283,7 @@ impl Hunt {
 
 /// A closing over: `others` is the squashed over without your call or the activator's.
 fn closes(others: &str) -> bool {
-    CLOSING.iter().any(|w| others.contains(w))
+    CLOSING.iter().any(|w| crate::text::has(others, w))
 }
 
 /// Letters and at least one digit, at least three characters: the shape of a call.

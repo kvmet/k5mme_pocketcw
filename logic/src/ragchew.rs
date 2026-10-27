@@ -405,9 +405,9 @@ pub fn sentence(rng: &mut Rng) -> Text<MAX_GROUP> {
     let mut chat = Ragchew::new(rng.below(u32::MAX));
     chat.over = 2 + rng.below(DITS as u32 - 2) as usize;
     let over = chat.over();
-    let lines = || over.lines().iter().filter(|line| !line.as_str().contains(" DE "));
+    let lines = || over.lines().iter().filter(|line| !crate::text::has(line.as_str(), " DE "));
     let line = lines().nth(rng.below(lines().count() as u32) as usize).map_or("", |line| line.as_str());
-    Text::format(format_args!("{}", line.trim_end_matches(" =")))
+    Text::format(format_args!("{}", crate::text::trim_end(line, " =")))
 }
 
 #[cfg(test)]
