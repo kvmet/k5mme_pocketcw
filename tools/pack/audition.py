@@ -6,6 +6,8 @@ voice's folder. A fixed clip goes to the pack's cache, so the next pack build ta
 Good and Bad mark the clip as it is now. With the list focused: G good, B bad, N note (Enter in the note marks bad), Space plays again,
 Up and Down move. Enter in the respelling or phonemes speaks the fix, Keep fix saves it and
 marks the clip good, and Reset puts back the word list's said. Esc goes back to the list.
+Find (Ctrl+F, or Cmd+F on a Mac) goes to the search, which matches a row's text or what it
+says; Enter there goes back to the list.
 
     tools/pack/.venv/bin/python tools/pack/audition.py
 """
@@ -133,12 +135,14 @@ class Review:
 
 
 class Model(QAbstractTableModel):
-    """The rows of `review` that the filter shows."""
+    """The rows of `review` that the filter and the search show."""
 
     def __init__(self, review: Review):
         super().__init__()
         self.review = review
         self.filter = FILTERS[0]
+        # Casefolded; matches anywhere in a row's text or what it says.
+        self.search = ""
         self.shown = self.matching()
 
     def matching(self) -> list[int]:
@@ -146,11 +150,13 @@ class Model(QAbstractTableModel):
 
     def shows(self, row: Row) -> bool:
         state = self.review.state(row)
-        return self.filter == "All" or state == "bad" or (self.filter == "To review" and state in ("unmarked", "stale"))
+        filtered = self.filter == "All" or state == "bad" or (self.filter == "To review" and state in ("unmarked", "stale"))
+        return filtered and (self.search in row.text.casefold() or self.search in row.said.casefold())
 
-    def set_filter(self, name: str):
+    def set_filter(self, name: str, search: str):
         self.beginResetModel()
         self.filter = name
+        self.search = search.casefold()
         self.shown = self.matching()
         self.endResetModel()
 
@@ -158,7 +164,7 @@ class Model(QAbstractTableModel):
         return self.review.rows[self.shown[index]]
 
     def changed(self, index: int):
-        """Takes the row out when it no longer matches the filter, or redraws it."""
+        """Takes the row out when it no longer matches the filter and search, or redraws it."""
         if self.shows(self.row(index)):
             self.dataChanged.emit(self.index(index, 0), self.index(index, len(COLUMNS) - 1))
         else:
@@ -234,6 +240,10 @@ class Window(QMainWindow):
 
         self.filter = QComboBox()
         self.filter.addItems(FILTERS)
+        self.search = QLineEdit()
+        find = QKeySequence(QKeySequence.Find).toString(QKeySequence.NativeText)
+        self.search.setPlaceholderText(f"search text or says ({find})")
+        self.search.setClearButtonEnabled(True)
         self.progress = QLabel()
         self.model = Model(review)
         self.table = Table()
@@ -289,6 +299,7 @@ class Window(QMainWindow):
         left = QVBoxLayout()
         top = QHBoxLayout()
         top.addWidget(self.filter)
+        top.addWidget(self.search, 1)
         top.addWidget(self.progress, 1)
         left.addLayout(top)
         left.addWidget(self.table)
@@ -304,6 +315,8 @@ class Window(QMainWindow):
         self.play_timer = QTimer(singleShot=True, interval=PLAY_DELAY_MS)
         self.play_timer.timeout.connect(self.play_kept)
         self.filter.currentTextChanged.connect(self.set_filter)
+        self.search.textChanged.connect(self.set_filter)
+        self.search.returnPressed.connect(self.table.setFocus)
         self.table.selectionModel().currentRowChanged.connect(self.show_row)
         mark_good = lambda: self.mark("good", "")
         mark_bad = lambda: self.mark("bad", self.note.text())
@@ -327,6 +340,7 @@ class Window(QMainWindow):
             shortcut.setContext(Qt.WidgetShortcut)
             shortcut.activated.connect(action)
         QShortcut(QKeySequence("Escape"), self).activated.connect(self.table.setFocus)
+        QShortcut(QKeySequence.Find, self).activated.connect(self.search.setFocus)
         self.select(0)
         self.table.setFocus()
 
@@ -350,9 +364,20 @@ class Window(QMainWindow):
         else:
             self.table.setCurrentIndex(target)
 
-    def set_filter(self, name: str):
-        self.model.set_filter(name)
-        self.select(0)
+    def set_filter(self):
+        """Stays on the current row when it still matches, with what its fields hold."""
+        current = self.current()
+        self.model.set_filter(self.filter.currentText(), self.search.text())
+        kept = next((i for i in range(self.model.rowCount()) if self.model.row(i) is current), None)
+        if kept is None:
+            self.select(0)
+            return
+        # Without currentRowChanged, show_row leaves an unsaved fix in place and plays nothing.
+        selection = self.table.selectionModel()
+        selection.blockSignals(True)
+        self.table.setCurrentIndex(self.model.index(kept, 0))
+        selection.blockSignals(False)
+        self.table.scrollTo(self.model.index(kept, 0))
 
     def phoneme_keys(self) -> QGroupBox:
         """A key for each of PHONEME_KEYS, which types it in the phonemes field."""
