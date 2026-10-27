@@ -21,7 +21,7 @@ const _: () = assert!(INPUT_COLS as i32 * crate::gfx::CHAR_W <= MAIN - 2 - BADGE
 pub(super) const FOOT_TOP: i32 = INPUT_Y + 18;
 const FOOT_Y: i32 = 226;
 pub(super) const FOOT_COLS: usize = ((MAIN - 2) / TINY_W) as usize;
-const STATUS_MS: u32 = 3000;
+const STATUS_MS: u32 = 5000;
 
 pub(super) type FootLine = Text<FOOT_COLS>;
 

@@ -64,7 +64,7 @@ When the battery is empty, the device saves everything and turns off by itself. 
 
 - The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end. `TX` shows while your key keys the radio.
 - The column at the right edge, under the header, shows the labels of F1 to F4.
-- The footer at the bottom shows what the screen waits for or what the selected row does. Short messages show there for 3 seconds, brighter, and then the footer comes back. See [Status messages](status-messages.md).
+- The footer at the bottom shows what the screen waits for or what the selected row does. Short messages show there for 5 seconds, brighter, and then the footer comes back. See [Status messages](status-messages.md).
 
 ## Header values
 

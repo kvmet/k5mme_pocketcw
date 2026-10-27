@@ -1,6 +1,6 @@
 # Status messages
 
-Short messages show on the bottom line of the screen, brighter than the screen's own footer. Most show for 3 seconds, and then the footer comes back. A stuck contact, `RELEASE TO POWER OFF` and `BATTERY EMPTY: POWERING OFF` stay until the state ends. In this list, `n` is a number and `X` is a character.
+Short messages show on the bottom line of the screen, brighter than the screen's own footer. Most show for 5 seconds, and then the footer comes back. A stuck contact, `RELEASE TO POWER OFF` and `BATTERY EMPTY: POWERING OFF` stay until the state ends. In this list, `n` is a number and `X` is a character.
 
 ## Power and battery
 
