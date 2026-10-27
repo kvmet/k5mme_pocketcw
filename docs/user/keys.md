@@ -47,7 +47,7 @@ The func jack keys a radio. It follows these settings in the KEYER section:
 | OUT TYPE | STRAIGHT | One line closes while the keyer sends, for a radio's straight key input. OUT LINES picks TIP KEYS or RING KEYS. |
 | OUT TYPE | PADDLE | Tip and ring follow your dot contact and your dash contact, for the radio's own keyer. OUT LINES picks DIT ON TIP or DIT ON RING. |
 
-F3 (OUT) on the KEYER screen turns KEY OUT on and off.
+Hold F1 to turn KEY OUT on and off from any screen, while F1 HOLD in the DEVICE section of the [settings](settings.md#device) is KEY OUT, its default.
 
 Only your own keying, your [memories](memories.md) and a logging program over the [serial port](usb.md) key the func jack. The practice screens and the settings never let your key key it, so a drill stays off the air. The stations of the practice screens never key it. A logging program keys it on every screen while KEY OUT is ON. Memories key the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT.
 

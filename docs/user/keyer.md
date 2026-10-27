@@ -57,7 +57,7 @@ Each character has an underline in its grade: a thin line for good, a dashed lin
 | - | - |
 | F1 (SET) | Opens the settings at the KEYER section. |
 | F2 (MEM) | Opens the memory row. See [Memories](memories.md). |
-| F3 (OUT) | Turns KEY OUT on or off. |
+| F3 (TMNG) | Opens the [TIMING](timing.md) screen. |
 | F4 (MENU) | Opens the [menu](menu.md). |
 | Dial turn | Changes the marked value: speed, volume or tone. A turn does nothing while you key, and for one word gap after you stop. |
 | Dial click | Moves the mark to the next value: speed, then volume, then tone. |

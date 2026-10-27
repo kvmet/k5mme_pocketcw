@@ -10,7 +10,7 @@ use pocketcw_logic::{
     settings::{Field, Settings},
 };
 
-use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::Section};
+use super::{COLS, Screen, Ui, dit_ms, lanes, mode_name, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, blocks, blocks_width, para, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::{Tenths, Text};
@@ -35,7 +35,7 @@ const DECODE_STEP: i32 = 18;
 /// The underline takes the bottom row of the text cell and the 2 rows under it.
 const UNDERLINE_Y: i32 = DECODE_STEP - UNDERLINE_H;
 const ROWS: usize = 4;
-pub(super) const KEYS: [&str; 4] = ["SET", "MEM", "OUT", "MENU"];
+pub(super) const KEYS: [&str; 4] = ["SET", "MEM", "TMNG", "MENU"];
 
 /// What the dial sets here, in click order.
 pub(super) const TARGETS: [Target; 3] = [Target::Send, Target::Volume, Target::Tone];
@@ -210,10 +210,7 @@ impl Ui {
             }
             Action::Soft(0) => self.open_settings_at(lcd, s, Section::Keyer),
             Action::Soft(1) => self.open_mem_row(lcd),
-            Action::Soft(2) => {
-                s.adjust(Field::KeyOut, 1);
-                self.key_out_changed(lcd, s);
-            }
+            Action::Soft(2) => self.open(lcd, s, Screen::Timing),
             Action::Soft(3) => self.open_menu(lcd, s),
             _ => {}
         }
