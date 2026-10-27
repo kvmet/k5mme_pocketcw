@@ -13,6 +13,8 @@ Steps run in order:
   expect REGEX                   wait up to 60 s for an event line that matches
   listen MS                      show event lines for MS
   shots DIR                      save every screen into DIR; start on KEYER
+  manual                         save every screen into docs/user/img at twice the size, with
+                                 the default settings and your callsign; start on KEYER
   info                           show the firmware version, screen, panel and pack
   get NAME                       show a setting or memory; get all shows every one
   set NAME VALUE                 change a setting or memory, as the screen writes it
@@ -99,8 +101,9 @@ class Device:
                 raise ValueError(f'only F1 to F4 hold, not {b}')
             self._write(f'HOLD {b}\n')
 
-    def shot(self, path=None):
-        """The screen as (width, height, 8-bit RGB bytes); saved as a PNG when `path` is given."""
+    def shot(self, path=None, scale=1):
+        """The screen as (width, height, 8-bit RGB bytes); saved as a PNG when `path` is given,
+        each pixel `scale` pixels wide and high."""
         self._write('SHOT\n')
         deadline = time.monotonic() + SHOT_TIMEOUT_S
         while True:
@@ -123,7 +126,7 @@ class Device:
         self.data = self.data[size:]
         if path:
             with open(path, 'wb') as f:
-                f.write(png(width, height, rgb))
+                f.write(png(width, height, rgb, scale))
         return width, height, rgb
 
     def send(self, text, timeout=EXPECT_TIMEOUT_S):
@@ -333,9 +336,14 @@ def find_port():
     return ports[0]
 
 
-def png(width, height, rgb):
+def png(width, height, rgb, scale=1):
     stride = width * 3
-    rows = b''.join(b'\x00' + rgb[y * stride:(y + 1) * stride] for y in range(height))
+    rows = b''
+    for y in range(height):
+        row = rgb[y * stride:(y + 1) * stride]
+        wide = b''.join(row[x:x + 3] * scale for x in range(0, stride, 3))
+        rows += (b'\x00' + wide) * scale
+    width, height = width * scale, height * scale
 
     def chunk(kind, body):
         return struct.pack('>I', len(body)) + kind + body + struct.pack('>I', zlib.crc32(kind + body))
@@ -354,25 +362,74 @@ RECEIVE = ['KOCH', 'WORDS', 'CALLS', 'NINJA', 'HEAD']
 ON_AIR = ['POTA', 'SOTA', 'HUNT', 'CHEW', 'QUIZ']
 STATS = ['LETTERS', 'PROGRESS']
 SETTINGS_SECTIONS = ['keyer', 'sound', 'receive', 'drills', 'qso', 'memories', 'callsign', 'device', 'theme']
+# The settings the screens show, at their defaults, so the manual's screens match a new device.
+# KEY OUT stays off, so the tour never keys a radio.
+DEFAULTS = {
+    'MODE': 'IAMBIC B', 'PADDLES': 'NORMAL', 'SPEED': '20', 'KEY_OUT': 'OFF', 'OUT_TYPE': 'STRAIGHT',
+    'OUT_LINES': 'TIP KEYS', 'TONE': '700', 'VOLUME': '23', 'WAVE': 'SINE', 'NOISE': 'OFF',
+    'FADING': 'OFF', 'CHAR_SPEED': 'MATCH', 'FARNSWORTH': 'OFF', 'CHEW_SHOWS': 'WHOLE OVER',
+    'NINJA_WORDS': '500', 'PILEUP': 'TAKE TURNS', 'FIST': 'HUMAN', 'SPEED_SPREAD': 'ON',
+    'STYLE': 'HAZARD', 'PALETTE': 'ORANGE', 'BRIGHTNESS': '100', 'F1_HOLD': 'KEY OUT', 'MEM_EVERY': '6',
+    'MEM_STAY_OPEN': 'OFF',
+}
+MANUAL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'docs', 'user', 'img')
+MANUAL_SCALE = 2
+RESTORE_TRIES = 3
+RESTORE_WAIT_S = 2
+# A QSO keyed on KEYER, long enough to fill its decode lines with nothing from earlier keying.
+KEYER_QSO = ['CQ CQ CQ DE {call} {call} K', 'K1ABC DE {call} TNX FER CALL UR 5NN 5NN',
+             'RIG POCKETCW ANT DIPOLE HW? K1ABC DE {call} K']
 # Long enough for a ragchew over to end.
 OVER_S = 45
 # Long enough for a QSO to send its first text.
 QSO_S = 4
+# Long enough for the pileup to answer a CQ, or the hunt's activator to send its CQ.
+ANSWER_S = 8
 # After the answer: the copy ends three word gaps after it, and the score shows.
 SCORED_S = 2
 
 
 class Screens:
-    """Saves every screen into `out_dir`, from KEYER back to KEYER."""
+    """Saves every screen into `out_dir`, from KEYER back to KEYER, with `settings` changed for
+    the tour and put back after it."""
 
-    def __init__(self, device, out_dir):
+    def __init__(self, device, out_dir, settings, scale=1):
         self.d = device
         self.out_dir = out_dir
+        self.settings = settings
+        self.scale = scale
 
     def shot(self, name):
         path = os.path.join(self.out_dir, name + '.png')
-        self.d.shot(path)
+        self.d.shot(path, self.scale)
         print(path, flush=True)
+
+    def run(self):
+        screen = self.d.info()['SCREEN']
+        if screen != 'KEYER':
+            raise RuntimeError(f'the tour starts on KEYER, not {screen}')
+        os.makedirs(self.out_dir, exist_ok=True)
+        kept = {name: self.d.get(name) for name in self.settings}
+        try:
+            for name, new in self.settings.items():
+                self.d.set(name, new)
+            self.tour()
+        finally:
+            self.restore(kept)
+
+    def restore(self, kept):
+        """Sets each of `kept` back, trying a few times while the device is busy. Prints what it
+        could not set back instead of raising, so the error that stopped the tour shows."""
+        left = dict(kept)
+        for _ in range(RESTORE_TRIES):
+            for name, old in list(left.items()):
+                try:
+                    self.d.set(name, old)
+                    del left[name]
+                except TimeoutError:
+                    time.sleep(RESTORE_WAIT_S)
+        for name, old in left.items():
+            print(f'NOT SET BACK: {name} {old}', flush=True)
 
     def open(self, rows, name):
         """From a menu list of `rows`: opens row `name`. The top list counts from its end, so
@@ -391,8 +448,11 @@ class Screens:
         self.d.send(group)
         time.sleep(SCORED_S)
 
-    def run(self):
+    def tour(self):
         d = self.d
+        call = d.get('CALL')
+        for over in KEYER_QSO:
+            d.send(over.format(call=call))
         self.shot('keyer')
         d.press('F2')
         self.shot('keyer-mem')
@@ -420,7 +480,10 @@ class Screens:
         self.shot('menu-on-air')
         for name in ON_AIR:
             self.open(ON_AIR, name)
-            time.sleep(OVER_S if name in ('CHEW', 'QUIZ') else QSO_S)
+            if name in ('POTA', 'SOTA'):
+                time.sleep(QSO_S)
+                d.send(f'CQ {name} DE {call} K')
+            time.sleep(OVER_S if name in ('CHEW', 'QUIZ') else ANSWER_S)
             self.shot(name.lower())
             d.press('F4')
         d.press('F4')
@@ -447,7 +510,7 @@ class Screens:
 
 # How many values each step takes.
 STEP_VALUES = {
-    'hold': 1, 'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1,
+    'hold': 1, 'shot': 1, 'wait': 1, 'send': 1, 'expect': 1, 'listen': 1, 'shots': 1, 'manual': 0,
     'info': 0, 'get': 1, 'set': 2, 'play': 1, 'say': 1, 'stop': 0, 'stats': 2, 'edges': 2,
 }
 
@@ -494,8 +557,9 @@ def run(d, plan):
         elif step == 'listen':
             d.listen(int(value))
         elif step == 'shots':
-            os.makedirs(value, exist_ok=True)
-            Screens(d, value).run()
+            Screens(d, value, {'KEY_OUT': 'OFF'}).run()
+        elif step == 'manual':
+            Screens(d, MANUAL_DIR, DEFAULTS, MANUAL_SCALE).run()
         elif step == 'info':
             print(' '.join(f'{k}={v}' for k, v in d.info().items()))
         elif step == 'get' and value == 'all':
