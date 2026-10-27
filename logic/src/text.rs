@@ -63,8 +63,11 @@ impl<const N: usize> Text<N> {
     }
 
     pub fn as_str(&self) -> &str {
-        // Only whole `&str` values are ever copied in, so the bytes are valid UTF-8.
-        core::str::from_utf8(&self.buf[..self.len]).unwrap()
+        str_of(&self.buf, self.len)
+    }
+
+    fn sink(&mut self, cut: bool) -> Sink<'_> {
+        Sink { buf: &mut self.buf, len: &mut self.len, cut }
     }
 }
 
@@ -72,33 +75,53 @@ impl<const N: usize> Text<N> {
     /// Formats `args`, cut at the capacity: too-long text shows cut off, not missing.
     pub fn format(args: fmt::Arguments) -> Self {
         let mut text = Self::new();
-        // `Cut` never fails, so an error here can only come from a `Display` impl.
-        let _ = fmt::Write::write_fmt(&mut Cut(&mut text), args);
+        // A cutting `Sink` never fails, so an error here can only come from a `Display` impl.
+        let _ = fmt::Write::write_fmt(&mut text.sink(true), args);
         text
-    }
-}
-
-/// Writes into a `Text`, dropping what does not fit.
-struct Cut<'a, const N: usize>(&'a mut Text<N>);
-
-impl<const N: usize> fmt::Write for Cut<'_, N> {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        let mut end = s.len().min(N - self.0.len);
-        while !s.is_char_boundary(end) {
-            end -= 1;
-        }
-        fmt::Write::write_str(self.0, &s[..end])
     }
 }
 
 impl<const N: usize> fmt::Write for Text<N> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let end = self.len + s.len();
-        if end > N {
-            return Err(fmt::Error);
+        fmt::Write::write_str(&mut self.sink(false), s)
+    }
+
+    fn write_fmt(&mut self, args: fmt::Arguments) -> fmt::Result {
+        fmt::Write::write_fmt(&mut self.sink(false), args)
+    }
+}
+
+// The code below is not generic over `N`: one copy serves every `Text` size, about 4.8 KB less.
+
+#[inline(never)]
+fn str_of(buf: &[u8], len: usize) -> &str {
+    // Only whole `&str` values are ever copied in, so the bytes are valid UTF-8.
+    core::str::from_utf8(&buf[..len]).unwrap()
+}
+
+/// Writes into a `Text`'s buffer. Text that does not fit is an error, or with `cut`, is dropped
+/// from the last whole character that fits.
+struct Sink<'a> {
+    buf: &'a mut [u8],
+    len: &'a mut usize,
+    cut: bool,
+}
+
+impl fmt::Write for Sink<'_> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        let room = self.buf.len() - *self.len;
+        let mut end = s.len();
+        if end > room {
+            if !self.cut {
+                return Err(fmt::Error);
+            }
+            end = room;
+            while !s.is_char_boundary(end) {
+                end -= 1;
+            }
         }
-        self.buf[self.len..end].copy_from_slice(s.as_bytes());
-        self.len = end;
+        self.buf[*self.len..*self.len + end].copy_from_slice(&s.as_bytes()[..end]);
+        *self.len += end;
         Ok(())
     }
 }
@@ -154,6 +177,17 @@ mod tests {
 
     fn lines(s: &str, cols: usize) -> Vec<&str> {
         wrap(s, cols).collect()
+    }
+
+    #[test]
+    fn write_is_all_or_nothing() {
+        use core::fmt::Write;
+        let mut t = Text::<4>::new();
+        assert!(t.write_str("ABCDE").is_err());
+        assert_eq!(t.as_str(), "");
+        // A literal argument would fold into the format string as one piece.
+        assert!(write!(t, "AB{}", core::hint::black_box("CDE")).is_err());
+        assert_eq!(t.as_str(), "AB");
     }
 
     #[test]
