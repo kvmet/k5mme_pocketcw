@@ -1,6 +1,6 @@
 //! Copy accuracy per character and the most common mixups, kept across sessions.
 
-use crate::math::sqrt;
+use crate::math::{sort_by_key, sqrt};
 use crate::record::{self, body_mut, frame, is_sealed, unframe};
 
 /// Every drilled character: the Koch order LCWO uses, then the prosigns AR, SK and KN as
@@ -146,7 +146,7 @@ impl Letters {
     /// Mixups, most common first.
     pub fn mixups(&self) -> impl Iterator<Item = Mixup> {
         let mut sorted = self.mixups;
-        sorted.sort_unstable_by_key(|m| core::cmp::Reverse(m.count));
+        sort_by_key(&mut sorted, |m| core::cmp::Reverse(m.count));
         sorted.into_iter().filter(|m| m.count > 0)
     }
 
@@ -192,7 +192,7 @@ impl Letters {
             *m = Mixup { sent: body[at], copied: body[at + 1], count: body[at + 2] };
         }
         if slots > MIXUP_SLOTS {
-            mixups.sort_unstable_by_key(|m| core::cmp::Reverse(m.count));
+            sort_by_key(&mut mixups, |m| core::cmp::Reverse(m.count));
         }
         letters.mixups.copy_from_slice(&mixups[..MIXUP_SLOTS]);
         let valid = (FIRST_LEVEL..=KOCH.len() as u8).contains(&letters.level)

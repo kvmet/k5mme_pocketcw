@@ -2,6 +2,7 @@
 //! There is no clock, so sessions stand in for days. Each slot saves on its own, so a save
 //! writes only the session in progress.
 
+use crate::math::sort_by_key;
 use crate::record::{is_sealed, seal};
 
 pub const SLOTS: usize = 32;
@@ -167,7 +168,7 @@ impl History {
             sorted[n] = *s;
             n += 1;
         }
-        sorted[..n].sort_unstable_by_key(|s| s.seq);
+        sort_by_key(&mut sorted[..n], |s| s.seq);
         (sorted, n)
     }
 
