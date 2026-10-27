@@ -4,14 +4,17 @@
 # off where the compiler merged identical panic paths.
 # usage: tools/panic.sh [-e ELF] ADDR...   (the ELF defaults to the last app build)
 set -eu
-cd "$(dirname "$0")/.."
-elf=firmware/target/thumbv7em-none-eabihf/release/pocketcw-firmware
+usage() { echo "usage: $0 [-e ELF] ADDR..." >&2; exit 1; }
+elf=$(cd "$(dirname "$0")/.." && pwd)/firmware/target/thumbv7em-none-eabihf/release/pocketcw-firmware
 if [ "${1:-}" = -e ]; then
+    [ $# -ge 2 ] || usage
     elf=$2
     shift 2
 fi
-[ $# -gt 0 ] || { echo "usage: $0 [-e ELF] ADDR..." >&2; exit 1; }
+[ $# -gt 0 ] || usage
+[ -f "$elf" ] || { echo "$0: no ELF at $elf" >&2; exit 1; }
 for ret in "$@"; do
+    ret=${ret#0[xX]}
     case $ret in
     [Ff][Ff][Ff][Ff][Ff][Ff]*) echo "$ret: exception entry"; continue ;;
     esac
@@ -19,5 +22,6 @@ for ret in "$@"; do
     # never returns. The 4-byte bl starts 4 bytes before it; minus 2 lands inside the bl.
     call=$(printf '0x%08X' $(( (0x$ret & ~1) - 2 )))
     echo "$ret:"
-    lldb --batch -o "image lookup -a $call" "$elf" | sed -n '/Summary:/,$p' | sed 's/^ *\(Summary: \)\{0,1\}[^`]*`/    /; s/::h[0-9a-f]\{16\}//g'
+    lldb --batch -o "image lookup -a $call" "$elf" | sed -n '/Summary:/,$p' |
+        sed 's/^ *\(Summary: \)\{0,1\}[^`]*`/    /; s/::h[0-9a-f]\{16\}//g; s/\$LT\$/</g; s/\$GT\$/>/g; s/\$u20\$/ /g; s/\$u7b\$/{/g; s/\$u7d\$/}/g; s/\$RF\$/\&/g; s/\$C\$/,/g; s/\.\./::/g'
 done
