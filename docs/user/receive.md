@@ -16,9 +16,9 @@ The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the
 
 ## How a drill runs
 
-1. The device sends a group. The status shows `LISTEN`.
-2. The status shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
-3. While you key, the status shows `KEYING`. When you stop keying for three word gaps, your copy ends.
+1. The device sends a group. The state at the right of your copy shows `LISTEN`.
+2. The state shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
+3. While you key, the state shows `KEYING`. When you stop keying for three word gaps, your copy ends.
 4. The device scores your copy and shows it in the list. The next group starts after about 1 second.
 
 If you do not start to key within 5 seconds, the group counts as missed when you copy the next one. After two such groups in a row, the drill pauses, and neither group counts: the status line shows `NO COPY FOR 2 GROUPS: PAUSED`. Key any character, or press F3 (GO), to go on. The character you key does not count as copy.
@@ -32,15 +32,15 @@ To hear the group again, key `?` alone as your copy.
 - In HEAD, the top line shows your rung and what it sends, such as `RUNG 3 OF 8  1 WORD OF 5 CHARS`.
 - The list of recent groups. Each row shows the group that was sent, then your copy with each character marked: green for right, red and inverted for wrong, `_` for missed. The score shows at the right, such as `4/5`.
 - In HEAD, each item takes two rows: what was sent, then your marked copy under it. The list shows the last 3 items.
-- Your copy as you key it, with the status at the right.
-- The footer: your score for this session, such as `SESSION 85%  120 CHARS`.
+- Your copy as you key it, with the state at the right: `LISTEN`, `YOUR TURN`, `KEYING` or `PAUSED`.
+- The footer: your score for this session, such as `SESSION 85%  120 CHARS`. Before your first score, and while you wait to key, it says what to do. While the drill is paused, it says how to go on.
 
 ## NINJA
 
 NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a word, and then the voice says it. You can just listen, or copy it in your head and key it back first.
 
-1. The device sends a word. The status shows `LISTEN`.
-2. The status shows `YOUR TURN`. To be scored, start to key the word within 1.5 seconds.
+1. The device sends a word. The state shows `LISTEN`.
+2. The state shows `YOUR TURN`. To be scored, start to key the word within 1.5 seconds.
 3. If you key, the device scores your copy as in the other drills, then the voice says the word.
 4. If you do not key, the voice says the word, and the list shows it with no score.
 5. The next word starts about 1 second after the voice ends.

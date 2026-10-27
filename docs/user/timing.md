@@ -2,7 +2,7 @@
 
 The TIMING screen gives a close look at your keying. The header shows TIMING, the keyer mode, and the SND and VOL values.
 
-The screen measures every mark and gap against the dot length the decoder uses: the dot length of your set speed in the iambic modes, or of the speed you actually send in STRAIGHT mode. It grades each mark and gap as good, off or bad. See [Timing grades](keyer.md#timing-grades).
+The screen measures every mark and gap against the dot length the decoder uses: the dot length of your set speed in the iambic modes, or of the speed you actually send in STRAIGHT mode. A unit is that dot length. The screen grades each mark and gap as good, off or bad. See [Timing grades](keyer.md#timing-grades).
 
 ## What the screen shows
 
@@ -37,14 +37,14 @@ Each bar counts the marks or gaps of that length, in the color of the grade a ma
 
 The HAND view shows what your paddle or key does, not what the keyer sends. It shows the statistics for the MODE in use.
 
-In IAMBIC A and IAMBIC B, the keyer decides one dot after each element whether to send another. A paddle closed at that moment, or pressed during the element, sends one.
+In IAMBIC A and IAMBIC B, the keyer decides one unit after each element whether to send another. A paddle closed at that moment, or pressed during the element, sends one.
 
 | Item | What it shows |
 | - | - |
-| RELEASE BEFORE THE KEYER DECIDES | A histogram from 0 to 3 dots: at the end of each character, how long before the keyer's decision you let go. A bar under half a dot is red: a little later, and the keyer would have sent one more element. |
-| RELEASE | The average and standard deviation of that time, in dots. |
-| CLOSE | The percent of characters you let go less than half a dot before the decision, and how many characters it counts. |
-| LATE | The percent of gaps inside characters you started after the keyer's decision, how many gaps it counts, and how late they came on average, in dots. A late press makes a gap longer than one dot. LATE counts only the gaps that still read as inside a character; a press late enough to split the character shows as a short gap between characters in the BARS view. |
+| RELEASE BEFORE THE KEYER DECIDES | A histogram from 0 to 3 units: at the end of each character, how long before the keyer's decision you let go. A bar under half a unit is red: a little later, and the keyer would have sent one more element. |
+| RELEASE | The average and standard deviation of that time, in units. |
+| CLOSE | The percent of characters you let go less than half a unit before the decision, and how many characters it counts. |
+| LATE | The percent of gaps inside characters you started after the keyer's decision, how many gaps it counts, and how late they came on average, in units. A late press makes a gap longer than one unit. LATE counts only the gaps that still read as inside a character; a press late enough to split the character shows as a short gap between characters in the BARS view. |
 
 In STRAIGHT, for a straight key or a sideswiper:
 

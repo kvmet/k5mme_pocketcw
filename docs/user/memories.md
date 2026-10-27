@@ -13,7 +13,7 @@ The first time PocketCW starts, the memories hold messages for a POTA activation
 
 ## Send a memory
 
-1. On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. The labels of F1 to F4 change to M1 to M4, and the status line says `HOLD REPEATS  CLICK CLOSES`.
+1. On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. The labels of F1 to F4 change to M1 to M4, and the footer says `HOLD REPEATS  CLICK CLOSES`.
 2. Press F1 to F4 to send M1 to M4 once. Hold the button to send the memory again and again. An empty memory sends nothing, and the status line shows `M1 IS EMPTY (SETTINGS)`.
 
 The memory sends at your keyer speed and tone. The footer shows `SENDING M1  KEY TO STOP`. A held memory waits for the REPEAT EVERY time after it ends, then sends again. Between sends, the footer shows `M1 REPEATS EVERY 6S  KEY TO STOP`.
