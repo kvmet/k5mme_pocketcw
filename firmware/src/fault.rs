@@ -28,6 +28,15 @@ const DEBOUNCE_MS: u32 = 50;
 /// Shows `title` and the text `detail` writes, wrapped to the screen, then powers off at the next
 /// dial click. Interrupts stay off, so the click is polled.
 pub fn halt(title: &str, detail: impl FnOnce(&mut Text<400>)) -> ! {
+    stop();
+    let mut text = Text::new();
+    detail(&mut text);
+    show(title, text.as_str())
+}
+
+/// The parts of `halt` outside the generic closure call, so each caller does not get a copy.
+#[inline(never)]
+fn stop() {
     cortex_m::interrupt::disable();
     // Unkey first: a fault must not leave a radio transmitting.
     for (port, pin) in [(port_a(), KEY_OUT_TIP), (port_a(), KEY_OUT_RING), (port_b(), LED)] {
@@ -36,14 +45,15 @@ pub fn halt(title: &str, detail: impl FnOnce(&mut Text<400>)) -> ! {
     // Interrupts stay off from here on, so nothing else touches these peripherals.
     let dp = unsafe { pac::Peripherals::steal() };
     dp.TMR1.cctrl().write(|w| w.c1en().clear_bit());
+}
 
-    let mut text = Text::new();
-    detail(&mut text);
+#[inline(never)]
+fn show(title: &str, detail: &str) -> ! {
+    let dp = unsafe { pac::Peripherals::steal() };
     let mut lcd = Lcd::new(dp.SPI1);
     let _ = lcd.clear(BG);
     let _ = SMALL.draw(&mut lcd, Point::zero(), title, Rgb565::WHITE, BG);
-    let bytes = text.as_str().as_bytes();
-    for (row, chunk) in bytes.chunks(COLS).take(ROWS - 3).enumerate() {
+    for (row, chunk) in detail.as_bytes().chunks(COLS).take(ROWS - 3).enumerate() {
         let line = core::str::from_utf8(chunk).unwrap_or("?");
         let _ = SMALL.draw(&mut lcd, Point::new(0, (row as i32 + 2) * SMALL.height as i32), line, Rgb565::WHITE, BG);
     }
