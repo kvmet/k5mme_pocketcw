@@ -16,7 +16,7 @@ use super::home::{number, units};
 use super::{Ui, footer::FOOT_TOP, lanes, mode_name, settings::Section};
 use crate::gfx::{TINY_W, rect, text_cols, tiny};
 use crate::lcd::Lcd;
-use crate::text::Text;
+use crate::text::{Hundredths, Tenths, Text};
 use crate::theme::{MAIN, quality_color};
 
 const STATS_Y: i32 = 109;
@@ -107,7 +107,7 @@ impl Ui {
         percent(&mut line, hand.late.count, hand.element_gaps);
         let _ = write!(line, " OF {}", hand.element_gaps);
         if let Some(late) = hand.late.mean() {
-            let _ = write!(line, "  +{late:.1}U");
+            let _ = write!(line, "  +{}U", Tenths(late));
         }
         text_cols(lcd, 0, LINES_Y + 2 * LINE_STEP, line.as_str(), super::COLS, t.fg, t.bg);
     }
@@ -131,7 +131,7 @@ impl Ui {
         line.clear();
         let weight = &self.hand.weight;
         let _ = match (weight.mean(), weight.sd()) {
-            (Some(mean), Some(sd)) => write!(line, "WEIGHT {mean:.2}  SD {sd:.2}"),
+            (Some(mean), Some(sd)) => write!(line, "WEIGHT {}  SD {}", Hundredths(mean), Hundredths(sd)),
             _ => write!(line, "WEIGHT --"),
         };
         text_cols(lcd, 0, LINES_Y, line.as_str(), super::COLS, t.fg, t.bg);

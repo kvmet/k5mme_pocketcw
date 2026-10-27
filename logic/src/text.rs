@@ -103,6 +103,17 @@ impl<const N: usize> fmt::Write for Text<N> {
     }
 }
 
+/// A number with one decimal, rounded half up. It writes integers, so it needs no float
+/// formatting code. Negative numbers write as 0.0.
+pub struct Tenths(pub f32);
+
+impl fmt::Display for Tenths {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tenths = (self.0 * 10.0 + 0.5) as u32;
+        write!(f, "{}.{}", tenths / 10, tenths % 10)
+    }
+}
+
 /// A number with two decimals, rounded. It writes integers, so it needs no float formatting
 /// code. Negative numbers write as 0.00.
 pub struct Hundredths(pub f32);
@@ -143,6 +154,14 @@ mod tests {
 
     fn lines(s: &str, cols: usize) -> Vec<&str> {
         wrap(s, cols).collect()
+    }
+
+    #[test]
+    fn tenths_round_half_up() {
+        let tenths = |x: f32| Text::<8>::format(format_args!("{}", Tenths(x)));
+        for (x, s) in [(0.0, "0.0"), (0.04, "0.0"), (0.05, "0.1"), (1.25, "1.3"), (9.99, "10.0"), (12.3, "12.3"), (-1.0, "0.0")] {
+            assert_eq!(tenths(x).as_str(), s, "{x}");
+        }
     }
 
     #[test]

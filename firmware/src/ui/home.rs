@@ -13,7 +13,7 @@ use pocketcw_logic::{
 use super::{COLS, Ui, dit_ms, lanes, mode_name, settings::Section};
 use crate::gfx::{CHAR_W, TINY_H, TINY_W, blocks, blocks_width, para, rect, text, tiny};
 use crate::lcd::Lcd;
-use crate::text::Text;
+use crate::text::{Tenths, Text};
 use crate::theme::{MAIN, UNDERLINE_H, underline};
 
 const DIGITS_X: i32 = 7;
@@ -230,7 +230,7 @@ pub(super) fn units<const N: usize>(out: &mut Text<N>, value: Option<f32>) {
 
 pub(super) fn number<const N: usize>(out: &mut Text<N>, value: Option<f32>) {
     let _ = match value {
-        Some(v) => write!(out, "{v:.1}"),
+        Some(v) => write!(out, "{}", Tenths(v)),
         None => write!(out, "--"),
     };
 }

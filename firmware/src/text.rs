@@ -1,1 +1,1 @@
-pub use pocketcw_logic::text::Text;
+pub use pocketcw_logic::text::{Hundredths, Tenths, Text};

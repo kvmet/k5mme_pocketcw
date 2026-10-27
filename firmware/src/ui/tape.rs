@@ -7,7 +7,7 @@ use pocketcw_logic::timing::{Interval, Kind, Quality};
 
 use crate::fonts::{SMALL, TINY};
 use crate::gfx::{TINY_W, rect, tiny};
-use crate::text::Text;
+use crate::text::{Tenths, Text};
 use crate::theme::{MAIN, Theme, quality_block, quality_color, underline};
 
 /// Home: keyer output above the two contacts. Timing: ideal and actual marks, zoomed.
@@ -153,7 +153,7 @@ impl Tape {
                 rect(lcd, tick, l.key_y - 2, 1, l.key_h + 4, theme.muted);
             }
         }
-        let label = if self.zoom { Text::<6>::format(format_args!("{:.1}U", iv.units)) } else { Text::format(format_args!("{:.1}", iv.units)) };
+        let label = if self.zoom { Text::<6>::format(format_args!("{}U", Tenths(iv.units))) } else { Text::format(format_args!("{}", Tenths(iv.units))) };
         let y = if self.zoom { ZOOM_LETTER_Y + 4 } else { HOME_GAP_Y };
         tiny(lcd, (x + end) / 2 - label.len() as i32 * TINY_W / 2, y, label.as_str(), color, theme.bg);
     }
