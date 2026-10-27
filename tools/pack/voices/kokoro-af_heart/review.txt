@@ -121,6 +121,7 @@ NM	meaning	good	341d386d0b01243cafe1c3e1
 BTU	meaning	good	20c4cb5838df8ed115d41dcf
 MNI	meaning	good	a48a3130955817989dca5e75
 B4	meaning	good	32afd1abe2a8c8688c1ec549
+SKED	word	good	4011a0cbb31259e04f8ef4f0
 SKED	meaning	good	2b7a8716716165be0ec05cb8
 WX	meaning	good	9882a49cdbbd96c31f41aa9b
 CONDX	meaning	good	313df25eb189e113d6d349d7
@@ -201,10 +202,16 @@ CWT	meaning	good	b1415de66d8609eace75fe75
 SST	meaning	good	dd5a382b00f6a3b483b80994
 FD	meaning	good	14c63e5c95f22b65d1ed626b
 CONTEST	word	good	fba81775558ab688edbeb47f
+CW	meaning	good	54c9f38ef97ca6377d17936f
 WPM	meaning	good	4fa05d857bc7f76225d50517
+AL	word	good	8c3acfd2376db5382fc9d2b0
+AMY	word	good	bcb2e522acd29080f203c753
 ANN	word	good	b43c848cb73a2fb289a373c8
+ANNA	word	good	11628eb189ff1de10654dbf7
+BETH	word	good	c1ab461d1e0cf78b3a6eb737
 DAVE	word	good	a203642a34f7a8ba7079d226
 ED	word	good	71433e0c889d3abc01a15a23
+EMMA	word	good	f1188a07fa1f046c81ef523b
 GARY	word	good	8c03183a91d4a511491b40c5
 JEN	word	good	a24af05360f4533e206108ad
 KAREN	word	good	9a367aef7d247a9dce1d752b
