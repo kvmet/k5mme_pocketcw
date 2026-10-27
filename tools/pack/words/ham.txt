@@ -71,12 +71,8 @@ CUL	C U L	see you later
 CUAGN	C U A G N	see you again
 HPE	H P E	hope
 CONGRATS	congrats
-73	seventy three	best regards
-72	seventy two	best regards, low power
-88	eighty eight	love and kisses
-OM	O M	old man, a fellow ham
-YL	Y L	young lady, any woman
-XYL	X Y L	wife
+73	7 3	best regards
+72	7 2	best regards, low power
 DR	D R	dear
 
 # Contact words
@@ -177,7 +173,7 @@ SST	S S T	slow speed test
 ARRL	A R R L
 FD	F D	field day
 CONTEST	contest
-CW	C W	Morse code
+CW	C W	continuous wave
 WPM	W P M	words per minute
 
 # Operator names the QSO drills send

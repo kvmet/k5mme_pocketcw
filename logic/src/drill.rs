@@ -74,7 +74,7 @@ const RUNG_STREAK: u8 = 3;
 
 /// Common words and abbreviations heard on the air.
 const WORDS: [&str; 64] = [
-    "CQ", "DE", "TU", "73", "72", "5NN", "RST", "UR", "NAME", "QTH", "RIG", "ANT", "WX", "FB", "OM", "YL", "GM", "GA", "GE",
+    "CQ", "DE", "TU", "73", "72", "5NN", "RST", "UR", "NAME", "QTH", "RIG", "ANT", "WX", "FB", "OP", "RPT", "GM", "GA", "GE",
     "ES", "HR", "TNX", "AGN", "PSE", "QRS", "QRZ", "QSL", "QSO", "QRP", "POTA", "SOTA", "PARK", "<BK>", "<KN>", "<SK>", "HW",
     "CPY", "CUL", "GL", "BEST", "KEY", "THE", "AND", "FOR", "YOU", "ARE", "WITH", "THAT", "HAVE", "THIS", "FROM", "WILL",
     "WORK", "GOOD", "SUN", "RAIN", "COLD", "HOT", "WATTS", "DIPOLE", "VERT", "MILES", "TODAY", "AGAIN",
