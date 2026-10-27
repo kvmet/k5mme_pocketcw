@@ -32,7 +32,7 @@ The script stops with an error in two cases:
 
 At the end, the script prints the command that flashes the image.
 
-The linker script `firmware/memory.x` puts the app at 0x08005000, with 236 KB of flash and 64 KB of RAM. `firmware/build.rs` passes the `nmagic` option to the linker. Without it, the linker maps the ELF headers at 0x08000000, inside the bootloader, and `mkimage.sh` refuses the image.
+The linker script `firmware/memory.x` puts the app at 0x08005000, with 236 KB of flash and 64 KB of RAM. Its `.fast_text` section holds the sample interrupt, inside the flash that has no wait states. See [MCU](hardware/mcu.md#option-bytes). `firmware/build.rs` passes the `nmagic` option to the linker. Without it, the linker maps the ELF headers at 0x08000000, inside the bootloader, and `mkimage.sh` refuses the image.
 
 ## Flash the image
 

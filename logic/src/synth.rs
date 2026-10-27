@@ -52,6 +52,7 @@ const FADE_HZ: [f32; PLAYERS] = [0.13, 0.19, 0.11, 0.23];
 const PI: f32 = core::f32::consts::PI;
 
 /// Sine of a small angle from its Taylor series: within 0.006% up to pi/4 rad.
+#[inline(always)]
 fn sin_small(x: f32) -> f32 {
     let x2 = x * x;
     x * (1.0 - x2 / 6.0 + x2 * x2 / 120.0)
@@ -90,6 +91,7 @@ impl Oscillator {
         self.cos = 1.0;
     }
 
+    #[inline(always)]
     fn next(&mut self) -> f32 {
         self.sin += self.k * self.cos;
         self.cos -= self.k * self.sin;
@@ -125,11 +127,13 @@ fn square(sin: f32, cos: f32, harmonics: usize) -> f32 {
 }
 
 /// The raised cosine (1 - cos(pi x)) / 2 for x in 0..=1: exactly 0 and 1 at the ends.
+#[inline(always)]
 fn raised_cosine(x: f32) -> f32 {
-    let half = |x: f32| {
+    #[inline(always)]
+    fn half(x: f32) -> f32 {
         let s = sin_small(PI / 2.0 * x);
         s * s
-    };
+    }
     if x <= 0.5 { half(x) } else { 1.0 - half(1.0 - x) }
 }
 
@@ -299,8 +303,15 @@ impl Synth {
     }
 
     /// Nothing sounds and nothing will until a key goes down, the band opens or a clip starts.
+    #[inline(always)]
     pub fn is_silent(&self) -> bool {
-        self.voices.iter().all(Voice::silent) && !self.noise_on() && self.speech.is_none()
+        // A loop, not `all`: the sample interrupt inlines this, and `all` stays a call into flash.
+        for v in &self.voices {
+            if !v.silent() {
+                return false;
+            }
+        }
+        !self.noise_on() && self.speech.is_none()
     }
 
     fn noise_on(&self) -> bool {

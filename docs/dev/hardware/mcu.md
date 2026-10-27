@@ -13,6 +13,7 @@ On the 2.64 unit, the low bytes from 0x1FFFF800 up read `A5 FF F2 64 E0 FF FF FF
 - FAP = 0xA5, so flash read protection is off. A running app or an SWD probe can read the bootloader.
 - Data0 and Data1 hold the board version. See [Board variants](board-variants.md).
 - WRP0 = 0xE0 write-protects the bootloader. See [Flash layout and bootloader](flash-layout.md).
+- EOPB0 = 0xFE. It likely selects 224 KB of SRAM with 128 KB of zero wait flash, 0x08000000 to 0x08020000; this is not checked against Artery's documents. Code past 0x08020000 runs much slower: the sample interrupt measured 2661 cycles with its code there and 1092 with it inside the first 128 KB, on board 2.64. `firmware/memory.x` puts the `.fast_text` section right after the vector table for this.
 
 PocketCW reads Data1 at 0x1FFFF806.
 

@@ -91,6 +91,12 @@ impl Audio {
 
     /// The sample interrupt: fills the half of the buffer the DMA is not reading with the next
     /// sample, or with silence. Once the whole buffer is silent, the DMA stops.
+    ///
+    /// In `.fast_text` (memory.x), inside the first 128 KB of flash, which has no wait states;
+    /// past it, the sample took 2661 of its 4096 cycles. The named section also keeps LLVM's
+    /// outliner from moving parts of it to the end of `.text`.
+    #[unsafe(link_section = ".fast_text.sample")]
+    #[inline(never)]
     pub fn sample(&mut self) {
         let start = DWT::cycle_count();
         self.dma.clr().write(|w| w.gfc1().set_bit());

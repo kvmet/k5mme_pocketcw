@@ -24,7 +24,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
   | EEPROM (I2C) | 2 KB | 64 bytes (0x7C0 to 0x7FF) | Settings, letter stats, progress, memories. Too small for the log; the plan only appends the LOG setting to the settings record. |
   | RAM | 64 KB | About 56 KB | Buffers, such as the 16 KB voice clip buffer. |
 
-- `opt-level = "z"` is adopted: the app ran fine on hardware. The worst-case synth sample costs 1900 of 4096 cycles at `"z"` and 1400 at `"s"`, measured on board 2.64.
+- `opt-level = "z"` is adopted: the app ran fine on hardware. The sample interrupt costs 1092 of 4096 cycles for one sine voice, and at most 1812 with square waves, noise and fading, at `"z"` on board 2.64 (INFO AUDIO, 2026-10-27).
 - USB MIDI is planned next, and will take MCU flash.
 - SPI flash: 16 MB GigaDevice GD25Q128 (JEDEC C8 40 18), on SPI1 with the LCD (`LCD_CS` PB6, `FLASH_CS` PB9). No write protection is set. SFDP 1.0 with 9 dwords lists 4 KB (0x20), 32 KB (0x52) and 64 KB (0xD8) erase, but no erase times and no page size.
 - SPI flash in use, by scan: 0x000000 to 0x025FFF (boot screen), 0x030000 to 0x0C5FFF (UI images), 0x100000 to about 0x8FC000 (the content pack `F000400.bin`), 0xE00000 to 0xFECFFF (fonts). Free: 0x0C6000 to 0x0FFFFF and 0x8FC000 to 0xDFFFFF. The stock firmware has a contact log whose location is not known, so a pack install may erase it.

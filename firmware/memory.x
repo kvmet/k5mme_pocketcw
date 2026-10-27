@@ -6,3 +6,14 @@ MEMORY
   /* 64K is safe on every candidate chip; raise to 96K once the part is confirmed. */
   RAM : ORIGIN = 0x20000000, LENGTH = 64K
 }
+
+/* Code that must run without flash wait states: only the first 128 KB of flash has none, and
+   the end of .text is past that. Placed right after the vector table, ahead of .text. */
+SECTIONS
+{
+  .fast_text : ALIGN(4)
+  {
+    *(.fast_text .fast_text.*);
+  } > FLASH
+} INSERT AFTER .vector_table;
+_stext = ALIGN(ADDR(.fast_text) + SIZEOF(.fast_text), 4);
