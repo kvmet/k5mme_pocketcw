@@ -59,7 +59,7 @@ When you add code, put it in `logic` unless it needs a register, a pin or the sc
 | `usb` | The USB device peripheral for `stm32-usbd`, and the USB keyboard and serial port. |
 | `ui/` | One file per screen, plus shared parts: `dial` for the header values, `exchange` and `transcript` for the QSO screens, `tape` for the timing tape, `serial` for the serial commands the screen answers. |
 | `text` | A re-export of the fixed size string type. |
-| `bin/probe.rs`, `bin/usbprobe.rs`, `bin/voiceprobe.rs`, `bin/flashprobe.rs` | Separate hardware, USB, voice and SPI flash probe images. See [Build and flash](building.md). |
+| `bin/probe.rs`, `bin/usbprobe.rs`, `bin/voiceprobe.rs`, `bin/flashprobe.rs`, `bin/popprobe.rs` | Separate hardware, USB, voice, SPI flash and audio pop probe images. See [Build and flash](building.md). |
 
 ## Tasks
 
