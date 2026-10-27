@@ -34,7 +34,8 @@ pub fn halt(title: &str, detail: impl FnOnce(&mut Text<400>)) -> ! {
     show(title, text.as_str())
 }
 
-/// The parts of `halt` outside the generic closure call, so each caller does not get a copy.
+/// What `halt` does before the closure. With `show`, it keeps the code that is not generic out
+/// of each caller's copy of `halt`.
 #[inline(never)]
 fn stop() {
     cortex_m::interrupt::disable();
@@ -47,6 +48,7 @@ fn stop() {
     dp.TMR1.cctrl().write(|w| w.c1en().clear_bit());
 }
 
+/// Draws the fault screen and powers off at the next dial click.
 #[inline(never)]
 fn show(title: &str, detail: &str) -> ! {
     let dp = unsafe { pac::Peripherals::steal() };
@@ -84,7 +86,7 @@ unsafe extern "C" {
 }
 
 /// Shows the return addresses of the call chain; `tools/panic.sh` names their functions.
-/// Reading `_info` would keep every panic message and its formatting code, about 25 KB.
+/// Reading `_info` would keep every panic message and its formatting code, about 28 KB.
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     let fp: u32;
@@ -97,7 +99,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
         for i in 0..=FRAMES {
             // A record is [caller's r7, return address]. Reset never sets r7, so the chain ends
             // at a value from the bootloader; the bounds stop the walk there.
-            if frame < low || frame + 8 > high || frame % 4 != 0 {
+            if frame < low || frame > high - 8 || !frame.is_multiple_of(4) {
                 break;
             }
             let (next, ret) = unsafe { (read_volatile(frame as *const u32), read_volatile((frame + 4) as *const u32)) };
