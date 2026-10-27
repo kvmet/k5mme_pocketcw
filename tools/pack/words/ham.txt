@@ -177,19 +177,28 @@ CW	C W	continuous wave
 WPM	W P M	words per minute
 
 # Operator names the QSO drills send
+AL	al
+AMY	amy
 ANN	ann
+ANNA	anna
+BETH	beth
 DAVE	dave
 ED	ed
+EMMA	emma
 GARY	gary
 JEN	jen
 KAREN	karen
+KATE	kate
 KEN	ken
 LISA	lisa
+MEG	meg
+NINA	nina
 PAT	pat
 RON	ron
 SUE	sue
+ZOE	zoe
 
-# City names the ragchew drill sends; a city of two words has an entry for each
+# City and country names the ragchew drill sends; a city of two words has an entry for each
 ALBANY	albany
 AMSTERDAM	amsterdam
 ATLANTA	atlanta
@@ -219,6 +228,7 @@ FRESNO	fresno
 HALIFAX	halifax
 HAMBURG	hamburg
 HARTFORD	hartford
+HOLLAND	holland
 KYOTO	kyoto
 LEEDS	leeds
 LYON	lyon

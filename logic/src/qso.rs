@@ -622,12 +622,14 @@ pub(crate) fn home(rng: &mut Rng) -> Home {
 }
 
 /// A place outside the US: its call prefixes, the call area digits they take, the province it
-/// sends in an exchange (empty outside Canada), and cities for a ragchew QTH.
+/// sends in an exchange (empty outside Canada), and cities and a country (empty in Canada) for a
+/// ragchew QTH.
 pub(crate) struct Abroad {
     prefixes: &'static [&'static str],
     digits: &'static [u8],
     pub(crate) region: &'static str,
     pub(crate) cities: &'static [&'static str],
+    pub(crate) country: &'static str,
 }
 
 impl Abroad {
@@ -648,28 +650,28 @@ impl Abroad {
 }
 
 pub(crate) const CANADA: [Abroad; 8] = [
-    Abroad { prefixes: &["VE", "VA"], digits: &[1], region: "NS", cities: &["HALIFAX"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[2], region: "QC", cities: &["MONTREAL", "QUEBEC"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[3], region: "ON", cities: &["TORONTO", "OTTAWA"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[4], region: "MB", cities: &["WINNIPEG"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[5], region: "SK", cities: &["REGINA", "SASKATOON"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[6], region: "AB", cities: &["CALGARY", "EDMONTON"] },
-    Abroad { prefixes: &["VE", "VA"], digits: &[7], region: "BC", cities: &["VANCOUVER", "VICTORIA"] },
-    Abroad { prefixes: &["VE"], digits: &[9], region: "NB", cities: &["MONCTON"] },
+    Abroad { prefixes: &["VE", "VA"], digits: &[1], region: "NS", cities: &["HALIFAX"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[2], region: "QC", cities: &["MONTREAL", "QUEBEC"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[3], region: "ON", cities: &["TORONTO", "OTTAWA"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[4], region: "MB", cities: &["WINNIPEG"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[5], region: "SK", cities: &["REGINA", "SASKATOON"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[6], region: "AB", cities: &["CALGARY", "EDMONTON"], country: "" },
+    Abroad { prefixes: &["VE", "VA"], digits: &[7], region: "BC", cities: &["VANCOUVER", "VICTORIA"], country: "" },
+    Abroad { prefixes: &["VE"], digits: &[9], region: "NB", cities: &["MONCTON"], country: "" },
 ];
 
 pub(crate) const DX: [Abroad; 11] = [
-    Abroad { prefixes: &["G", "M"], digits: &[0, 3, 4], region: "", cities: &["LONDON", "LEEDS", "BRISTOL"] },
-    Abroad { prefixes: &["DL", "DK", "DJ"], digits: &[1, 2, 3, 4, 5, 6, 7, 8, 9], region: "", cities: &["MUNICH", "BERLIN", "HAMBURG"] },
-    Abroad { prefixes: &["F"], digits: &[4, 5, 6, 8], region: "", cities: &["PARIS", "LYON"] },
-    Abroad { prefixes: &["I", "IK", "IZ"], digits: &[0, 1, 2, 3, 4, 5, 6, 7, 8], region: "", cities: &["ROME", "MILAN", "TURIN"] },
-    Abroad { prefixes: &["EA"], digits: &[1, 2, 3, 4, 5, 6, 7], region: "", cities: &["MADRID", "VALENCIA"] },
-    Abroad { prefixes: &["PA", "PD"], digits: &[0, 1, 2, 3], region: "", cities: &["AMSTERDAM", "UTRECHT"] },
-    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[1], region: "", cities: &["TOKYO"] },
-    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[3], region: "", cities: &["OSAKA", "KYOTO"] },
-    Abroad { prefixes: &["VK"], digits: &[2], region: "", cities: &["SYDNEY"] },
-    Abroad { prefixes: &["VK"], digits: &[3], region: "", cities: &["MELBOURNE"] },
-    Abroad { prefixes: &["VK"], digits: &[6], region: "", cities: &["PERTH"] },
+    Abroad { prefixes: &["G", "M"], digits: &[0, 3, 4], region: "", cities: &["LONDON", "LEEDS", "BRISTOL", "MANCHESTER"], country: "ENGLAND" },
+    Abroad { prefixes: &["DL", "DK", "DJ"], digits: &[1, 2, 3, 4, 5, 6, 7, 8, 9], region: "", cities: &["MUNICH", "BERLIN", "HAMBURG"], country: "GERMANY" },
+    Abroad { prefixes: &["F"], digits: &[4, 5, 6, 8], region: "", cities: &["PARIS", "LYON"], country: "FRANCE" },
+    Abroad { prefixes: &["I", "IK", "IZ"], digits: &[0, 1, 2, 3, 4, 5, 6, 7, 8], region: "", cities: &["ROME", "MILAN", "TURIN"], country: "ITALY" },
+    Abroad { prefixes: &["EA"], digits: &[1, 2, 3, 4, 5, 6, 7], region: "", cities: &["MADRID", "VALENCIA"], country: "SPAIN" },
+    Abroad { prefixes: &["PA", "PD"], digits: &[0, 1, 2, 3], region: "", cities: &["AMSTERDAM", "UTRECHT"], country: "HOLLAND" },
+    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[1], region: "", cities: &["TOKYO"], country: "JAPAN" },
+    Abroad { prefixes: &["JA", "JH", "JR"], digits: &[3], region: "", cities: &["OSAKA", "KYOTO"], country: "JAPAN" },
+    Abroad { prefixes: &["VK"], digits: &[2], region: "", cities: &["SYDNEY"], country: "AUSTRALIA" },
+    Abroad { prefixes: &["VK"], digits: &[3], region: "", cities: &["MELBOURNE"], country: "AUSTRALIA" },
+    Abroad { prefixes: &["VK"], digits: &[6], region: "", cities: &["PERTH"], country: "AUSTRALIA" },
 ];
 
 #[cfg(test)]
