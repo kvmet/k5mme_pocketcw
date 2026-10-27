@@ -277,3 +277,4 @@ EXCHANGE	word	/ɛksʧˈAnʤq,/
 WINDY	word	/wˈɪndi,/
 HW	meaning	/hˌW dˈu ju kˈɑpi?/
 CW	meaning	continuous wave
+EMMA	word	/ˈɛmə,/
