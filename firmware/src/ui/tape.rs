@@ -23,6 +23,8 @@ struct Layout {
 const HOME: Layout = Layout { x0: 28, px_per_unit: 4, top: 72, bottom: 129, key_y: 74, key_h: 8 };
 const ZOOM: Layout = Layout { x0: 26, px_per_unit: 8, top: 26, bottom: 108, key_y: 44, key_h: 14 };
 const X1: i32 = MAIN - 2;
+/// Dots past a page's origin that `Tape::x` tells apart.
+const MAX_UNITS: u32 = 1024;
 /// A dah and the gap after it: what must fit for an element to start on this page.
 const ELEMENT_ROOM_UNITS: u32 = 4;
 /// Home lanes for the dit and dah contacts, 12 px apart so their labels fit beside them.
@@ -81,7 +83,11 @@ impl Tape {
     fn x(&self, t: u32) -> i32 {
         let l = self.layout();
         let Some(page) = self.page else { return l.x0 };
-        l.x0 + (t.wrapping_sub(page.origin) as i64 * l.px_per_unit as i64 / page.dit_ms as i64) as i32
+        let dit_ms = page.dit_ms as u32;
+        // Past MAX_UNITS dots the x is far off screen either way. The cap keeps the product in
+        // u32 for px_per_unit up to 64: a 64-bit divide costs about 0.9 KB.
+        let elapsed_ms = t.wrapping_sub(page.origin).min(MAX_UNITS * dit_ms);
+        l.x0 + (elapsed_ms * l.px_per_unit as u32 / dit_ms) as i32
     }
 
     /// Clears the tape and draws the lane labels and unit ticks.
