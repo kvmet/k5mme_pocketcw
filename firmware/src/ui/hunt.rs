@@ -172,6 +172,7 @@ impl Ui {
         self.session = Some(Session::Hunt(Hunting::new(s.callsign(), seed, Self::qso_options(s), s.wpm)));
         self.open(lcd, s, Screen::Hunt);
         self.hunt_cq();
+        self.draw_hunt_lines(lcd);
     }
 
     fn hunt_cq(&mut self) {
