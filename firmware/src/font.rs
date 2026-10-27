@@ -10,15 +10,20 @@ pub struct Font {
     pub height: u16,
     /// Sorted by byte value.
     pub chars: &'static [u8],
-    /// Coverage 0..=15, 4 bits per pixel, high nibble first, `width * height` pixels per glyph.
+    /// Per glyph: left, top, width and height of its inked pixels inside the cell.
+    pub boxes: &'static [[u8; 4]],
+    /// Per glyph: where its pixels start in `pixels`; one more entry ends the last glyph.
+    pub offsets: &'static [u16],
+    /// Coverage 0..=15, 4 bits per pixel, high nibble first, each glyph's box row by row.
     pub pixels: &'static [u8],
 }
 
 impl Font {
-    fn glyph(&self, c: u8) -> Option<&'static [u8]> {
-        let index = self.chars.binary_search(&c).ok()?;
-        let size = (self.width as usize * self.height as usize).div_ceil(2);
-        self.pixels.get(index * size..(index + 1) * size)
+    /// A lowercase letter missing from the font finds its capital.
+    fn glyph(&self, c: u8) -> Option<([u8; 4], &'static [u8])> {
+        let index = self.chars.binary_search(&c).or_else(|_| self.chars.binary_search(&c.to_ascii_uppercase())).ok()?;
+        let pixels = self.pixels.get(self.offsets[index] as usize..self.offsets[index + 1] as usize)?;
+        Some((self.boxes[index], pixels))
     }
 
     pub fn size(&self) -> Size {
@@ -36,17 +41,26 @@ impl Font {
         bg: Rgb565,
     ) -> Result<(), D::Error> {
         let palette = blend_palette(fg, bg);
-        let pixel_count = self.width as usize * self.height as usize;
+        let (width, height) = (self.width as usize, self.height as usize);
         for (i, c) in text.bytes().enumerate() {
             let cell = Rectangle::new(origin + Point::new(i as i32 * self.width as i32, 0), self.size());
             match self.glyph(c) {
-                Some(glyph) => target.fill_contiguous(
-                    &cell,
-                    (0..pixel_count).map(|p| {
-                        let shift = if p % 2 == 0 { 4 } else { 0 };
-                        palette[((glyph[p / 2] >> shift) & 0x0F) as usize]
-                    }),
-                )?,
+                Some((ink, glyph)) => {
+                    let [left, top, w, h] = ink.map(usize::from);
+                    let pixels = (0..height).flat_map(|y| {
+                        (0..width).map(move |x| {
+                            // Wrapping: a pixel left of or above the box lands far past its end.
+                            let (bx, by) = (x.wrapping_sub(left), y.wrapping_sub(top));
+                            if bx >= w || by >= h {
+                                return palette[0];
+                            }
+                            let p = by * w + bx;
+                            let shift = if p % 2 == 0 { 4 } else { 0 };
+                            palette[((glyph[p / 2] >> shift) & 0x0F) as usize]
+                        })
+                    });
+                    target.fill_contiguous(&cell, pixels)?
+                }
                 None => target.fill_solid(&cell, fg)?,
             }
         }
