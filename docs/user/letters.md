@@ -12,6 +12,8 @@ When a character reaches 200 tries, its counts halve. The numbers then follow ho
 
 ## What the screen shows
 
+![The LETTERS screen](img/letters.png)
+
 Each character has a tile, in the Koch order. A tile shows the character and the percent you copied right. The color of the tile shows how sure the device is that you know the character:
 
 | Color | Meaning |

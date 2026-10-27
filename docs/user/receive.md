@@ -16,6 +16,8 @@ The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the
 
 ## How a drill runs
 
+![The WORDS drill after one scored group](img/receive-words.png)
+
 1. The device sends a group. The state at the right of your copy shows `LISTEN`.
 2. The state shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
 3. While you key, the state shows `KEYING`. When you stop keying for three word gaps, your copy ends.
@@ -27,6 +29,8 @@ To hear the group again, key `?` alone as your copy.
 
 ## What the screen shows
 
+![The KOCH drill](img/receive-koch.png)
+
 - The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  30/50 CHARS  80%  NEED 90%`: the characters scored at this level, up to the last 50, the percent of them you copied, and the percent the next level needs.
 - The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. The other drills show all 44 characters.
 - In HEAD, the top line shows your rung and what it sends, such as `RUNG 3 OF 8  1 WORD OF 5 CHARS`.
@@ -36,6 +40,8 @@ To hear the group again, key `?` alone as your copy.
 - The footer: your score for this session, such as `SESSION 85%  120 CHARS`. Before your first score, and while you wait to key, it says what to do. While the drill is paused, it says how to go on.
 
 ## NINJA
+
+![The NINJA drill](img/receive-ninja.png)
 
 NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a word, and then the voice says it. You can just listen, or copy it in your head and key it back first.
 
@@ -50,6 +56,8 @@ The words are the ham words and abbreviations of the content pack, then the most
 NINJA needs the content pack. Without it, the drill shows `CONTENT PACK MISSING: INSTALL IT` and sends nothing. [Install](install.md) again, with the [content pack](install.md#the-content-pack).
 
 ## HEAD
+
+![The HEAD drill](img/receive-head.png)
 
 HEAD is a head-copy ladder. You copy each item in your head while it plays, and key it back after it ends. Keying while it plays does not count.
 

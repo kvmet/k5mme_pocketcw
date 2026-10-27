@@ -17,6 +17,8 @@ The device keeps the last 32 sessions. A session starts to count at the first th
 
 ## What the screen shows
 
+![The PROGRESS screen](img/progress.png)
+
 The chart shows the last 14 sessions, the newest at the right. `NOW` marks the session in progress.
 
 - A filled bar shows the minutes of practice in that session.

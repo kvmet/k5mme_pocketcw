@@ -30,6 +30,8 @@ A closing over holds TU, 72, 73, 5NN, 599, TNX or RR.
 
 ## What the screen shows
 
+![The HUNT screen after the activator's CQ, with its text hidden](img/hunt.png)
+
 The transcript shows each over: YOU for yours, THEM for the activator. What the activator sends shows as a row of dashes until you log the QSO, so you copy it by ear. F3 (HINT) shows the text, and then reads HIDE.
 
 Under the transcript:

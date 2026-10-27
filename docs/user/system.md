@@ -6,6 +6,8 @@ A value in red shows a problem.
 
 ## Rows
 
+![The SYSTEM screen](img/system.png)
+
 | Row | Example | What it shows |
 | - | - | - |
 | FIRMWARE | `v0.2.0` | The PocketCW version. |

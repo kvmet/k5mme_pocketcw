@@ -35,6 +35,8 @@ More ways to talk to the hunters:
 
 ## What the screen shows
 
+![The POTA screen after a CQ, with the pileup calling](img/pota.png)
+
 The transcript shows each over: YOU for yours, PILE for the pileup, and the hunter's callsign for the hunter you work. What the hunters send shows as a row of dashes until the QSO is in your log, so you copy it by ear. F3 (HINT) shows the text, and then reads HIDE.
 
 Under the transcript:

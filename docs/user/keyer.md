@@ -4,6 +4,8 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 
 ## What the screen shows
 
+![The KEYER screen after keying CQ](img/keyer.png)
+
 | Area | What it shows |
 | - | - |
 | Large digits | Your sending speed in WPM, 5 to 60. |

@@ -19,6 +19,8 @@ The screen shows each over in a list: the sender's callsign at the left of the f
 
 ### CHEW
 
+![The CHEW screen](img/chew.png)
+
 CHEW SHOWS in the DRILLS section of the settings sets when text shows:
 
 - WHOLE OVER: each over shows after it ends.
@@ -27,6 +29,8 @@ CHEW SHOWS in the DRILLS section of the settings sets when text shows:
 The footer repeats this choice.
 
 ### QUIZ
+
+![The QUIZ screen](img/quiz.png)
 
 After an over that holds a fact, the screen asks one question, such as:
 

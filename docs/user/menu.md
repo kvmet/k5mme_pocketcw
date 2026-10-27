@@ -6,6 +6,8 @@ To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other sc
 
 ## The top list
 
+![The top list of the menu](img/menu.png)
+
 | Row | Opens | Page |
 | - | - | - |
 | RESUME | The practice you left, where you left it. After you turn the device on, it starts the last practice you opened again from the start. The right end names the practice. The row shows once you have opened a practice. | See below |
@@ -20,6 +22,8 @@ The header of the top list shows your callsign.
 
 ## RECEIVE
 
+![The RECEIVE list of the menu](img/menu-receive.png)
+
 | Row | Opens |
 | - | - |
 | KOCH | The Koch drill. The right end shows your level, such as `LEVEL 12`. |
@@ -31,6 +35,8 @@ The header of the top list shows your callsign.
 See [Receive drills](receive.md).
 
 ## ON AIR
+
+![The ON AIR list of the menu](img/menu-on-air.png)
 
 | Row | Opens | Page |
 | - | - | - |

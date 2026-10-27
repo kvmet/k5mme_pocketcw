@@ -20,6 +20,8 @@ Under the tape, F3 switches between two views: BARS, and HAND.
 
 ### BARS view
 
+![The TIMING screen in the BARS view](img/timing.png)
+
 | Histogram | Range | Dotted lines at |
 | - | - | - |
 | MARKS | 0 to 4 units | 1 (dot) and 3 (dash) |
@@ -34,6 +36,8 @@ Each bar counts the marks or gaps of that length, in the color of the grade a ma
 | GAP, CHR, WRD | Average gap inside characters, between characters and between words, in units. |
 
 ### HAND view
+
+![The TIMING screen in the HAND view, in IAMBIC B](img/timing-hand.png)
 
 The HAND view shows what your paddle or key does, not what the keyer sends. It shows the statistics for the MODE in use.
 

@@ -36,6 +36,8 @@ A line under the list tells you what the selected row sets.
 
 ## KEYER
 
+![The settings at the KEYER section](img/settings-keyer.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | MODE | IAMBIC A, IAMBIC B, STRAIGHT | IAMBIC B | Your key type. See [Keys and jacks](keys.md). |
@@ -46,6 +48,8 @@ A line under the list tells you what the selected row sets.
 | OUT LINES | TIP KEYS, RING KEYS (STRAIGHT); DIT ON TIP, DIT ON RING (PADDLE) | TIP KEYS or DIT ON TIP | Which lines of the func jack key. |
 
 ## SOUND
+
+![The settings at the SOUND section](img/settings-sound.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |
@@ -59,12 +63,16 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 
 ## RECEIVE
 
+![The settings at the RECEIVE section](img/settings-receive.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | CHAR SPEED | MATCH, 5 to 40 WPM | MATCH | The speed of each character the device sends you: the drills, the ragchew, and the stations of POTA, SOTA and HUNT. MATCH uses your keyer SPEED. |
 | FARNSWORTH | OFF, 5 to 40 WPM | OFF | Longer gaps between characters and words, so the text comes at this slower overall speed. It never goes above CHAR SPEED. |
 
 ## DRILLS
+
+![The settings at the DRILLS section](img/settings-drills.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |
@@ -73,6 +81,8 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 
 ## QSO
 
+![The settings at the QSO section](img/settings-qso.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | PILEUP | OFF, TAKE TURNS, OVERLAP | TAKE TURNS | How the hunters call when you [activate](activate.md). |
@@ -80,6 +90,8 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 | SPEED SPREAD | ON, OFF | ON | ON: each hunter or activator sends up to 5 WPM faster or slower than CHAR SPEED. |
 
 ## MEMORIES
+
+![The settings at the MEMORIES section](img/settings-memories.png)
 
 | Row | Values |
 | - | - |
@@ -90,6 +102,8 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 See [Edit the memories](memories.md#edit-the-memories).
 
 ## CALLSIGN
+
+![The settings at the CALLSIGN section](img/settings-callsign.png)
 
 CALL is your callsign. The QSO and hunt screens use it, and the boot screen draws it. The default is N0CALL, a placeholder callsign.
 
@@ -104,6 +118,8 @@ Click the dial on CALL, then key your callsign. Each character you key goes at t
 
 ## DEVICE
 
+![The settings at the DEVICE section](img/settings-device.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | USB OUT | OFF, TEXT, VBAND, SERIAL, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. SERIAL is the serial port alone, for a logging program. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
@@ -111,6 +127,8 @@ Click the dial on CALL, then key your callsign. Each character you key goes at t
 | F1 HOLD | KEY OUT, RESUME, MEM ROW, TIMING | KEY OUT | What holding F1 does on every screen. See [Held buttons](controls.md#held-buttons). |
 
 ## THEME
+
+![The settings at the THEME section](img/settings-theme.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |
