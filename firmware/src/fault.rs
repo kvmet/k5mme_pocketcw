@@ -2,6 +2,7 @@
 //! for a dial click to power off.
 
 use core::fmt::Write;
+use core::ptr::read_volatile;
 
 use at32f4xx_pac::at32f403a as pac;
 use embedded_graphics::{
@@ -63,13 +64,40 @@ fn wait_for_click(down: bool) {
     }
 }
 
+/// Return addresses shown on the panic screen, two per line.
+const FRAMES: usize = 6;
+
+unsafe extern "C" {
+    /// Top and bottom of the stack, from cortex-m-rt's link.x.
+    static _stack_start: u32;
+    static _stack_end: u32;
+}
+
+/// Shows the return addresses of the call chain; `tools/panic.sh` names their functions.
+/// Reading `_info` would keep every panic message and its formatting code, about 25 KB.
 #[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    let fp: u32;
+    // The target forces frame pointers, so r7 points at this function's frame record.
+    unsafe { core::arch::asm!("mov {}, r7", out(reg) fp, options(nomem, nostack, preserves_flags)) };
     halt("panic", |text| {
-        if let Some(location) = info.location() {
-            let file = location.file().rsplit('/').next().unwrap_or("");
-            let _ = write!(text, "{file}:{} ", location.line());
+        let (low, high) = (&raw const _stack_end as u32, &raw const _stack_start as u32);
+        let mut frame = fp;
+        // Frame 0 returns into `panic_fmt`, which is the same for every panic.
+        for i in 0..=FRAMES {
+            // A record is [caller's r7, return address]. Reset never sets r7, so the chain ends
+            // at a value from the bootloader; the bounds stop the walk there.
+            if frame < low || frame + 8 > high || frame % 4 != 0 {
+                break;
+            }
+            let (next, ret) = unsafe { (read_volatile(frame as *const u32), read_volatile((frame + 4) as *const u32)) };
+            if i > 0 {
+                let _ = write!(text, "{ret:08X}        ");
+            }
+            if next <= frame {
+                break;
+            }
+            frame = next;
         }
-        let _ = write!(text, "{}", info.message());
     })
 }

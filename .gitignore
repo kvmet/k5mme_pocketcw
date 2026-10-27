@@ -25,6 +25,7 @@ rustc-ice-*.txt
 
 # Release output from tools/release.sh
 dist/
+symbols/
 
 # Built from tools/pocketcw-flash.c
 tools/pocketcw-flash

@@ -15,7 +15,7 @@
   rustup component add llvm-tools
   ```
 
-- To flash from macOS: `clang` from the Xcode command line tools.
+- To flash from macOS: `clang` from the Xcode command line tools. `tools/panic.sh` uses their `lldb`.
 
 ## Build the image
 
@@ -64,6 +64,18 @@ cargo test
 ```
 
 `logic/` has no target setting, so it builds for your computer. The firmware crate has no tests.
+
+## Panic screen
+
+A panic shows up to six return addresses, from the call into `panic_fmt` outward. Give them to `tools/panic.sh`, which names each function, inlined calls included, with its file and line:
+
+```bash
+sh tools/panic.sh 0801382D 08024A11 08031F05
+```
+
+The first frame outside `core::` is the code that panicked. The function is exact; the line can be off where the compiler merged identical panic paths. `FFFFFFF9` and the like mark an exception entry: the frames after it are the code the interrupt stopped.
+
+The script reads the last app build. For a release, `tools/release.sh` keeps the ELF in `symbols/A000014-VERSION.elf`; pass it with `-e`.
 
 ## Hardware probe
 

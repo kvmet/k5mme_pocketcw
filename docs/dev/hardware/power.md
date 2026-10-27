@@ -30,5 +30,5 @@ On a panic, a hard fault or an unexpected interrupt, `firmware/src/fault.rs`:
 
 1. Drives both func jack lines and the LED low, so a radio does not stay keyed.
 2. Stops the PA8 audio output.
-3. Shows the fault on a dark red screen: the file and line of a panic and its message, the PC, LR, CFSR, HFSR and BFAR values of a hard fault, or the number of an unexpected interrupt.
+3. Shows the fault on a dark red screen: the return addresses of a panic (see [Panic screen](../building.md#panic-screen)), the PC, LR, CFSR, HFSR and BFAR values of a hard fault, or the number of an unexpected interrupt.
 4. Waits, with interrupts off, for a dial click, then enters standby.

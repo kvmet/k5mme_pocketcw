@@ -18,6 +18,9 @@ sh tools/mkimage.sh
 rm -rf dist
 mkdir dist
 cp firmware/target/A000014.bin LICENSE firmware/src/B612-OFL.txt dist/
+# tools/panic.sh needs the matching ELF; it holds local paths, so it stays out of dist/.
+mkdir -p symbols
+cp firmware/target/thumbv7em-none-eabihf/release/pocketcw-firmware "symbols/A000014-$version.elf"
 # Not run with -I: pack.py imports voiceclips from its own folder.
 tools/pack/.venv/bin/python tools/pack/pack.py --out dist
 clang -O2 -arch arm64 -arch x86_64 -mmacosx-version-min=10.15 -o dist/pocketcw-flash tools/pocketcw-flash.c \
