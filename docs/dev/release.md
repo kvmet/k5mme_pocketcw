@@ -49,7 +49,7 @@ Run these on a Mac. `release.sh` needs `clang` with the macOS frameworks, and th
 ## What release.sh does
 
 1. Stops with an error when the voice tools are not set up, when `firmware/Cargo.toml` does not hold the version you gave, or when the working tree has changes that are not committed. Then the files always match the tag.
-2. Runs `tools/mkimage.sh` and copies the image to `dist/A000014.bin`.
+2. Runs `tools/mkimage.sh` and copies the image to `dist/A000014.bin`. Keeps the ELF in `symbols/A000014-VERSION.elf` for `tools/panic.sh`; the ELF holds local paths, so it is not uploaded.
 3. Copies `LICENSE` and `firmware/src/B612-OFL.txt` to `dist/`.
 4. Builds the content pack into `dist/F000400.bin` with `tools/pack/pack.py`. It prints how many common words fit.
 5. Builds `dist/pocketcw-flash` for Apple and Intel Macs, macOS 10.15 or later.

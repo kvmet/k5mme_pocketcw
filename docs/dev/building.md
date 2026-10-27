@@ -73,7 +73,7 @@ A panic shows up to six return addresses, from the call into `panic_fmt` outward
 sh tools/panic.sh 0801382D 08024A11 08031F05
 ```
 
-The first frame outside `core::` is the code that panicked. The function is exact; the line can be off where the compiler merged identical panic paths. `FFFFFFF9` and the like mark an exception entry: the frames after it are the code the interrupt stopped.
+The first frame outside `core::` is the code that panicked. The function is exact; the line can be off where the compiler merged identical panic paths. `FFFFFFF9` and the like mark an exception entry: the frames after it are the callers of the function the interrupt stopped. That function itself is not shown.
 
 The script reads the last app build. For a release, `tools/release.sh` keeps the ELF in `symbols/A000014-VERSION.elf`; pass it with `-e`.
 
@@ -233,6 +233,14 @@ sh tools/mkimage.sh flashprobe
 2. Flash `firmware/target/flashtest/F000400.bin`.
 3. Turn the device on and press F3. The tags line counts the test sectors.
 4. Press F4 twice, then flash `dist/F000400.bin` from `tools/release.sh` and the app.
+
+## Pop probe
+
+Finds which ES8388 write makes a volume change pop in silence. Each mode toggles one kind of write, by hand with F4 or once a second with F3, so the pops can be compared by ear. A pop with SAME VALUES or READ ONLY comes from the bus traffic, not a gain change.
+
+```bash
+sh tools/mkimage.sh popprobe
+```
 
 ## Remote control and screenshots
 
