@@ -65,14 +65,14 @@ const RECEIVE: [Row; 5] = [
     row("HEAD", "COPY WHOLE WORDS IN YOUR HEAD", "", Item::Practice(Practice::Drill(Kind::Head))),
 ];
 
-/// RADIO stays last: it shows only with the decoder board on.
+/// RADIO stays last: it shows only with the decoder board on or USB OUT not OFF.
 const ON_AIR: [Row; 6] = [
     row("POTA", "ACTIVATE A PARK AND WORK A PILEUP", "PARKS ON THE AIR", Item::Practice(Practice::Qso(Program::Pota))),
     row("SOTA", "ACTIVATE A SUMMIT, WORK A PILEUP", "SUMMITS ON THE AIR", Item::Practice(Practice::Qso(Program::Sota))),
     row("HUNT", "ANSWER ACTIVATORS ON THE AIR", "", Item::Practice(Practice::Hunt)),
     row("CHEW", "LISTEN TO TWO STATIONS RAGCHEW", "", Item::Practice(Practice::Chew { quiz: false })),
     row("QUIZ", "A RAGCHEW WITH A QUESTION PER OVER", "", Item::Practice(Practice::Chew { quiz: true })),
-    row("RADIO", "THE DECODER BOARD OF THE PRO", "", Item::Open(Screen::Radio)),
+    row("RADIO", "DECODE THE BOARD OR MIDI IN", "", Item::Open(Screen::Radio)),
 ];
 
 const STATS: [Row; 2] = [
@@ -110,7 +110,7 @@ impl Ui {
     fn shown(&self, s: &Settings, item: Item) -> bool {
         match item {
             Item::Resume => self.session.is_some() || s.last_practice.is_some(),
-            Item::Open(Screen::Radio) => s.decoder_board,
+            Item::Open(Screen::Radio) => self.radio_available(),
             _ => true,
         }
     }

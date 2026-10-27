@@ -81,7 +81,12 @@ Every USB OUT setting but OFF also has a MIDI port named PocketCW. It sends what
 
 - Each mark is one Note On and one Note Off, on channel 1 at full velocity.
 - The note is the one nearest your TONE setting, so a synthesizer or music program plays your keying at your sidetone pitch.
-- The device ignores the notes and other messages the computer sends.
+
+Notes the computer sends sound on the device at their own pitch, and the [RADIO](radio.md) screen decodes them.
+
+- The tone sounds while any note is held. Two stations at once sound as one tone, at the pitch of the newer note, and decode as garble.
+- A tone longer than 3 seconds stops, so a lost Note Off cannot hold the speaker on.
+- The device ignores every message but Note On and Note Off.
 
 ### Vail
 
@@ -94,6 +99,8 @@ The screen shows `VAIL ON` when Vail's page loads. Until you unplug the device o
 
 - The device sends note 0, which Vail reads as a straight key in every one of its keyer modes. Every MODE works, since the device times the elements.
 - In VBAND, the device sends no Ctrl keys, so Vail never gets your keying twice.
+
+The other stations in your Vail room sound on the device, and RADIO decodes them.
 
 Keep the Vail tab in front: Chrome slows the timers of a hidden tab.
 

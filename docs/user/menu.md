@@ -45,7 +45,7 @@ See [Receive drills](receive.md).
 | HUNT | Hunt activators on parks and summits. | [Hunt](hunt.md) |
 | CHEW | Listen to two stations ragchew. | [Ragchew](ragchew.md) |
 | QUIZ | A ragchew with a question about each over. | [Ragchew](ragchew.md) |
-| RADIO | The decoder board of the Pro model. This row shows only when DECODER BOARD is ON. | [Radio](radio.md) |
+| RADIO | What the decoder board of the Pro model hears, or what a computer sends as MIDI notes, decoded. This row shows only when DECODER BOARD is ON or USB OUT is not OFF. | [Radio](radio.md) |
 
 ## STATS
 

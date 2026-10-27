@@ -74,7 +74,7 @@ mod app {
         sender,
         serial::{Command as SerialCommand, CommandLine},
         settings::{Field, Settings, UsbOut},
-        synth::{PLAYERS, SIDETONE},
+        synth::{PLAYERS, REMOTE, SIDETONE},
         volume::wm8978_speaker,
         ticks,
         timing::Line,
@@ -225,6 +225,8 @@ mod app {
         typist: Typist,
         /// Keys SEND or WinKeyer text from the serial port, into the same path as the paddle.
         serial_key: sender::Sender,
+        /// The notes the computer holds down on MIDI in.
+        remote: midi::In,
     }
 
     #[local]
@@ -233,6 +235,8 @@ mod app {
         buttons: Buttons,
         decoder: KeyDecoder,
         listener: Listener,
+        /// Decodes MIDI in.
+        remote_listener: Listener,
         jack: Jack,
         messages: Sender<'static, Message, EVENT_QUEUE>,
         board_messages: Sender<'static, Message, EVENT_QUEUE>,
@@ -376,6 +380,7 @@ mod app {
             buttons: Buttons::default(),
             decoder: KeyDecoder::new(keyer.dit_ms()),
             listener: Listener::default(),
+            remote_listener: Listener::default(),
             jack,
             messages,
             board_messages,
@@ -388,7 +393,7 @@ mod app {
             wk_bytes,
         };
         let serial_key = sender::Sender::new();
-        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default(), serial_key }, local)
+        (Shared { keyer, audio, players: [Player::new(); PLAYERS], link, typist: Typist::default(), serial_key, remote: midi::In::new() }, local)
     }
 
     /// The key jack's contacts from port B's input bits: a closed contact pulls its pin low.
@@ -460,7 +465,7 @@ mod app {
     #[task(
         binds = USBFS_L_CAN1_RX0,
         priority = 2,
-        shared = [typist, serial_key],
+        shared = [typist, serial_key, remote],
         local = [
             port, command_line, usb_messages, chunks, wk_replies, wk_bytes,
             unsent: Option<Chunk> = None,
@@ -489,6 +494,7 @@ mod app {
         }
         if !ready {
             *cx.local.midi_out = midi::Out::new();
+            cx.shared.remote.lock(|remote| *remote = midi::In::new());
             VAIL.store(false, Ordering::Relaxed);
             cx.shared.typist.lock(Typist::clear);
             // Left over, these would land in front of the next screenshot.
@@ -500,9 +506,11 @@ mod app {
         match port.read_midi(&mut packets) {
             Ok(n) => {
                 for packet in packets[..n].chunks_exact(4) {
-                    if midi::is_vail_hello(&[packet[0], packet[1], packet[2], packet[3]]) && !VAIL.swap(true, Ordering::Relaxed) {
+                    let packet = [packet[0], packet[1], packet[2], packet[3]];
+                    if midi::is_vail_hello(&packet) && !VAIL.swap(true, Ordering::Relaxed) {
                         send(Message::Vail);
                     }
+                    cx.shared.remote.lock(|remote| remote.packet(&packet));
                 }
             }
             Err(_) => {
@@ -659,9 +667,9 @@ mod app {
     #[task(
         binds = TMR3,
         priority = 3,
-        shared = [keyer, audio, players, typist, serial_key],
+        shared = [keyer, audio, players, typist, serial_key, remote],
         local = [
-            timer, buttons, decoder, listener, jack, messages, wk_echoes,
+            timer, buttons, decoder, listener, remote_listener, jack, messages, wk_echoes,
             sent_after_ms: Option<u32> = None,
             paddle_hold_ms: u32 = 0,
             paddled: bool = false,
@@ -804,11 +812,13 @@ mod app {
             send(Message::Played { play: PLAYS_STARTED.load(Ordering::Relaxed) });
         }
         *cx.local.playing = playing;
+        let (remote_on, remote_hz) = cx.shared.remote.lock(|remote| (remote.tick(), remote.hz()));
         cx.shared.audio.lock(|audio| {
             audio.synth.key(SIDETONE, down, USER_TONE.load(Ordering::Relaxed));
             for (i, (&key, &hz)) in played.iter().zip(&pitches).enumerate() {
                 audio.synth.key(SIDETONE + 1 + i, key == Some(true), hz);
             }
+            audio.synth.key(REMOTE, remote_on, remote_hz);
             audio.wake();
         });
         let out = usb_out();
@@ -855,6 +865,9 @@ mod app {
             if out == UsbOut::Radio && typing {
                 type_out(decoded);
             }
+        }
+        if listening && let Some(decoded) = cx.local.remote_listener.tick(remote_on) {
+            send(Message::Heard { decoded, wpm: cx.local.remote_listener.wpm() });
         }
 
         let mut raw = [false; buttons::COUNT];
@@ -1312,6 +1325,9 @@ mod app {
         if after.decoder_board != before.decoder_board {
             cx.shared.link.lock(|link| link.set_on(after.decoder_board));
             ui.board_powered(after.decoder_board);
+        }
+        if after.usb_out != before.usb_out {
+            ui.usb_powered(after.usb_out != UsbOut::Off);
         }
         if after.volume != before.volume && ui.board_present() {
             // The board's volume scale matches the WM8978 speaker register, 0 to 63.

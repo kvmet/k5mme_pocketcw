@@ -4,10 +4,12 @@
 use crate::adpcm::{Clips, Upsample};
 use crate::math::sqrt;
 
-/// The voice your own keying sounds on; voices after it carry the players.
+/// The voice your own keying sounds on; voices after it carry the players, then MIDI in.
 pub const SIDETONE: usize = 0;
 pub const PLAYERS: usize = 4;
-pub const VOICES: usize = 1 + PLAYERS;
+/// The tone the computer sends as MIDI notes. It does not fade: it is a station on the internet.
+pub const REMOTE: usize = 1 + PLAYERS;
+pub const VOICES: usize = 2 + PLAYERS;
 /// Noise and fading levels run 0 (off) to this.
 pub const MAX_LEVEL: u8 = 10;
 
@@ -242,7 +244,7 @@ impl Synth {
             harmonics: odd_harmonics(sound.tone_hz as f32, sample_hz),
             down: false,
             level: 0.0,
-            fade: Oscillator::new(if i == SIDETONE { 0.0 } else { FADE_HZ[i - 1] }, sample_hz),
+            fade: Oscillator::new(if i == SIDETONE || i == REMOTE { 0.0 } else { FADE_HZ[i - 1] }, sample_hz),
         };
         let mut synth = Synth {
             sample_hz,
@@ -340,7 +342,8 @@ impl Synth {
                 sidetone_peak = VOICE_PEAK * envelope;
                 sidetone = sidetone_peak * wave;
             } else {
-                let peak = VOICE_PEAK * envelope * self.duck * (1.0 - self.fade_depth * (1.0 + v.fade.next()) / 2.0);
+                let fade = if i == REMOTE { 1.0 } else { 1.0 - self.fade_depth * (1.0 + v.fade.next()) / 2.0 };
+                let peak = VOICE_PEAK * envelope * self.duck * fade;
                 stations_peak += peak;
                 stations += peak * wave;
             }

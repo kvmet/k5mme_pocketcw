@@ -1,5 +1,6 @@
-//! Radio: what the Pro decoder board hears, decoded, with the board's filter and noise
-//! reduction. F2 and F3 step them, as on the vendor decoder screen.
+//! Radio: what the Pro decoder board hears and what the computer sends as MIDI notes, decoded.
+//! With the board on, F2 and F3 step its filter and noise reduction, as on the vendor decoder
+//! screen.
 
 use core::fmt::Write;
 
@@ -28,9 +29,11 @@ const ROWS: usize = 9;
 
 pub(super) type Heard = DecodeLines<COLS, ROWS>;
 
-/// What the decoder board last reported, and the speed it is heard at.
+/// What the decoder board last reported, and the speed heard text comes at.
 #[derive(Default)]
 pub(super) struct Board {
+    /// The DECODER BOARD setting.
+    on: bool,
     /// The board announced itself since power on.
     present: bool,
     filter: u8,
@@ -38,11 +41,18 @@ pub(super) struct Board {
     wpm: u16,
 }
 
+impl Board {
+    pub(super) fn new(on: bool) -> Board {
+        Board { on, ..Default::default() }
+    }
+}
+
 impl Ui {
     pub(super) fn draw_radio(&self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "RADIO", &[]);
-        self.softkeys(lcd, ["SET", "FILT", "NR", "BACK"]);
+        let (filter, nr) = if self.board.on { ("FILT", "NR") } else { ("", "") };
+        self.softkeys(lcd, ["SET", filter, nr, "BACK"]);
         self.draw_radio_info(lcd);
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         for row in 0..ROWS {
@@ -54,8 +64,11 @@ impl Ui {
         let t = &self.theme;
         let b = &self.board;
         let mut line = Text::<48>::new();
-        let status = if b.present { "BOARD OK" } else { "NO REPLY" };
-        let _ = write!(line, "{status} FIL {} NR {} ", b.filter, b.noise_reduction);
+        let _ = match (b.on, b.present) {
+            (true, true) => write!(line, "BOARD OK FIL {} NR {} ", b.filter, b.noise_reduction),
+            (true, false) => write!(line, "NO REPLY FIL {} NR {} ", b.filter, b.noise_reduction),
+            (false, _) => write!(line, "MIDI IN "),
+        };
         let _ = match b.wpm {
             0 => write!(line, "--WPM"),
             wpm => write!(line, "{wpm}WPM"),
@@ -77,6 +90,7 @@ impl Ui {
     pub(super) fn radio_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
             Action::Soft(0) => self.open_settings_at(lcd, s, Section::Device),
+            Action::Soft(1 | 2) if !self.board.on => {}
             Action::Soft(1) => {
                 self.board.filter = (self.board.filter + 1) % (MAX_FILTER + 1);
                 self.board_command = Some(board::filter(self.board.filter));
@@ -106,7 +120,7 @@ impl Ui {
         }
     }
 
-    /// A character decoded from the board's tone line, heard at `wpm`.
+    /// A character decoded from the board's tone line or MIDI in, heard at `wpm`.
     pub fn heard(&mut self, lcd: &mut Lcd, decoded: Decoded, wpm: u16) {
         // The timing quality marks your own keying; heard text has none to show.
         self.heard.push(decoded, Quality::Good);
@@ -130,6 +144,7 @@ impl Ui {
     /// The decoder board setting changed. Off, the board is unpowered and must announce itself
     /// again.
     pub fn board_powered(&mut self, on: bool) {
+        self.board.on = on;
         if !on {
             self.board.present = false;
         }
@@ -143,6 +158,16 @@ impl Ui {
     /// A command for the decoder board, once.
     pub fn take_board_command(&mut self) -> Option<board::Command> {
         self.board_command.take()
+    }
+
+    /// USB OUT changed: MIDI in, and so the RADIO screen, needs USB.
+    pub fn usb_powered(&mut self, on: bool) {
+        self.usb_on = on;
+    }
+
+    /// The board or MIDI in has something for RADIO to show.
+    pub(super) fn radio_available(&self) -> bool {
+        self.board.on || self.usb_on
     }
 
     /// The RADIO screen is open, so the tone line should be decoded.

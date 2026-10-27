@@ -209,6 +209,8 @@ pub struct Ui {
     settings_from: Option<Screen>,
     heard: radio::Heard,
     board: radio::Board,
+    /// USB OUT is not OFF, so MIDI in can arrive.
+    usb_on: bool,
     /// A command for the decoder board, not sent yet.
     board_command: Option<pocketcw_logic::board::Command>,
     pack: Result<Pack, pocketcw_logic::pack::Error>,
@@ -271,7 +273,8 @@ impl Ui {
             now_ms: 0,
             settings_from: None,
             heard: radio::Heard::new(),
-            board: radio::Board::default(),
+            board: radio::Board::new(settings.decoder_board),
+            usb_on: settings.usb_out != pocketcw_logic::settings::UsbOut::Off,
             board_command: None,
             pack,
         }
@@ -353,8 +356,8 @@ impl Ui {
     }
 
     /// The second action of a held F key: F1 does the F1 HOLD setting and F4 opens KEYER, on
-    /// every screen; F2 or F3 clears what the screen holds. On the MEM row each key sends its
-    /// memory again and again. True when the key has one here.
+    /// every screen; F2 or F3 clears what the screen holds, and F3 on KEYER opens RADIO. On the
+    /// MEM row each key sends its memory again and again. True when the key has one here.
     fn hold_act(&mut self, lcd: &mut Lcd, s: &mut Settings, key: u8) -> bool {
         if self.mem_row {
             self.memory_key(lcd, s, key as usize, true);
@@ -373,6 +376,7 @@ impl Ui {
                 self.draw(lcd, s);
             }
             (2, Screen::Settings) if self.editing_text() => self.clear_text(lcd, s),
+            (2, Screen::Home) if self.radio_available() => self.open(lcd, s, Screen::Radio),
             (3, screen) if screen != Screen::Home => self.open(lcd, s, Screen::Home),
             _ => return false,
         }
@@ -442,7 +446,7 @@ impl Ui {
             // While a memory sends, a press or hold only stops it.
             (_, Screen::Home) if self.sending.is_some() => [""; 4],
             (true, _) => ["REPEAT"; 4],
-            (false, Screen::Home) => [f1, "", "", ""],
+            (false, Screen::Home) => [f1, "", if self.radio_available() { "RADIO" } else { "" }, ""],
             (false, Screen::Letters | Screen::Timing) => [f1, "CLEAR", "", "HOME"],
             (false, Screen::Settings) if self.editing_text() => [f1, "", "CLEAR", "HOME"],
             (false, _) => [f1, "", "", "HOME"],

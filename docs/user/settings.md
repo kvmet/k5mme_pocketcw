@@ -123,7 +123,7 @@ Click the dial on CALL, then key your callsign. Each character you key goes at t
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | USB OUT | OFF, TEXT, VBAND, SERIAL, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. SERIAL is the serial port alone, for a logging program. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
-| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the ON AIR list of the menu shows RADIO. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
+| DECODER BOARD | ON, OFF | OFF | ON: the device powers the decoder board of the Pro model, and the ON AIR list of the menu shows RADIO. RADIO also shows while USB OUT is not OFF, for MIDI in. OFF also changes USB OUT from RADIO to OFF. See [Radio](radio.md). |
 | F1 HOLD | KEY OUT, RESUME, MEM ROW, TIMING | KEY OUT | What holding F1 does on every screen. See [Held buttons](controls.md#held-buttons). |
 
 ## THEME

@@ -34,6 +34,77 @@ pub fn nearest_note(hz: u16) -> u8 {
     127
 }
 
+/// The pitch of MIDI note `note`, rounded to whole Hz.
+pub fn note_hz(note: u8) -> u16 {
+    const SEMITONE: f32 = 1.059_463_1;
+    let mut hz = 8.175_799;
+    for _ in 0..note.min(127) {
+        hz *= SEMITONE;
+    }
+    (hz + 0.5) as u16
+}
+
+/// A remote tone longer than this ends, and every held note is dropped, so a lost Note Off
+/// cannot hold the speaker on.
+pub const MAX_MARK_MS: u32 = 3000;
+
+/// The notes the computer holds down. Overlapping senders sound as one tone, at the pitch of the
+/// newest note.
+pub struct In {
+    /// Note Ons minus Note Offs, per note.
+    counts: [u8; 128],
+    held: u16,
+    hz: u16,
+    on_ms: u32,
+}
+
+impl In {
+    pub const fn new() -> In {
+        In { counts: [0; 128], held: 0, hz: 0, on_ms: 0 }
+    }
+
+    /// Takes one packet from the computer; anything but a note is ignored.
+    pub fn packet(&mut self, packet: &Packet) {
+        let [_, status, note, velocity] = *packet;
+        let count = &mut self.counts[note as usize & 0x7F];
+        match status & 0xF0 {
+            0x90 if velocity > 0 => {
+                if *count == 0 {
+                    self.held += 1;
+                }
+                *count = count.saturating_add(1);
+                self.hz = note_hz(note & 0x7F);
+            }
+            0x80 | 0x90 if *count > 0 => {
+                *count -= 1;
+                if *count == 0 {
+                    self.held -= 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Steps 1 ms: whether the tone sounds.
+    pub fn tick(&mut self) -> bool {
+        if self.held == 0 {
+            self.on_ms = 0;
+            return false;
+        }
+        self.on_ms += 1;
+        if self.on_ms > MAX_MARK_MS {
+            *self = In { hz: self.hz, ..In::new() };
+            return false;
+        }
+        true
+    }
+
+    /// The newest note's pitch, kept after it ends so the tone fades out at it.
+    pub fn hz(&self) -> u16 {
+        self.hz
+    }
+}
+
 /// The note the computer last took, so each mark gets one Note On and one Note Off.
 pub struct Out {
     sounding: Option<u8>,
@@ -94,6 +165,46 @@ mod tests {
         assert_eq!(off, note_off(74));
         out.sent(off);
         assert_eq!(out.next(true, VAIL_NOTE), Some(note_on(VAIL_NOTE)));
+    }
+
+    #[test]
+    fn note_hz_matches_equal_temperament() {
+        for (note, hz) in [(0, 8), (60, 262), (69, 440), (72, 523), (127, 12544)] {
+            assert_eq!(note_hz(note), hz, "{note}");
+        }
+    }
+
+    #[test]
+    fn in_sounds_while_any_note_is_held() {
+        let mut remote = In::new();
+        assert!(!remote.tick());
+        remote.packet(&note_on(72));
+        assert!(remote.tick());
+        assert_eq!(remote.hz(), 523);
+        remote.packet(&note_on(69));
+        remote.packet(&note_off(72));
+        assert!(remote.tick());
+        assert_eq!(remote.hz(), 440, "the newest note's pitch");
+        remote.packet(&[0x09, 0x90, 69, 0]);
+        assert!(!remote.tick(), "Note On at velocity 0 is a Note Off");
+        assert_eq!(remote.hz(), 440, "the pitch stays for the fade out");
+        remote.packet(&note_off(69));
+        remote.packet(&[0x0B, 0xB0, 1, 30]);
+        assert!(!remote.tick(), "an extra Note Off and a CC change nothing");
+    }
+
+    #[test]
+    fn in_drops_a_stuck_note_after_max_mark() {
+        let mut remote = In::new();
+        remote.packet(&note_on(72));
+        for _ in 0..MAX_MARK_MS {
+            assert!(remote.tick());
+        }
+        assert!(!remote.tick());
+        assert_eq!(remote.hz(), 523);
+        assert!(!remote.tick(), "stays off with no Note Off");
+        remote.packet(&note_on(72));
+        assert!(remote.tick(), "the next Note On sounds");
     }
 
     #[test]
