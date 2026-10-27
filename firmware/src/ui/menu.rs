@@ -9,7 +9,7 @@ use pocketcw_logic::{
 };
 
 use super::{Screen, Session, Ui, settings::Section};
-use crate::gfx::{TINY_W, rect, text, tiny};
+use crate::gfx::{TINY_W, mix, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::MAIN;
@@ -174,7 +174,8 @@ impl Ui {
         rect(lcd, 0, ABOUT_Y, MAIN, CREDIT_Y + 12 - ABOUT_Y, t.bg);
         let restarts = row.item == Item::Resume && self.session.is_none();
         tiny(lcd, 2, ABOUT_Y, if restarts { "START YOUR LAST PRACTICE AGAIN" } else { row.about }, t.muted, t.bg);
-        tiny(lcd, 2, CREDIT_Y, row.credit, t.dim, t.bg);
+        // 15 % toward the background keeps 2.6:1 contrast or more in every palette.
+        tiny(lcd, 2, CREDIT_Y, row.credit, mix(t.muted, t.bg, 15), t.bg);
     }
 
     /// Opens `list` with `item` selected, or the list's last selection when it has no such row.
