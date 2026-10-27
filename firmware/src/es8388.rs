@@ -22,10 +22,11 @@ const BYPASS: &[(u8, u8)] = &[
 /// VMID charge time on the 5k divider before it moves to 50k for play.
 const VMID_CHARGE_MS: u32 = 100;
 const VMID_50K: (u8, u8) = (0x00, 0x05);
-const MIXER_INPUT: [u8; 2] = [0x27, 0x2A]; // left and right input into the output mixers
+pub const MIXER_INPUT: [u8; 2] = [0x27, 0x2A]; // left and right input into the output mixers
 /// Input switched into the mixer at 0 dB; each step of bits 5..3 above it cuts 3 dB.
-const MIXER_ON_0DB: u8 = 0x50;
-const OUTPUT_VOLUME: [u8; 4] = [0x2E, 0x2F, 0x30, 0x31]; // LOUT1, ROUT1, LOUT2, ROUT2
+pub const MIXER_ON_0DB: u8 = 0x50;
+pub const SPEAKER_VOLUME: [u8; 2] = [0x2E, 0x2F]; // LOUT1, ROUT1
+pub const HEADPHONE_VOLUME: [u8; 2] = [0x30, 0x31]; // LOUT2, ROUT2
 
 /// Returns true when every register write was acknowledged. Takes VMID_CHARGE_MS; the speaker
 /// amp should switch on only after it, so the charge doesn't thump.
@@ -36,12 +37,14 @@ pub fn init(bus: &mut I2c, volume: u8) -> bool {
     bus.write(ADDRESS, &[VMID_50K.0, VMID_50K.1]) && volume_ok && bypass_ok
 }
 
-/// `level` as in `pocketcw_logic::volume`: 0 disconnects the tone from the mixers.
+/// `level` as in `pocketcw_logic::volume`: 0 disconnects the tone from the mixers. The synth
+/// makes the rest of the level with `pocketcw_logic::volume::CodecGain::synth_gain`.
 pub fn set_volume(bus: &mut I2c, level: u8) -> bool {
-    let (mixer, output) = match codec_gain(level) {
-        Some(gain) => (MIXER_ON_0DB + (gain.mixer_cut << 3), gain.output),
-        None => (0, 0),
+    let (mixer, speaker, headphones) = match codec_gain(level) {
+        Some(gain) => (MIXER_ON_0DB + (gain.mixer_cut << 3), gain.speaker, gain.headphones),
+        None => (0, 0, 0),
     };
-    let writes = MIXER_INPUT.map(|r| (r, mixer)).into_iter().chain(OUTPUT_VOLUME.map(|r| (r, output)));
+    let writes = MIXER_INPUT.map(|r| (r, mixer)).into_iter();
+    let writes = writes.chain(SPEAKER_VOLUME.map(|r| (r, speaker))).chain(HEADPHONE_VOLUME.map(|r| (r, headphones)));
     writes.fold(true, |ok, (register, value)| bus.write(ADDRESS, &[register, value]) && ok)
 }

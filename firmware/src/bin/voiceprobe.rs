@@ -26,6 +26,7 @@ use pocketcw_firmware::lcd::Lcd;
 use pocketcw_firmware::pins::{BACKLIGHT, DIAL_LEFT, DIAL_RIGHT, F_KEYS, POWER_BUTTON, SIDETONE, SPEAKER_AMP};
 use pocketcw_firmware::{eeprom, gpio, power, store};
 use pocketcw_logic::adpcm::{Clip as Samples, Upsample};
+use pocketcw_logic::pwm::Shaper;
 use pocketcw_logic::synth::{self, Sound, Synth, VOICES};
 use pocketcw_logic::text::Text;
 use pocketcw_logic::{panel, rng::Rng};
@@ -226,8 +227,8 @@ fn main() -> ! {
     }
 }
 
-/// Worst and mean cycles of one synth sample with every voice keyed, square waves, and the top
-/// noise and fading levels: the heaviest load the sample interrupt carries.
+/// Worst and mean cycles of one synth sample and its pulses' duties with every voice keyed, square
+/// waves, and the top noise and fading levels: the heaviest load the sample interrupt carries.
 fn time_synth() -> (u32, u32) {
     let sound = Sound { square: true, noise: synth::MAX_LEVEL, fading: synth::MAX_LEVEL, tone_hz: 700 };
     let mut synth = Synth::new(SAMPLE_HZ, sound);
@@ -235,12 +236,13 @@ fn time_synth() -> (u32, u32) {
     for voice in 0..VOICES {
         synth.key(voice, true, 500 + 100 * voice as u16);
     }
+    let (mut shaper, mut pulses) = (Shaper::new(STEPS), [0; REPEAT as usize]);
     let (mut worst, mut total) = (0, 0u64);
     for _ in 0..SYNTH_RUN {
         let start = DWT::cycle_count();
-        let duty = synth::duty(synth.sample(), STEPS);
+        shaper.fill(synth.sample(), &mut pulses);
         let cycles = DWT::cycle_count().wrapping_sub(start);
-        core::hint::black_box(duty);
+        core::hint::black_box(&pulses);
         worst = worst.max(cycles);
         total += cycles as u64;
     }

@@ -15,6 +15,7 @@ use pocketcw_logic::{
 };
 
 use super::{Play, Screen, Session, Ui, settings};
+use crate::audio;
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::Theme;
@@ -24,7 +25,8 @@ pub const REPLY_LEN: usize = config::REASON_LEN + 32;
 pub type Reply = Text<REPLY_LEN>;
 
 impl Ui {
-    /// `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS`
+    /// `INFO VERSION=0.2.0 SCREEN=KEYER PANEL=IPS PACK=3131 AUDIO=1900/4096`. AUDIO is the sample
+    /// interrupt's longest run since the last INFO, against its budget, in CPU cycles.
     pub fn info(&self) -> Reply {
         let screen = match self.screen {
             Screen::Home => "KEYER",
@@ -51,7 +53,9 @@ impl Ui {
             Err(PackError::Format(_)) => write!(pack, "OLD"),
             Err(PackError::Corrupt) => write!(pack, "BAD"),
         };
-        Text::format(format_args!("INFO VERSION={} SCREEN={screen} PANEL={panel} PACK={}\n", env!("CARGO_PKG_VERSION"), pack.as_str()))
+        let (audio, budget) = (audio::take_worst_cycles(), audio::SAMPLE_CYCLES);
+        let version = env!("CARGO_PKG_VERSION");
+        Text::format(format_args!("INFO VERSION={version} SCREEN={screen} PANEL={panel} PACK={} AUDIO={audio}/{budget}\n", pack.as_str()))
     }
 
     /// `VALUE SPEED 25`

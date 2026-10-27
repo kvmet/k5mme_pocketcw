@@ -5,9 +5,14 @@
 PA8 makes the audio. It goes into input 1 of the audio codec, and the codec's analog bypass sends it to the speaker and the headphone jack. The speaker amplifier needs PB12 high.
 
 - The vendor sends a square wave on PA8 at the tone pitch, from TMR1 channel 1 PWM. Confirmed on 2.64.
-- PocketCW uses PA8 as a 1 bit DAC: a 281 kHz pulse train whose duty changes 17,578 times a second. The codec input and the headphones smooth the pulses into sine tones and noise. Confirmed on 2.64.
+- PocketCW uses PA8 as a 1 bit DAC: a 281 kHz pulse train with a new duty on every pulse, for 17,578 samples a second. The codec input and the headphones smooth the pulses into sine tones and noise. Confirmed on 2.64.
 
-PocketCW timing (`firmware/src/audio.rs`): TMR1 counts 256 steps per pulse at 72 MHz, which is 281.25 kHz. The duty changes every 16 pulses. Between sounds the duty stays at half, the silent level, so a new sound does not pop, and the sample interrupt stops.
+PocketCW timing (`firmware/src/audio.rs`): TMR1 counts 256 steps per pulse at 72 MHz, which is 281.25 kHz. Each sample lasts 16 pulses.
+
+- At each TMR1 overflow, DMA2 channel 1 copies the next duty from a buffer of 32 pulses into the channel 1 compare register. The request reaches DMA2 through its flexible mapping, ID 0x37. The fixed mapping also wires TMR1 overflow to DMA1 channel 5, the decoder board link's receive channel, so DMA1 runs on flexible mapping too, with channel 5 on USART1 RX (ID 0x19).
+- The DMA interrupts at each half of the buffer. The sample interrupt then fills the half just played: one synth sample, as 16 duties.
+- Rounding a duty to a whole count leaves an error. `logic/src/pwm.rs` feeds each error into the next two pulses, so the rounding noise follows (1 - z^-1)^2 at the pulse rate, far above the audio band. Below 8 kHz the rounding noise is 46 to 48 dB under that of one duty held for the whole sample.
+- Between sounds the duty stays at half, the silent level, so a new sound does not pop. Once both halves of the buffer are silent, the DMA and the sample interrupt stop.
 
 ## Codecs
 
@@ -63,7 +68,19 @@ PocketCW (`firmware/src/es8388.rs`) follows the bypass start-up in section 10.4 
 
 ## Volume
 
-`logic/src/volume.rs` maps the VOLUME setting. Level 0 mutes. Levels 1 to 44 go from -60 dB to +4.5 dB in 1.5 dB steps. On the ES8388, the output stage cuts first, down to -45 dB. Below that, the mixer input cuts in 3 dB steps. A cut before the output stage raises the hiss relative to the tone.
+`logic/src/volume.rs` maps the VOLUME setting. Level 0 mutes, and level 44 is +4.5 dB.
+
+| Output | Level 1 | Step |
+| - | - | - |
+| ES8388 headphones (OUT2) | -60 dB | 1.5 dB |
+| ES8388 speaker (OUT1) | -38.5 dB | 1 dB |
+| WM8978 speaker and headphones | -60 dB | 1.5 dB |
+
+- Through the speaker, a tone below about -39 dB is lost in a quiet room, and the headphones are still clear at -60 dB. The firmware cannot tell which output is in use, so it sets both.
+- The ES8388 output stage steps 1.5 dB. The synth makes the speaker's levels between those steps: it cuts the whole signal by 0 dB, 0.5 dB or 1 dB, easing over 5 ms so the change does not click. The headphones hear that cut too, so they land within 0.5 dB of their level.
+- On the ES8388, the output stage cuts first, down to -45 dB. Below that, the mixer input cuts in 3 dB steps. A cut before the output stage raises the hiss relative to the tone. The mixer feeds both outputs, and the speaker's output stage makes up its cut.
+- Through the speaker, a sine tone is clean at 0 dB and starts to sound harsh at +1.5 dB. Speech still sounds clean at +3 dB, since it reaches its peak far less often than a tone.
+- Each volume change pops on both outputs, also in silence and with PA8 floating, so the pop does not come from PA8. The ES8388's analog volume registers have no zero cross or soft ramp setting.
 
 ## Speaker amplifier
 
@@ -77,6 +94,7 @@ PB12 enables the speaker amplifier.
 `logic/src/synth.rs` mixes five voices into one signal: your sidetone and four players, so stations can overlap.
 
 - Key edges rise and fall over 5 ms on a raised cosine, so they do not click.
+- WAVE SQUARE plays 7.5 dB under a sine's peak: at the same peak, it sounds 7.5 dB louder, by ear on the speaker and the headphones.
 - WAVE SQUARE sums the odd harmonics up to 31. At 17.6 kHz this reaches the Nyquist frequency for pitches down to 284 Hz. A lower pitch loses its top harmonics.
 - Band noise has a 500 Hz bandwidth, like a receiver CW filter. Its 10 levels are 2.5 dB apart, up to an RMS of 0.35.
 - Fading goes down to a tenth at the top level. Each player fades at its own rate, so stations fade apart.

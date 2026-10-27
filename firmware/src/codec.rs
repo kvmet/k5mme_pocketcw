@@ -1,6 +1,8 @@
 //! The audio codec: a WM8978 before board 2.64 and an ES8388 on it. They answer at different
 //! I2C addresses, so the one that answers is the one fitted.
 
+use pocketcw_logic::volume::codec_gain;
+
 use crate::i2c::I2c;
 use crate::{es8388, wm8978};
 
@@ -40,6 +42,14 @@ impl Codec {
         match self {
             Codec::Es8388 => es8388::set_volume(bus, level),
             Codec::Wm8978 => wm8978::set_volume(bus, level),
+        }
+    }
+
+    /// The synth's gain for `level`: the part of it the codec can't make.
+    pub fn synth_gain(self, level: u8) -> f32 {
+        match self {
+            Codec::Es8388 => codec_gain(level).map_or(1.0, |g| g.synth_gain()),
+            Codec::Wm8978 => 1.0,
         }
     }
 }

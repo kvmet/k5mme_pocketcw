@@ -37,7 +37,7 @@ mod app {
     use at32f4xx_pac::at32f403a as pac;
     use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
     use pocketcw_firmware::{
-        audio::Audio,
+        audio::{self, Audio},
         backlight::Backlight,
         battery::{self, Adc},
         boot::{Boot, Check, LOG_LINES},
@@ -255,19 +255,22 @@ mod app {
     }
 
     #[init]
-    fn init(cx: init::Context) -> (Shared, Local) {
+    fn init(mut cx: init::Context) -> (Shared, Local) {
         let dp = cx.device;
         dp.CRM.apb2en().modify(|_, w| {
             w.iomux().set_bit().gpioa().set_bit().gpiob().set_bit().gpioc().set_bit();
             w.spi1().set_bit().tmr1().set_bit().adc1().set_bit().usart1().set_bit()
         });
-        dp.CRM.ahben().modify(|_, w| w.dma1().set_bit());
+        dp.CRM.ahben().modify(|_, w| w.dma1().set_bit().dma2().set_bit());
         // The GPIO clocks must run first: writes to a port with its clock off are ignored.
         power::hold();
         dp.CRM.apb1en().modify(|_, w| w.pwc().set_bit().tmr3().set_bit().tmr4().set_bit());
         clock::init(&dp.CRM);
         let clock_source = clock::running(&dp.CRM);
         Mono::start(cx.core.SYST, clock::SYSCLK_HZ);
+        // The cycle counter times the sample interrupt for INFO.
+        cx.core.DCB.enable_trace();
+        cx.core.DWT.enable_cycle_counter();
         // JTAG off and SWD on frees PA15, PB3 and PB4. SPI1 moves to PB3/PB4/PB5.
         dp.IOMUX.remap().modify(|_, w| unsafe { w.swjtag_mux().bits(0b010).spi1_mux0().set_bit() });
 
@@ -315,7 +318,11 @@ mod app {
         USER_TONE.store(settings.tone_hz, Ordering::Relaxed);
         KEYER_WPM.store(settings.wpm, Ordering::Relaxed);
 
-        let audio = Audio::new(dp.TMR1, a, settings.sound());
+        let Some(audio_buffer) = cortex_m::singleton!(: audio::Buffer = [0; 32]) else {
+            unreachable!("init runs once")
+        };
+        let mut audio = Audio::new(dp.TMR1, dp.DMA2, audio_buffer, a, settings.sound());
+        audio.synth.set_gain(codec.map_or(1.0, |c| c.synth_gain(settings.volume)));
         let keyer = Keyer::new(settings.mode, settings.swap, settings.wpm);
 
         let timer = dp.TMR3;
@@ -416,7 +423,7 @@ mod app {
 
     /// The next audio sample, while anything sounds. Above the tick, so drawing and keying never
     /// make the audio stutter.
-    #[task(binds = TMR1_OVF_TMR10, priority = 4, shared = [audio])]
+    #[task(binds = DMA2_CHANNEL1, priority = 4, shared = [audio])]
     fn sample(mut cx: sample::Context) {
         cx.shared.audio.lock(Audio::sample);
     }
@@ -1256,6 +1263,9 @@ mod app {
             gpio::set(port_b(), SPEAKER_AMP, after.volume > 0);
             if !devices.codec.is_some_and(|c| c.set_volume(bus, after.volume)) {
                 ui.status(lcd, "CODEC DID NOT ANSWER");
+            }
+            if let Some(codec) = devices.codec {
+                cx.shared.audio.lock(|audio| audio.synth.set_gain(codec.synth_gain(after.volume)));
             }
         }
         if after.decoder_board != before.decoder_board {

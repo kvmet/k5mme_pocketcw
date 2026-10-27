@@ -1,4 +1,4 @@
-# Every character Morse sends, for spelling what the pack has no word for. Each line is the
+# Every character Morse sends, for spelling what the pack has no clip for. Each line is the
 # character, a tab, and what the voice says. ( and + are the prosigns KN and AR.
 
 A	A
@@ -12,23 +12,23 @@ H	aitch
 I	eye
 J	jay
 K	kay
-L	el
+L	L
 M	em
 N	en
 O	oh
 P	pee
 Q	cue
-R	are
+R	R
 S	ess
 T	tee
-U	you
+U	U
 V	vee
-W	double you
+W	W
 X	ex
 Y	why
 Z	zee
 0	zero
-1	one
+1	1
 2	two
 3	three
 4	four

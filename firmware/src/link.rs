@@ -1,6 +1,9 @@
 //! The Pro decoder board: its power and its link, USART1 at 115200 8N1. DMA1 channel 5 fills a
 //! buffer and the idle line ends a frame, as in the vendor firmware. While off, the board is
 //! unpowered and TX does not drive, so the board is not powered through its RX pin.
+//!
+//! DMA1 runs on its flexible request mapping. The fixed mapping also wires TMR1's overflow to
+//! channel 5, and `audio` raises that request at every pulse.
 
 use core::sync::atomic::{AtomicU16, Ordering, compiler_fence};
 
@@ -11,6 +14,9 @@ use crate::gpio::{self, port_a, port_b};
 use crate::pins::{DECODER_POWER, DECODER_RX, DECODER_TX};
 
 const BAUD: u32 = 115_200;
+/// USART1 receive on the DMA's flexible request mapping, `DMA_FLEXIBLE_UART1_RX` in Artery's
+/// AT32F403A firmware library.
+const USART1_RX_REQUEST: u8 = 0x19;
 /// The vendor's receive buffer size; a longer frame is cut here.
 pub const FRAME_LEN: usize = 64;
 
@@ -30,6 +36,7 @@ impl Link {
         // A pull-up keeps an idle line high when no board drives it.
         gpio::set_high(port_a(), DECODER_RX);
         gpio::configure(port_a(), DECODER_RX, gpio::INPUT_PULL);
+        dma.dma_src_sel1().write(|w| unsafe { w.ch5_src().bits(USART1_RX_REQUEST).dma_flex_en().set_bit() });
         let mut link = Link { usart, dma, buffer, on: true };
         link.set_on(false);
         link

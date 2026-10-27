@@ -3,9 +3,11 @@
 a bad one with a respelling or phonemes. Marks go to review.txt and fixes to fixes.txt in the
 voice's folder. A fixed clip goes to the pack's cache, so the next pack build takes it as it is.
 
-With the list focused: G good, B bad, N note (Enter in the note marks bad), Space plays again,
+Good and Bad mark the clip as it is now. With the list focused: G good, B bad, N note (Enter in the note marks bad), Space plays again,
 Up and Down move. Enter in the respelling or phonemes speaks the fix, Keep fix saves it and
 marks the clip good, and Reset puts back the word list's said. Esc goes back to the list.
+Find (Ctrl+F, or Cmd+F on a Mac) goes to the search, which matches a row's text or what it
+says; Enter there goes back to the list.
 
     tools/pack/.venv/bin/python tools/pack/audition.py
 """
@@ -25,6 +27,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -45,6 +48,21 @@ PLAY_HZ = 48000
 PLAY_DELAY_MS = 150
 FILTERS = ("To review", "Bad", "All")
 COLUMNS = ("Text", "Clip", "Mark", "Says", "Note")
+# Keys under the phonemes field: the misaki phonemes a keyboard lacks or that differ from their
+# letter, each with a word it sounds in. Kokoro has no g; it takes ɡ.
+PHONEME_KEYS = {
+    "Stress and pitch, before the vowel": [("ˈ", "stress"), ("ˌ", "light stress"), ("↗", "pitch up"), ("↘", "pitch down"), ("ː", "long"), ("…", "pause")],
+    "Vowels": [
+        ("i", "see"), ("ɪ", "sit"), ("A", "day"), ("ɛ", "bed"), ("æ", "cat"), ("ɑ", "father"),
+        ("ɔ", "law"), ("O", "go"), ("ʊ", "book"), ("u", "you"), ("ʌ", "cup"), ("ə", "about"),
+        ("ɜ", "her"), ("I", "my"), ("W", "how"), ("Y", "boy"), ("ᵊ", "button"), ("ᵻ", "roses"),
+    ],
+    "Consonants": [
+        ("ɡ", "get"), ("ŋ", "sing"), ("ɹ", "red"), ("j", "yes"), ("ʃ", "she"), ("ʒ", "vision"),
+        ("ʧ", "chin"), ("ʤ", "jam"), ("θ", "thin"), ("ð", "this"), ("T", "butter"),
+    ],
+}
+KEY_COLUMNS = 6
 
 
 @dataclass
@@ -117,12 +135,14 @@ class Review:
 
 
 class Model(QAbstractTableModel):
-    """The rows of `review` that the filter shows."""
+    """The rows of `review` that the filter and the search show."""
 
     def __init__(self, review: Review):
         super().__init__()
         self.review = review
         self.filter = FILTERS[0]
+        # Casefolded; matches anywhere in a row's text or what it says.
+        self.search = ""
         self.shown = self.matching()
 
     def matching(self) -> list[int]:
@@ -130,11 +150,13 @@ class Model(QAbstractTableModel):
 
     def shows(self, row: Row) -> bool:
         state = self.review.state(row)
-        return self.filter == "All" or state == "bad" or (self.filter == "To review" and state in ("unmarked", "stale"))
+        filtered = self.filter == "All" or state == "bad" or (self.filter == "To review" and state in ("unmarked", "stale"))
+        return filtered and (self.search in row.text.casefold() or self.search in row.said.casefold())
 
-    def set_filter(self, name: str):
+    def set_filter(self, name: str, search: str):
         self.beginResetModel()
         self.filter = name
+        self.search = search.casefold()
         self.shown = self.matching()
         self.endResetModel()
 
@@ -142,7 +164,7 @@ class Model(QAbstractTableModel):
         return self.review.rows[self.shown[index]]
 
     def changed(self, index: int):
-        """Takes the row out when it no longer matches the filter, or redraws it."""
+        """Takes the row out when it no longer matches the filter and search, or redraws it."""
         if self.shows(self.row(index)):
             self.dataChanged.emit(self.index(index, 0), self.index(index, len(COLUMNS) - 1))
         else:
@@ -218,6 +240,10 @@ class Window(QMainWindow):
 
         self.filter = QComboBox()
         self.filter.addItems(FILTERS)
+        self.search = QLineEdit()
+        find = QKeySequence(QKeySequence.Find).toString(QKeySequence.NativeText)
+        self.search.setPlaceholderText(f"search text or says ({find})")
+        self.search.setClearButtonEnabled(True)
         self.progress = QLabel()
         self.model = Model(review)
         self.table = Table()
@@ -238,11 +264,15 @@ class Window(QMainWindow):
         self.note.setPlaceholderText("what is wrong; Enter marks bad")
         self.respelling = QLineEdit()
         self.phonemes = QLineEdit()
+        # Stress marks are a few pixels wide at the default size.
+        self.phonemes.setFont(QFont(self.phonemes.font().family(), round(self.phonemes.font().pointSize() * 1.5)))
         # A tab or line break would break a row of fixes.txt or review.txt.
         for field in (self.note, self.respelling, self.phonemes):
             field.setValidator(QRegularExpressionValidator(f"[^{pack.BREAKS.pattern[1:-1]}]*", field))
         self.status = QLabel()
         self.status.setWordWrap(True)
+        good = QPushButton("Good (G)")
+        bad = QPushButton("Bad (B)")
         speak = QPushButton("Speak")
         play_kept = QPushButton("Play kept")
         keep = QPushButton("Keep fix")
@@ -257,12 +287,19 @@ class Window(QMainWindow):
             buttons.addWidget(button)
         form.addRow(buttons)
         right = QVBoxLayout()
-        for widget in (self.word, self.says, QLabel("Note"), self.note, fix, self.status):
+        for widget in (self.word, self.says, QLabel("Note"), self.note):
+            right.addWidget(widget)
+        marks = QHBoxLayout()
+        marks.addWidget(good)
+        marks.addWidget(bad)
+        right.addLayout(marks)
+        for widget in (fix, self.phoneme_keys(), self.status):
             right.addWidget(widget)
         right.addStretch()
         left = QVBoxLayout()
         top = QHBoxLayout()
         top.addWidget(self.filter)
+        top.addWidget(self.search, 1)
         top.addWidget(self.progress, 1)
         left.addLayout(top)
         left.addWidget(self.table)
@@ -278,8 +315,14 @@ class Window(QMainWindow):
         self.play_timer = QTimer(singleShot=True, interval=PLAY_DELAY_MS)
         self.play_timer.timeout.connect(self.play_kept)
         self.filter.currentTextChanged.connect(self.set_filter)
+        self.search.textChanged.connect(self.set_filter)
+        self.search.returnPressed.connect(self.table.setFocus)
         self.table.selectionModel().currentRowChanged.connect(self.show_row)
-        self.note.returnPressed.connect(lambda: self.mark("bad", self.note.text()))
+        mark_good = lambda: self.mark("good", "")
+        mark_bad = lambda: self.mark("bad", self.note.text())
+        self.note.returnPressed.connect(mark_bad)
+        good.clicked.connect(mark_good)
+        bad.clicked.connect(mark_bad)
         self.respelling.textEdited.connect(self.respelled)
         self.respelling.returnPressed.connect(self.speak)
         self.phonemes.returnPressed.connect(self.speak)
@@ -288,8 +331,8 @@ class Window(QMainWindow):
         keep.clicked.connect(self.keep)
         reset.clicked.connect(self.reset)
         for key, action in (
-            ("G", lambda: self.mark("good", "")),
-            ("B", lambda: self.mark("bad", self.note.text())),
+            ("G", mark_good),
+            ("B", mark_bad),
             ("N", self.note.setFocus),
             ("Space", self.play_kept),
         ):
@@ -297,6 +340,7 @@ class Window(QMainWindow):
             shortcut.setContext(Qt.WidgetShortcut)
             shortcut.activated.connect(action)
         QShortcut(QKeySequence("Escape"), self).activated.connect(self.table.setFocus)
+        QShortcut(QKeySequence.Find, self).activated.connect(self.search.setFocus)
         self.select(0)
         self.table.setFocus()
 
@@ -320,9 +364,41 @@ class Window(QMainWindow):
         else:
             self.table.setCurrentIndex(target)
 
-    def set_filter(self, name: str):
-        self.model.set_filter(name)
-        self.select(0)
+    def set_filter(self):
+        """Stays on the current row when it still matches, with what its fields hold."""
+        current = self.current()
+        self.model.set_filter(self.filter.currentText(), self.search.text())
+        kept = next((i for i in range(self.model.rowCount()) if self.model.row(i) is current), None)
+        if kept is None:
+            self.select(0)
+            return
+        # Without currentRowChanged, show_row leaves an unsaved fix in place and plays nothing.
+        selection = self.table.selectionModel()
+        selection.blockSignals(True)
+        self.table.setCurrentIndex(self.model.index(kept, 0))
+        selection.blockSignals(False)
+        self.table.scrollTo(self.model.index(kept, 0))
+
+    def phoneme_keys(self) -> QGroupBox:
+        """A key for each of PHONEME_KEYS, which types it in the phonemes field."""
+        keys = QGroupBox("Phoneme keys")
+        grid = QGridLayout(keys)
+        at = 0
+        for group, phonemes in PHONEME_KEYS.items():
+            grid.addWidget(QLabel(group), at, 0, 1, KEY_COLUMNS)
+            at += 1
+            for i, (phoneme, example) in enumerate(phonemes):
+                key = QPushButton(f"{phoneme}  {example}")
+                # The phonemes field keeps its cursor while a key is clicked.
+                key.setFocusPolicy(Qt.NoFocus)
+                key.clicked.connect(lambda _=False, phoneme=phoneme: self.type_phoneme(phoneme))
+                grid.addWidget(key, at + i // KEY_COLUMNS, i % KEY_COLUMNS)
+            at += -(-len(phonemes) // KEY_COLUMNS)
+        return keys
+
+    def type_phoneme(self, phoneme: str):
+        self.phonemes.insert(phoneme)
+        self.phonemes.setFocus()
 
     def show_row(self, index, previous=None):
         self.trial = None

@@ -50,7 +50,7 @@ A line under the list tells you what the selected row sets.
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | TONE | 300 to 1200 Hz, in steps of 10 Hz | 700 Hz | The pitch of your sidetone. Other stations send at pitches near it. |
-| VOLUME | 0 to 44 | 23 | 0 is off. Each step is 1.5 dB. |
+| VOLUME | 0 to 44 | 23 | 0 is off. Each step is 1.5 dB on headphones and 1 dB on the speaker. |
 | WAVE | SINE, SQUARE | SINE | SINE is a pure tone. SQUARE is a buzzier tone with soft edges. |
 | NOISE | OFF, 1 to 10 | OFF | Band noise under the stations you hear. |
 | FADING | OFF, 1 to 10 | OFF | How deep the stations you hear fade in and out. |

@@ -17,9 +17,10 @@ pub const OVERS: usize = 11;
 const DITS: usize = OVERS - 1;
 pub const MAX_LINES: usize = 5;
 
-const NAMES: [&str; 30] = [
-    "BOB", "JIM", "TOM", "MIKE", "DAVE", "JOHN", "BILL", "STEVE", "ED", "AL", "RON", "DON", "GARY", "KEN", "JOE", "SUE",
-    "ANN", "MARY", "LISA", "KAREN", "PAT", "CHRIS", "SAM", "ALEX", "JEN", "KIM", "ROSE", "MAX", "LEE", "RAY",
+const NAMES: [&str; 44] = [
+    "BOB", "JIM", "TOM", "MIKE", "DAVE", "JOHN", "BILL", "STEVE", "ED", "AL", "RON", "DON", "GARY", "KEN", "JOE", "MATT",
+    "TIM", "DAN", "BEN", "SUE", "ANN", "MARY", "LISA", "KAREN", "JEN", "KIM", "ROSE", "SARAH", "JAN", "AMY", "BETH", "EMMA",
+    "KATE", "ANNA", "NINA", "MEG", "ZOE", "PAT", "CHRIS", "SAM", "ALEX", "MAX", "LEE", "RAY",
 ];
 
 /// Cities and their states by call area digit, at most 10 letters without spaces for the quiz.
@@ -27,7 +28,7 @@ const CITIES_BY_AREA: [&[(&str, &str)]; 10] = [
     &[("DENVER", "CO"), ("WICHITA", "KS"), ("OMAHA", "NE"), ("DES MOINES", "IA"), ("ST PAUL", "MN"), ("FARGO", "ND")],
     &[("BOSTON", "MA"), ("PORTLAND", "ME"), ("BURLINGTON", "VT"), ("HARTFORD", "CT"), ("CONCORD", "NH")],
     &[("ALBANY", "NY"), ("BUFFALO", "NY"), ("TRENTON", "NJ"), ("NEWARK", "NJ")],
-    &[("PITTSBURGH", "PA"), ("ERIE", "PA"), ("DOVER", "DE"), ("BALTIMORE", "MD")],
+    &[("PITTSBURGH", "PA"), ("ERIE", "PA"), ("DOVER", "DE"), ("BALTIMORE", "MD"), ("WASHINGTON", "DC")],
     &[("RICHMOND", "VA"), ("RALEIGH", "NC"), ("ATLANTA", "GA"), ("TAMPA", "FL"), ("NASHVILLE", "TN"), ("MOBILE", "AL")],
     &[("AUSTIN", "TX"), ("EL PASO", "TX"), ("TULSA", "OK"), ("SANTA FE", "NM"), ("JACKSON", "MS")],
     &[("FRESNO", "CA"), ("SAN DIEGO", "CA"), ("OAKLAND", "CA"), ("REDDING", "CA")],
@@ -81,6 +82,8 @@ pub struct Station {
     city: &'static str,
     /// Empty for DX.
     state: &'static str,
+    /// Empty in the US and Canada.
+    country: &'static str,
     /// The report this station gives the other.
     report: &'static str,
     rig: &'static str,
@@ -105,12 +108,13 @@ impl Station {
     fn new(rng: &mut Rng) -> Station {
         let home = home(rng);
         let call = home.call(rng);
-        let (city, state) = match home {
+        let (city, state, country) = match home {
             Home::Us(digit) => {
                 let cities = CITIES_BY_AREA[digit as usize];
-                cities[rng.below(cities.len() as u32) as usize]
+                let (city, state) = cities[rng.below(cities.len() as u32) as usize];
+                (city, state, "")
             }
-            Home::Abroad(abroad) => (abroad.cities[rng.below(abroad.cities.len() as u32) as usize], abroad.region),
+            Home::Abroad(abroad) => (abroad.cities[rng.below(abroad.cities.len() as u32) as usize], abroad.region, abroad.country),
         };
         let metric = matches!(home, Home::Abroad(_));
         let (rig, watts) = RIGS[rng.below(RIGS.len() as u32) as usize];
@@ -131,6 +135,7 @@ impl Station {
             name: NAMES[rng.below(NAMES.len() as u32) as usize],
             city,
             state,
+            country,
             report: REPORTS[rng.below(REPORTS.len() as u32) as usize],
             rig,
             watts,
@@ -275,7 +280,12 @@ impl Ragchew {
                 }
                 o.line(format_args!("UR RST {} {} =", me.report, me.report));
                 let label = if style.op { "OP" } else { "NAME" };
-                let qth = phrase(&[if style.near { "QTH NR" } else { "QTH" }, me.city, me.state]);
+                let near = if style.near { "QTH NR" } else { "QTH" };
+                // A DX country joins the line while it fits one copy group, without NR if need be.
+                let qth = [phrase(&[near, me.city, me.country]), phrase(&["QTH", me.city, me.country])]
+                    .into_iter()
+                    .find(|qth| !me.country.is_empty() && qth.len() <= MAX_GROUP)
+                    .unwrap_or_else(|| phrase(&[near, me.city, me.state]));
                 if style.qth_before_name {
                     o.line(format_args!("{} =", qth.as_str()));
                 }
@@ -432,6 +442,27 @@ mod tests {
             assert!(["K", "<KN>", "<SK>", "E E"].iter().any(|end| last.ends_with(end)), "{last}");
             chat.next();
         }
+    }
+
+    #[test]
+    fn dx_sends_its_country_when_it_fits() {
+        let (mut sent, mut left_out) = (0, 0);
+        for seed in 0..2000 {
+            let mut chat = Ragchew::new(seed);
+            for over in 2..4 {
+                chat.over = over;
+                let me = *chat.sender();
+                if me.country.is_empty() {
+                    continue;
+                }
+                let over = chat.over();
+                let qth = over.lines().iter().find(|l| l.as_str().starts_with("QTH ")).unwrap().as_str();
+                let fits = std::format!("QTH {} {}", me.city, me.country).len() <= MAX_GROUP;
+                assert_eq!(qth.ends_with(&std::format!(" {} =", me.country)), fits, "{qth}");
+                if fits { sent += 1 } else { left_out += 1 }
+            }
+        }
+        assert!(sent > 0 && left_out > 0, "{sent} {left_out}");
     }
 
     #[test]
