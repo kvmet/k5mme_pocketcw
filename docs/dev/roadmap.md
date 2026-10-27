@@ -19,7 +19,7 @@ The planned work after USB: the SPI flash, copy training, two-way QSOs, and an i
 
   | Store | Size | Free | Holds |
   | - | - | - | - |
-  | MCU flash | 241,664 bytes | 30.7 KiB at `opt-level = "z"` (image 210,260 bytes on 2026-10-25) | Code, and small tables the core features need without a pack. Code cannot run from the SPI flash: it sits on SPI1, not a memory-mapped interface. |
+  | MCU flash | 241,664 bytes | 72.2 KiB at `opt-level = "z"` (image 167,740 bytes on 2026-10-27) | Code, and small tables the core features need without a pack. Code cannot run from the SPI flash: it sits on SPI1, not a memory-mapped interface. |
   | SPI flash (F files) | 16 MB | About 13 MB outside the vendor regions | Content pack, voice packs, log. |
   | EEPROM (I2C) | 2 KB | 64 bytes (0x7C0 to 0x7FF) | Settings, letter stats, progress, memories. Too small for the log; the plan only appends the LOG setting to the settings record. |
   | RAM | 64 KB | About 56 KB | Buffers, such as the 16 KB voice clip buffer. |
@@ -274,7 +274,7 @@ Flash cost: 4 to 5 KB (ring, `DUMP LOG`, note mode, LOG screen).
 
 Built: `STATS LETTERS`, `STATS PROGRESS` and `STATS TIMING` on the serial port, and `pocketcw.py stats` saves each as CSV. See [Stats](serial.md#stats). Timing statistics are not saved across power off, and the EEPROM has 64 bytes left, so a saved version would go in the log as a new kind.
 
-Flash cost: about 1 KB.
+Flash cost: 4.0 KB, measured.
 
 ## 8. More QSO kinds
 
@@ -314,16 +314,15 @@ Flash cost: 2 to 3 KB.
 | Voice and head copy | 4 KB |
 | Two-way ragchew (deferred) | 6 to 10 KB |
 | Logger, LOG screen, `DUMP LOG` (deferred) | 4 to 5 KB; capture and `DUMP LOG` measured 5.6 KB |
-| Stats export | 1 KB |
+| Stats export | 4.0 KB, measured |
 | P2P and S2S callers | 1 to 2 KB |
 | Short contest exchanges | 2 to 3 KB |
-| Total, without the deferred items | 12 to 14 KB |
+| Total, without the deferred items | 15 to 17 KB |
 
-The plan needs 12 to 14 KB of 30.7 KiB free at `"z"`, before Vail and MIDI. More ways to get flash back:
+The plan needs 15 to 17 KB of 72.2 KiB free at `"z"`, before MIDI. The cleanup on 2026-10-27 took back 54,400 bytes: panic messages, float formatting, a copy of the `Text` write code per size, full font cells, the Two-Way string search, `core`'s sort and a 64-bit divide. More ways to get flash back:
 
-- Float formatting: about 10 KB of `core::fmt` float code (grisu, dragon, `float_to_decimal_common_exact`), from `{:.1}` in `ui/tape.rs:156` and `ui/home.rs:234` and at least one shortest-form float print. Fixed-point integer formatting removes it.
 - Move fixed text tables (ragchew names, cities, rigs; bot phrases) into the content pack, with a small fallback in MCU flash so the bots still work without a pack.
-- Look at the largest symbols (`cargo bloat` or `nm --size-sort`) for fonts, formatting code and panics.
+- Look at the largest symbols (`llvm-nm --size-sort`) for the next large item.
 
 If flash stays short, set a budget per feature: which features ship first.
 
