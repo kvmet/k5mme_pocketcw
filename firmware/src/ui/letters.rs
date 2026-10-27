@@ -4,7 +4,7 @@ use pocketcw_logic::{
     drill::Kind,
     input::Action,
     letters::{KOCH, Mastery},
-    settings::Settings,
+    settings::{Practice, Settings},
 };
 
 use super::{Ui, char_cells, draw_char, settings::Section};
@@ -24,9 +24,9 @@ const SHOWN_MIXUPS: usize = 6;
 impl Ui {
     pub(super) fn draw_letters(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
-        let level = Text::<10>::format(format_args!("KOCH {}", self.letters.level));
+        let level = Text::<10>::format(format_args!("LEVEL {}", self.letters.level));
         self.header(lcd, s, "LETTERS", &[level.as_str()]);
-        self.softkeys(lcd, ["SET", "", "DRIL", "BACK"]);
+        self.softkeys(lcd, ["SET", "", "KOCH", "BACK"]);
         for (i, &c) in KOCH.iter().enumerate() {
             let x = 2 + (i % PER_ROW) as i32 * TILE_W;
             let y = GRID_Y + (i / PER_ROW) as i32 * (TILE_H + 2);
@@ -71,8 +71,8 @@ impl Ui {
 
     pub(super) fn letters_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
-            Action::Soft(2) => self.open_receive(lcd, s, Kind::Koch),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Receive),
+            Action::Soft(2) => self.open_practice(lcd, s, Practice::Drill(Kind::Koch)),
             Action::Soft(3) => self.back(lcd, s),
             _ => {}
         }

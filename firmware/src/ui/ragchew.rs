@@ -83,7 +83,7 @@ impl Chew {
         match self.state {
             State::Playing => "LISTEN",
             State::Asking => "YOUR TURN",
-            State::Answering => "PAUSE ENDS",
+            State::Answering => "KEYING",
             State::Showing => "",
             State::Paused => "PAUSED",
         }
@@ -161,8 +161,8 @@ impl Ui {
 
     fn draw_ragchew_keys(&self, lcd: &mut Lcd) {
         let Some(Session::Ragchew(c)) = &self.session else { return };
-        let pause = if c.state == State::Paused { "GO" } else { "STOP" };
-        self.softkeys(lcd, ["SET", "AGN", pause, "BACK"]);
+        let (again, pause) = if c.state == State::Paused { ("", "GO") } else { ("AGN", "STOP") };
+        self.softkeys(lcd, ["SET", again, pause, "BACK"]);
     }
 
     fn draw_ragchew_lines(&self, lcd: &mut Lcd) {
@@ -331,7 +331,7 @@ impl Ui {
     pub(super) fn ragchew_act(&mut self, lcd: &mut Lcd, s: &mut Settings, action: Action) {
         let Some(Session::Ragchew(c)) = &mut self.session else { return };
         match action {
-            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Hear),
+            Action::Soft(0) => self.open_settings_at(lcd, s, Section::Drills),
             Action::Soft(1) if matches!(c.state, State::Playing | State::Asking | State::Answering) => {
                 self.stop_players();
                 self.start_over(lcd, s, 0);

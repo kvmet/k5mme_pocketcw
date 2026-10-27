@@ -8,7 +8,7 @@ use pocketcw_logic::{
     input::Action,
     player::MAX_TEXT,
     player::Keying,
-    qso::{Bot, CALL_LEN, Hunter, Options, PILE_MAX, Program, Tx},
+    qso::{Bot, CALL_LEN, Hunter, Options, PILE_MAX, Program, Tx, ends_with_turn},
     settings::{Pileup, Settings},
 };
 
@@ -128,7 +128,7 @@ impl Qso {
         let bye = bot.program.bye();
         let mut step = Text::new();
         let _ = if !self.over.is_empty() {
-            write!(step, "YOUR OVER ENDS WHEN YOU PAUSE")
+            write!(step, "END YOUR OVER WITH K, OR PAUSE")
         } else if let Some(h) = bot.working() {
             if h.state.is_empty() {
                 write!(step, "SEND: TU {bye} E E")
@@ -160,7 +160,7 @@ impl Ui {
         let Some(Session::Qso(q)) = &self.session else { return };
         let t = &self.theme;
         self.header(lcd, s, q.bot.program.name(), &[]);
-        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        self.softkeys(lcd, exchange::keys(q.hint));
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_qso_lines(lcd);
         self.draw_qso_state(lcd);
@@ -189,9 +189,9 @@ impl Ui {
         let t = &self.theme;
         let bot = &q.bot;
         let working = bot.working();
-        let log = Text::<24>::format(format_args!("LOG {}/{}  COPY {}", bot.logged, bot.program.goal(), bot.copied));
+        let log = Text::<24>::format(format_args!("LOG {}/{}  GOOD {}", bot.logged, bot.program.goal(), bot.copied));
         let done = bot.logged >= bot.program.goal();
-        let label = if working.is_some() { "NOW" } else { "LAST" };
+        let label = if working.is_some() || q.last.is_none() { "NOW" } else { "LAST" };
         exchange::draw_now(lcd, t, label, log.as_str(), if done { GOOD } else { t.muted });
 
         let shown = working.copied().or(q.last.map(|l| l.hunter));
@@ -223,14 +223,19 @@ impl Ui {
         self.set_footer(lcd, next_step.as_str());
     }
 
-    pub(super) fn qso_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {
+    pub(super) fn qso_decoded(&mut self, lcd: &mut Lcd, s: &Settings, decoded: Decoded) {
         let Some(Session::Qso(q)) = &mut self.session else { return };
-        if decoded.write_to(&mut q.over) {
+        let written = decoded.write_to(&mut q.over);
+        let ended = decoded == Decoded::Space && ends_with_turn(q.over.as_str());
+        if written {
             self.draw_over(lcd);
+        }
+        if ended {
+            self.qso_over_done(lcd, s);
         }
     }
 
-    /// Your key went down or up; the over ends after a long enough silence.
+    /// Your key went down or up; the over ends after a long enough silence, or at K.
     pub(super) fn qso_key(&mut self, down: bool, at_ms: u32, dit_ms: u16) {
         let Some(Session::Qso(q)) = &mut self.session else { return };
         q.over_deadline = if down { None } else { Some(copy_end(at_ms, dit_ms)) };
@@ -282,9 +287,10 @@ impl Ui {
             Action::Soft(0) => self.open_settings_at(lcd, s, Section::Qso),
             Action::Soft(1) => self.bot_answer(lcd, s, "QRS"),
             Action::Soft(2) => {
-                if let Some(Session::Qso(q)) = &mut self.session {
-                    q.hint = !q.hint;
-                }
+                let Some(Session::Qso(q)) = &mut self.session else { return };
+                q.hint = !q.hint;
+                let hint = q.hint;
+                self.softkeys(lcd, exchange::keys(hint));
                 self.draw_qso_lines(lcd);
                 self.draw_qso_state(lcd);
                 self.draw_over(lcd);

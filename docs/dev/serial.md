@@ -134,13 +134,25 @@ RATIO 3.05
 WPM 19.60
 BINS MARK 4 0 0 0 1 12 ...
 BINS GAP 8 0 2 ...
+RELEASE 40 1.12 0.45
+CLOSE 3
+LATE 5 0.21 0.10
+ON_TIME 95
+TIP DIT 0 - -
+TIP DAH 0 - -
+RING DIT 0 - -
+RING DAH 0 - -
+WEIGHT 0 - -
+OVERLAP 0
+BINS RELEASE 3 0 3 2 5 ...
 ```
 
 - A `MARK` or `GAP` line gives the count, the mean and the standard deviation. Marks are in ms; gaps are in dots of the keyer speed at the time. The standard deviation divides by the count, so one sample gives 0. `-` stands for a value that needs at least one sample.
 - `RATIO` is the dah length over the dit length; 3 is standard. `WPM` is the speed your timing works out to. Each line comes only once its value is known.
-- A `BINS` line is a histogram: the range in dots, then the count in each of 24 equal bins from 0. The last bin also holds everything longer than the range.
+- A `BINS` line is a histogram: the range in dots, then the count in each of its equal bins from 0: 24 for `MARK` and `GAP`, 12 for `RELEASE`. The last bin also holds everything longer than the range.
+- The lines from `RELEASE` on measure the paddle or key contacts. See [Timing](../user/timing.md#hand-view). `RELEASE` is the time from your last release to the keyer's decision at the end of each iambic character, in dots. `CLOSE` counts the releases under half a dot. `LATE` is how far past the decision you pressed, in dots, for each gap inside a character you started late; `ON_TIME` counts the others. `TIP` and `RING` are the dots and dashes in ms each contact keyed in STRAIGHT mode, and `WEIGHT` is each such dot over the gap after it. `OVERLAP` counts those marks during which the other contact closed too.
 - Numbers have two decimals.
-- Marks in ms mix speeds when SPEED changes after a clear. Text that `SEND` keys counts too, since it keys the same line.
+- Marks in ms mix speeds when SPEED changes after a clear. Text that `SEND` keys counts in the `MARK` and `GAP` lines, since it keys the same line, but has no contacts for the lines after them.
 
 ## Events
 

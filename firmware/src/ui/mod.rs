@@ -27,7 +27,6 @@ use pocketcw_logic::{
     battery::Gauge,
     decoder::Decoded,
     dial::{KeyGuard, Target},
-    drill::FIRST_RUNG,
     input::Action,
     morse,
     letters::{Letters, RECORD_LEN as LETTERS_LEN},
@@ -37,8 +36,9 @@ use pocketcw_logic::{
     keyer::{self, Mode},
     player::{Keying, MAX_TEXT},
     qso::{Options, Program},
-    settings::{Field, Pileup, Settings, Shortcut},
+    settings::{Field, Pileup, Practice, Settings, Shortcut},
     ticks,
+    hand::Hand,
     timing::{Interval, Line, Meter, PAUSE_UNITS, Stats},
 };
 
@@ -99,14 +99,12 @@ impl Session {
         }
     }
 
-    /// The practice's title: the drill, program or ragchew.
-    fn name(&self) -> &'static str {
+    fn practice(&self) -> Practice {
         match self {
-            Session::Qso(q) => q.bot.program.name(),
-            Session::Hunt(_) => "HUNT",
-            Session::Receive(rx) => rx.kind().name(),
-            Session::Ragchew(c) if c.quiz => "QUIZ",
-            Session::Ragchew(_) => "CHEW",
+            Session::Qso(q) => Practice::Qso(q.bot.program),
+            Session::Hunt(_) => Practice::Hunt,
+            Session::Receive(rx) => Practice::Drill(rx.kind()),
+            Session::Ragchew(c) => Practice::Chew { quiz: c.quiz },
         }
     }
 
@@ -146,7 +144,9 @@ pub struct Ui {
     dial_focus: Option<Target>,
     /// The screen's own footer line, and a status message with the tick time it ends, if it does.
     footer: footer::FootLine,
-    status: Option<(footer::FootLine, Option<u32>)>,
+    /// A timed status message, and the tick time it ends.
+    status: Option<(footer::FootLine, u32)>,
+    alert: Option<footer::FootLine>,
     /// The state badge drawn now.
     badge_shown: &'static str,
     key_guard: KeyGuard,
@@ -163,6 +163,9 @@ pub struct Ui {
     editing: bool,
     meter: Meter,
     stats: Stats,
+    hand: Hand,
+    /// TIMING shows the HAND view, not BARS.
+    timing_hand: bool,
     tape: Tape,
     /// When each contact closed, while it is closed: tip, ring.
     contact_since: [Option<u32>; 2],
@@ -174,8 +177,6 @@ pub struct Ui {
     letters_saved: Letters,
     /// The Koch drill's window, kept while you leave the drill, and the level it counts toward.
     koch_window: (u8, (u16, u16)),
-    /// The HEAD rung, kept while you leave the drill.
-    head_rung: u8,
     history: History,
     memories: Memories,
     /// `memories` as last saved.
@@ -193,6 +194,8 @@ pub struct Ui {
     say: Option<Text<WORD_TEXT>>,
     /// A PLAY from the serial port is sounding.
     serial_play: bool,
+    /// A practice screen's transmission is sounding, which counts as practice time.
+    listening: bool,
     seed: u32,
     system: SystemInfo,
     /// None when the ADC did not answer.
@@ -228,6 +231,7 @@ impl Ui {
             dial_focus: None,
             footer: footer::FootLine::new(),
             status: None,
+            alert: None,
             badge_shown: "",
             key_guard: KeyGuard::default(),
             decode: Decode::new(),
@@ -239,6 +243,8 @@ impl Ui {
             editing: false,
             meter: Meter::default(),
             stats: Stats::default(),
+            hand: Hand::default(),
+            timing_hand: false,
             tape: Tape::new(false),
             contact_since: [None; 2],
             stuck_shown: [false; 2],
@@ -246,7 +252,6 @@ impl Ui {
             letters,
             letters_saved: letters,
             koch_window: (letters.level, (0, 0)),
-            head_rung: FIRST_RUNG,
             history,
             memories,
             memories_saved: memories,
@@ -257,6 +262,7 @@ impl Ui {
             play: None,
             say: None,
             serial_play: false,
+            listening: false,
             seed: settings.boot_count as u32 * 7919 + 1,
             system,
             battery: None,
@@ -362,6 +368,7 @@ impl Ui {
             }
             (1, Screen::Timing) => {
                 self.stats = Stats::default();
+                self.hand = Hand::default();
                 self.tape.new_page();
                 self.draw(lcd, s);
             }
@@ -380,14 +387,15 @@ impl Ui {
                 let line = match (s.key_out, self.screen_keys_radio()) {
                     (false, _) => "KEY OUT OFF",
                     (true, true) => "KEY OUT ON",
-                    (true, false) => "KEY OUT ON: NOT IN PRACTICE",
+                    (true, false) => "KEY OUT ON: NOT ON THIS SCREEN",
                 };
                 self.status(lcd, line);
             }
-            Shortcut::Resume => match self.session.as_ref().map(Session::screen) {
-                None => self.status(lcd, "NOTHING PAUSED"),
-                Some(screen) if screen == self.screen => {}
-                Some(_) => self.resume(lcd, s),
+            Shortcut::Resume => match (self.session.as_ref().map(Session::screen), s.last_practice) {
+                (Some(screen), _) if screen == self.screen => {}
+                (Some(_), _) => self.resume(lcd, s),
+                (None, Some(practice)) => self.start(lcd, s, practice),
+                (None, None) => self.status(lcd, "NOTHING TO RESUME"),
             },
             Shortcut::Mem => {
                 if self.screen != Screen::Home {
@@ -432,7 +440,7 @@ impl Ui {
         };
         let holds = match (self.mem_row, self.screen) {
             // While a memory sends, a press or hold only stops it.
-            (true, _) if self.sending.is_some() => [""; 4],
+            (_, Screen::Home) if self.sending.is_some() => [""; 4],
             (true, _) => ["REPEAT"; 4],
             (false, Screen::Home) => [f1, "", "", ""],
             (false, Screen::Letters | Screen::Timing) => [f1, "CLEAR", "", "HOME"],
@@ -468,6 +476,7 @@ impl Ui {
 
     /// A character read from the paddles.
     pub fn decoded(&mut self, lcd: &mut Lcd, s: &mut Settings, decoded: Decoded) {
+        self.hand.char_ended();
         let worst = self.meter.char_worst();
         let span = self.meter.char_span();
         self.decode.push(decoded, worst);
@@ -489,12 +498,12 @@ impl Ui {
                 if let Decoded::Char(c) = decoded {
                     self.tape.letter(lcd, &self.theme, c, span);
                 }
-                self.draw_timing_stats(lcd);
+                self.draw_timing_stats(lcd, s);
             }
-            Screen::Qso => self.qso_decoded(lcd, decoded),
-            Screen::Hunt => self.hunt_decoded(lcd, decoded),
+            Screen::Qso => self.qso_decoded(lcd, s, decoded),
+            Screen::Hunt => self.hunt_decoded(lcd, s, decoded),
             Screen::Settings => self.settings_decoded(lcd, s, decoded),
-            Screen::Receive => self.receive_decoded(lcd, decoded),
+            Screen::Receive => self.receive_decoded(lcd, s, decoded),
             Screen::Ragchew => self.ragchew_decoded(lcd, s, decoded),
             Screen::Menu | Screen::System | Screen::Letters | Screen::Progress | Screen::Radio => {}
         }
@@ -518,6 +527,7 @@ impl Ui {
                     let paused = self.meter_paused(at_ms, dit);
                     self.tape.key_down(lcd, &self.theme, at_ms, dit, paused, lanes(s));
                 }
+                self.hand.key(down, at_ms, dit, s.mode != Mode::Straight);
                 if let Some(iv) = self.meter.edge(down, at_ms, dit) {
                     self.stats.add(&iv);
                     if on_tape {
@@ -534,6 +544,7 @@ impl Ui {
             }
             Line::Tip | Line::Ring => {
                 let i = (line == Line::Ring) as usize;
+                self.hand.contact(line, down, at_ms);
                 if down && self.screen == Screen::Home {
                     self.stop_sending(lcd);
                     if self.mem_row && !self.memories.stay_open {
@@ -542,7 +553,7 @@ impl Ui {
                 }
                 if self.stuck_shown[i] {
                     self.stuck_shown[i] = false;
-                    self.status(lcd, "");
+                    self.alert(lcd, "");
                 }
                 if down {
                     self.contact_since[i] = Some(at_ms);
@@ -551,6 +562,11 @@ impl Ui {
                 {
                     let lane = if s.mode.dit_on_ring(s.swap) { 1 - i } else { i };
                     self.tape.contact(lcd, &self.theme, lane, since, at_ms, dit, lanes(s));
+                    // The first contact of a squeeze to open draws it, from the later close.
+                    if let Some(other) = self.contact_since[1 - i] {
+                        let both = if ticks::reached(since, other) { since } else { other };
+                        self.tape.squeeze(lcd, &self.theme, both, at_ms);
+                    }
                 }
             }
         }
@@ -574,6 +590,7 @@ impl Ui {
     /// screen's sounding, so each screen checks that its own transmission was.
     pub fn played(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
         self.serial_play = false;
+        self.listening = false;
         match self.screen {
             Screen::Qso => self.qso_played(),
             Screen::Hunt => self.hunt_played(now_ms),
@@ -590,10 +607,9 @@ impl Ui {
         if core::mem::take(&mut self.stop) {
             return Some(Command::Stop);
         }
-        if let Some(play) = self.play.take() {
-            return Some(Command::Play(play));
-        }
-        self.qso_next_play(s).or_else(|| self.hunt_next_play(s)).map(Command::Play)
+        let play = self.play.take().or_else(|| self.qso_next_play(s)).or_else(|| self.hunt_next_play(s))?;
+        self.listening = matches!(self.screen, Screen::Receive | Screen::Ragchew | Screen::Qso | Screen::Hunt);
+        Some(Command::Play(play))
     }
 
     /// Text for the voice to say now; run it after the players' commands, since a stop also
@@ -614,6 +630,7 @@ impl Ui {
         self.stop = true;
         self.play = None;
         self.say = None;
+        self.listening = false;
     }
 
     /// Band noise plays: practice while it runs, the SOUND tab, so you hear the noise level you
@@ -649,7 +666,7 @@ impl Ui {
         }
     }
 
-    pub fn timeout(&mut self, lcd: &mut Lcd, s: &Settings, now_ms: u32) {
+    pub fn timeout(&mut self, lcd: &mut Lcd, s: &mut Settings, now_ms: u32) {
         self.now_ms = now_ms;
         self.status_timeout(lcd, now_ms);
         self.draw_badge(lcd, false);
@@ -704,6 +721,8 @@ impl Ui {
     }
 
     fn open(&mut self, lcd: &mut Lcd, s: &Settings, screen: Screen) {
+        // SET and then BACK keep the dial focus of the screen you set from.
+        let keeps_focus = screen == Screen::Settings || (self.screen == Screen::Settings && self.settings_from == Some(screen));
         if screen != self.screen
             && let Some(session) = &mut self.session
             && session.screen() == self.screen
@@ -721,7 +740,9 @@ impl Ui {
         self.mem_row = false;
         self.screen = screen;
         self.editing = false;
-        self.dial_focus = None;
+        if !keeps_focus {
+            self.dial_focus = None;
+        }
         self.footer.clear();
         self.tape = Tape::new(screen == Screen::Timing);
         self.draw(lcd, s);
@@ -735,7 +756,7 @@ impl Ui {
     }
 
     fn close_settings(&mut self, lcd: &mut Lcd, s: &Settings) {
-        match self.settings_from.take() {
+        match self.settings_from {
             Some(screen) if self.session.as_ref().map(Session::screen) == Some(screen) => self.resume(lcd, s),
             Some(Screen::Settings) | None => self.back(lcd, s),
             Some(screen) => self.open(lcd, s, screen),
@@ -750,6 +771,26 @@ impl Ui {
             Some(Screen::Receive) => self.receive_resume(lcd, s),
             Some(Screen::Ragchew) => self.ragchew_resume(lcd, s),
             _ => {}
+        }
+    }
+
+    /// Starts `practice` afresh, and keeps it for RESUME after power on.
+    fn start(&mut self, lcd: &mut Lcd, s: &mut Settings, practice: Practice) {
+        s.last_practice = Some(practice);
+        match practice {
+            Practice::Drill(kind) => self.open_receive(lcd, s, kind),
+            Practice::Qso(program) => self.open_qso(lcd, s, program),
+            Practice::Hunt => self.open_hunt(lcd, s),
+            Practice::Chew { quiz } => self.open_ragchew(lcd, s, quiz),
+        }
+    }
+
+    /// Goes on with `practice` if it is paused, or starts it afresh.
+    fn open_practice(&mut self, lcd: &mut Lcd, s: &mut Settings, practice: Practice) {
+        if self.session.as_ref().map(Session::practice) == Some(practice) {
+            self.resume(lcd, s);
+        } else {
+            self.start(lcd, s, practice);
         }
     }
 

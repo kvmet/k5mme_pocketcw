@@ -12,35 +12,41 @@ To start, open RECEIVE in the [menu](menu.md), then the drill. The header shows 
 | NINJA | One word from the content pack, then the voice says it. See [NINJA](#ninja). |
 | HEAD | Words that get longer as you copy them, then two words, then a QSO line. See [HEAD](#head). |
 
-The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the HEAR section in [Settings](settings.md#hear). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
+The device sends at CHAR SPEED, with FARNSWORTH spacing when you set it. See the RECEIVE section in [Settings](settings.md#receive). The RCV value in the header shows the speed, such as `20/20`, or `20/10` with Farnsworth spacing.
 
 ## How a drill runs
 
-1. The device sends a group. The status shows `LISTEN`.
-2. The status shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
-3. While you key, the status shows `PAUSE ENDS`: when you stop keying for three word gaps, your copy ends.
+![The WORDS drill after one scored group](img/receive-words.png)
+
+1. The device sends a group. The state at the right of your copy shows `LISTEN`.
+2. The state shows `YOUR TURN`. Start to key what you copied within 5 seconds. You can also start while the group still plays, except in HEAD.
+3. While you key, the state shows `KEYING`. When you stop keying for three word gaps, your copy ends.
 4. The device scores your copy and shows it in the list. The next group starts after about 1 second.
 
-If you do not start to key within 5 seconds, the group counts as missed.
+If you do not start to key within 5 seconds, the group counts as missed when you copy the next one. After two such groups in a row, the drill pauses, and neither group counts: the status line shows `NO COPY FOR 2 GROUPS: PAUSED`. Key any character, or press F3 (GO), to go on. The character you key does not count as copy.
 
 To hear the group again, key `?` alone as your copy.
 
 ## What the screen shows
 
-- The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  80% OF 30  NEED 90% OF 50`.
+![The KOCH drill](img/receive-koch.png)
+
+- The top line: in KOCH, your level and your progress to the next level, such as `LEVEL 5  30/50 CHARS  80%  NEED 90%`: the characters scored at this level, up to the last 50, the percent of them you copied, and the percent the next level needs.
 - The character set, each character in the color of how well you copy it. Green: you know it. Amber: not enough tries to tell. Red, inverted: weak. Gray: not sent yet. KOCH shows the characters of your level, and a line marks the newest one. The other drills show all 44 characters.
 - In HEAD, the top line shows your rung and what it sends, such as `RUNG 3 OF 8  1 WORD OF 5 CHARS`.
 - The list of recent groups. Each row shows the group that was sent, then your copy with each character marked: green for right, red and inverted for wrong, `_` for missed. The score shows at the right, such as `4/5`.
 - In HEAD, each item takes two rows: what was sent, then your marked copy under it. The list shows the last 3 items.
-- Your copy as you key it, with the status at the right.
-- The footer: your score for this session, such as `SESSION 85%  120 CHARS`.
+- Your copy as you key it, with the state at the right: `LISTEN`, `YOUR TURN`, `KEYING` or `PAUSED`.
+- The footer: your score for this session, such as `SESSION 85%  120 CHARS`. Before your first score, and while you wait to key, it says what to do. While the drill is paused, it says how to go on.
 
 ## NINJA
 
+![The NINJA drill](img/receive-ninja.png)
+
 NINJA works like [Morse Code Ninja](https://morsecode.ninja): the device sends a word, and then the voice says it. You can just listen, or copy it in your head and key it back first.
 
-1. The device sends a word. The status shows `LISTEN`.
-2. The status shows `YOUR TURN`. To be scored, start to key the word within 1.5 seconds.
+1. The device sends a word. The state shows `LISTEN`.
+2. The state shows `YOUR TURN`. To be scored, start to key the word within 1.5 seconds.
 3. If you key, the device scores your copy as in the other drills, then the voice says the word.
 4. If you do not key, the voice says the word, and the list shows it with no score.
 5. The next word starts about 1 second after the voice ends.
@@ -50,6 +56,8 @@ The words are the ham words and abbreviations of the content pack, then the most
 NINJA needs the content pack. Without it, the drill shows `CONTENT PACK MISSING: INSTALL IT` and sends nothing. [Install](install.md) again, with the [content pack](install.md#the-content-pack).
 
 ## HEAD
+
+![The HEAD drill](img/receive-head.png)
 
 HEAD is a head-copy ladder. You copy each item in your head while it plays, and key it back after it ends. Keying while it plays does not count.
 
@@ -66,7 +74,7 @@ HEAD is a head-copy ladder. You copy each item in your head while it plays, and 
 
 Three copies in a row all right move you up one rung. Three copies in a row under half right move you down one. An extra character makes a copy not all right. A `?` repeat does not count.
 
-The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung while you use other screens, but not after you turn it off.
+The words come from the content pack: ham words and common English words. HEAD needs the content pack, as NINJA does. The device keeps your rung, also after you turn it off.
 
 ## The Koch method
 
@@ -84,11 +92,12 @@ The device keeps your level and your progress toward the next level while you us
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Pauses the drill and opens the settings at the HEAR section. F4 (BACK) there returns, and the next group plays at the new settings. |
-| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. |
-| F3 (STOP or GO) | Pauses the drill, or starts it again. |
+| F1 (SET) | Pauses the drill and opens the settings at the RECEIVE section, or at DRILLS from NINJA. F4 (BACK) there returns, and the next group plays at the new settings. |
+| F2 (AGN) | While a group plays or waits for your copy: sends the group again, and clears your copy. Blank while the drill is paused. |
+| F3 (STOP or GO) | Pauses the drill, or starts it again. While the drill is paused, a character you key also starts it again. |
 | F4 (BACK) | Pauses the drill and opens the RECEIVE list of the [menu](menu.md). Click the drill or RESUME there to go on. |
-| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). | KOCH also has `LEVEL` under the header: it sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
+| Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
+| Dial turn on `LEVEL` | KOCH only: sets your level, 2 to 44. A new level starts its progress count from zero; turn back to the level you left and its count returns. |
 | Dial click | Moves the focus to the next header value. |
 | Dial hold | Turns the device off. |
 | Key | Keys your copy. |

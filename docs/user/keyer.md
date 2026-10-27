@@ -4,6 +4,8 @@ The KEYER screen is the main screen. It opens after the boot screen. The header 
 
 ## What the screen shows
 
+![The KEYER screen after keying CQ](img/keyer.png)
+
 | Area | What it shows |
 | - | - |
 | Large digits | Your sending speed in WPM, 5 to 60. |
@@ -23,7 +25,7 @@ A small mark under a value shows which value the dial sets: speed, volume or ton
 The tape draws time from left to right, 4 pixels per dot length.
 
 - The KEY row shows the keyer output. In STRAIGHT mode, each mark has the color and shape of its timing grade.
-- The two rows under it show the two contacts of your key: DIT and DAH, or TIP and RNG in STRAIGHT mode.
+- The two rows under it show the two contacts of your key: DIT and DAH, or TIP and RNG in STRAIGHT mode. While both contacts are closed, a bar joins the two rows.
 - Under the rows, each decoded character shows under its marks.
 - Each gap between characters or words shows its length in units, in the color of its grade. A thin tick shows where the ideal gap would end.
 

@@ -10,7 +10,7 @@ use pocketcw_logic::{
     settings::Settings,
 };
 
-use super::{COLS, Play, Ui};
+use super::{COLS, Play, Screen, Ui};
 use crate::gfx::{rect, text_cols, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
@@ -33,7 +33,7 @@ pub(super) struct Sending {
 impl Ui {
     pub(super) fn open_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = true;
-        self.draw_mem_keys(lcd);
+        self.draw_home_keys(lcd);
         let t = &self.theme;
         for i in 0..SLOTS {
             let y = HOME_Y + i as i32 * HOME_STEP;
@@ -47,15 +47,23 @@ impl Ui {
         self.idle_status(lcd);
     }
 
-    /// M1 to M4 on the open MEM row, with STOP on the memory that is sending.
-    fn draw_mem_keys(&self, lcd: &mut Lcd) {
-        if !self.mem_row {
+    /// The KEYER keys: M1 to M4 on the open MEM row, with STOP on the memory that is sending.
+    /// With the row closed, every key reads STOP while a memory sends, since any press stops it.
+    pub(super) fn draw_home_keys(&self, lcd: &mut Lcd) {
+        if self.screen != Screen::Home {
             return;
         }
-        let mut keys = ["M1", "M2", "M3", "M4"];
-        if let Some(sending) = self.sending {
-            keys[sending.slot] = "STOP";
-        }
+        let keys = match (self.mem_row, self.sending) {
+            (false, None) => super::home::KEYS,
+            (false, Some(_)) => ["STOP"; 4],
+            (true, sending) => {
+                let mut keys = ["M1", "M2", "M3", "M4"];
+                if let Some(sending) = sending {
+                    keys[sending.slot] = "STOP";
+                }
+                keys
+            }
+        };
         self.softkeys(lcd, keys);
     }
 
@@ -66,7 +74,7 @@ impl Ui {
 
     pub(super) fn close_mem_row(&mut self, lcd: &mut Lcd) {
         self.mem_row = false;
-        self.softkeys(lcd, super::home::KEYS);
+        self.draw_home_keys(lcd);
         self.draw_decode_all(lcd);
         if self.sending.is_none() {
             self.idle_status(lcd);
@@ -95,11 +103,11 @@ impl Ui {
         let keying = Keying { wpm: s.wpm, effective: s.wpm, fist: 0 };
         self.play = Some(Play { text: message, keying, seed, delay_ms: 0, pitch_hz: s.tone_hz, transmit: true });
         self.sending = Some(Sending { slot, repeat, again_at: None });
-        self.draw_mem_keys(lcd);
-        let _ = if s.output == Output::Paddle {
-            write!(line, "M{} TONE ONLY: OUT IS PADDLE", slot + 1)
-        } else {
-            write!(line, "SENDING M{}  KEY TO STOP", slot + 1)
+        self.draw_home_keys(lcd);
+        let _ = match (s.output, s.key_out) {
+            (Output::Paddle, _) => write!(line, "M{} TONE ONLY: OUT TYPE PADDLE", slot + 1),
+            (_, false) => write!(line, "M{} TONE ONLY: KEY OUT OFF", slot + 1),
+            _ => write!(line, "SENDING M{}  KEY TO STOP", slot + 1),
         };
         self.set_footer(lcd, line.as_str());
     }
@@ -108,7 +116,7 @@ impl Ui {
     pub(super) fn stop_sending(&mut self, lcd: &mut Lcd) {
         if self.sending.take().is_some() {
             self.stop_players();
-            self.draw_mem_keys(lcd);
+            self.draw_home_keys(lcd);
             self.idle_status(lcd);
         }
     }
@@ -121,11 +129,11 @@ impl Ui {
         }
         if !sending.repeat {
             self.sending = None;
-            self.draw_mem_keys(lcd);
+            self.draw_home_keys(lcd);
             return self.idle_status(lcd);
         }
         sending.again_at = Some(now_ms.wrapping_add(self.memories.every_s as u32 * 1000));
-        let line = Text::<COLS>::format(format_args!("M{} AGAIN IN {}S  KEY TO STOP", sending.slot + 1, self.memories.every_s));
+        let line = Text::<COLS>::format(format_args!("M{} REPEATS EVERY {}S  KEY TO STOP", sending.slot + 1, self.memories.every_s));
         self.set_footer(lcd, line.as_str());
     }
 

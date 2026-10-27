@@ -1,6 +1,6 @@
 # Letters
 
-The LETTERS screen shows how well you copy each of the 44 Koch characters, and the characters you mix up most. The header shows LETTERS and your Koch level, such as `KOCH 12`.
+The LETTERS screen shows how well you copy each of the 44 Koch characters, and the characters you mix up most. The header shows LETTERS and your Koch level, such as `LEVEL 12`.
 
 Open STATS in the [menu](menu.md), then LETTERS, or press F2 (LTRS) on the [Progress](progress.md) screen.
 
@@ -11,6 +11,8 @@ Every character you copy in a [receive drill](receive.md) or answer in a [ragche
 When a character reaches 200 tries, its counts halve. The numbers then follow how you copy now, more than how you copied long ago.
 
 ## What the screen shows
+
+![The LETTERS screen](img/letters.png)
 
 Each character has a tile, in the Koch order. A tile shows the character and the percent you copied right. The color of the tile shows how sure the device is that you know the character:
 
@@ -27,9 +29,9 @@ Under the tiles, MIXUPS lists the six most common mixups, such as `S/H 4X`: the 
 
 | Control | Action |
 | - | - |
-| F1 (SET) | Opens the settings at the HEAR section. F4 (BACK) there returns to this screen. |
+| F1 (SET) | Opens the settings at the RECEIVE section. F4 (BACK) there returns to this screen. |
 | F2 hold (CLEAR) | Erases all counts and mixups. Your Koch level stays. |
-| F3 (DRIL) | Starts the KOCH drill. |
+| F3 (KOCH) | Goes on with the KOCH drill if it is paused, or starts it. |
 | F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
 | Dial click | Moves the focus to the next header value. |

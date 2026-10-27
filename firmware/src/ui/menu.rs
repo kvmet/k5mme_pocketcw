@@ -1,10 +1,15 @@
 //! The menu: a top list and the lists it opens. Each row names a screen or a list; the footer
 //! says what the selected row holds, and whose idea it was.
 
-use pocketcw_logic::{drill::Kind, input::Action, qso::Program, settings::Settings};
+use pocketcw_logic::{
+    drill::Kind,
+    input::Action,
+    qso::Program,
+    settings::{Practice, Settings},
+};
 
 use super::{Screen, Session, Ui, settings::Section};
-use crate::gfx::{TINY_W, rect, text, tiny};
+use crate::gfx::{TINY_W, mix, rect, text, tiny};
 use crate::lcd::Lcd;
 use crate::text::Text;
 use crate::theme::MAIN;
@@ -28,10 +33,7 @@ enum Item {
     Resume,
     List(List),
     Open(Screen),
-    Drill(Kind),
-    Chew { quiz: bool },
-    Qso(Program),
-    Hunt,
+    Practice(Practice),
 }
 
 struct Row {
@@ -48,7 +50,7 @@ const fn row(name: &'static str, about: &'static str, credit: &'static str, item
 const TOP: [Row; 7] = [
     row("RESUME", "PICK UP WHERE YOU LEFT OFF", "", Item::Resume),
     row("RECEIVE", "KOCH  WORDS  CALLS  NINJA  HEAD", "", Item::List(List::Receive)),
-    row("ON AIR", "POTA  SOTA  HUNT  RAGCHEW", "", Item::List(List::OnAir)),
+    row("ON AIR", "POTA  SOTA  HUNT  CHEW  QUIZ", "", Item::List(List::OnAir)),
     row("TIMING", "ZOOMED TAPE AND HISTOGRAMS", "", Item::Open(Screen::Timing)),
     row("STATS", "LETTER ACCURACY AND PROGRESS", "", Item::List(List::Stats)),
     row("SETTINGS", "KEYER, SOUND, MEMORIES, CALL, THEME", "", Item::Open(Screen::Settings)),
@@ -56,20 +58,20 @@ const TOP: [Row; 7] = [
 ];
 
 const RECEIVE: [Row; 5] = [
-    row("KOCH", "ONE MORE CHARACTER AT 90% RIGHT", "KOCH METHOD  LUDWIG KOCH", Item::Drill(Kind::Koch)),
-    row("WORDS", "COMMON WORDS TO COPY AND KEY BACK", "", Item::Drill(Kind::Words)),
-    row("CALLS", "CALLSIGNS TO COPY AND KEY BACK", "", Item::Drill(Kind::Calls)),
-    row("NINJA", "A WORD IN MORSE, THEN SPOKEN", "MORSE CODE NINJA  AD0WE", Item::Drill(Kind::Ninja)),
-    row("HEAD", "COPY WHOLE WORDS IN YOUR HEAD", "", Item::Drill(Kind::Head)),
+    row("KOCH", "ONE MORE CHARACTER AT 90% RIGHT", "KOCH METHOD  LUDWIG KOCH", Item::Practice(Practice::Drill(Kind::Koch))),
+    row("WORDS", "COMMON WORDS TO COPY AND KEY BACK", "", Item::Practice(Practice::Drill(Kind::Words))),
+    row("CALLS", "CALLSIGNS TO COPY AND KEY BACK", "", Item::Practice(Practice::Drill(Kind::Calls))),
+    row("NINJA", "A WORD IN MORSE, THEN SPOKEN", "MORSE CODE NINJA  AD0WE", Item::Practice(Practice::Drill(Kind::Ninja))),
+    row("HEAD", "COPY WHOLE WORDS IN YOUR HEAD", "", Item::Practice(Practice::Drill(Kind::Head))),
 ];
 
 /// RADIO stays last: it shows only with the decoder board on.
 const ON_AIR: [Row; 6] = [
-    row("POTA", "ACTIVATE A PARK AND WORK A PILEUP", "PARKS ON THE AIR", Item::Qso(Program::Pota)),
-    row("SOTA", "ACTIVATE A SUMMIT, WORK A PILEUP", "SUMMITS ON THE AIR", Item::Qso(Program::Sota)),
-    row("HUNT", "ANSWER ACTIVATORS ON THE AIR", "", Item::Hunt),
-    row("CHEW", "LISTEN TO TWO STATIONS RAGCHEW", "", Item::Chew { quiz: false }),
-    row("QUIZ", "A RAGCHEW WITH A QUESTION PER OVER", "", Item::Chew { quiz: true }),
+    row("POTA", "ACTIVATE A PARK AND WORK A PILEUP", "PARKS ON THE AIR", Item::Practice(Practice::Qso(Program::Pota))),
+    row("SOTA", "ACTIVATE A SUMMIT, WORK A PILEUP", "SUMMITS ON THE AIR", Item::Practice(Practice::Qso(Program::Sota))),
+    row("HUNT", "ANSWER ACTIVATORS ON THE AIR", "", Item::Practice(Practice::Hunt)),
+    row("CHEW", "LISTEN TO TWO STATIONS RAGCHEW", "", Item::Practice(Practice::Chew { quiz: false })),
+    row("QUIZ", "A RAGCHEW WITH A QUESTION PER OVER", "", Item::Practice(Practice::Chew { quiz: true })),
     row("RADIO", "THE DECODER BOARD OF THE PRO", "", Item::Open(Screen::Radio)),
 ];
 
@@ -100,19 +102,14 @@ const ALL: [List; LISTS] = [List::Top, List::Receive, List::OnAir, List::Stats];
 
 impl Session {
     fn item(&self) -> Item {
-        match self {
-            Session::Qso(q) => Item::Qso(q.bot.program),
-            Session::Hunt(_) => Item::Hunt,
-            Session::Receive(rx) => Item::Drill(rx.kind()),
-            Session::Ragchew(c) => Item::Chew { quiz: c.quiz },
-        }
+        Item::Practice(self.practice())
     }
 }
 
 impl Ui {
     fn shown(&self, s: &Settings, item: Item) -> bool {
         match item {
-            Item::Resume => self.session.is_some(),
+            Item::Resume => self.session.is_some() || s.last_practice.is_some(),
             Item::Open(Screen::Radio) => s.decoder_board,
             _ => true,
         }
@@ -151,19 +148,22 @@ impl Ui {
         let selected = i == self.cursor[self.list as usize];
         let (fg, sub_fg, bg) = if selected { t.select(lcd, 2, y, MAIN - 6, MENU_STEP - 2) } else { (t.fg, t.muted, t.bg) };
         text(lcd, 12, y + 2, row.name, fg, bg);
-        let detail = self.detail(row.item);
+        let detail = self.detail(s, row.item);
         tiny(lcd, MAIN - 10 - detail.len() as i32 * TINY_W, y + 5, detail.as_str(), sub_fg, bg);
     }
 
     /// What shows at the right end of a row: where a drill stands, or that a list opens.
-    fn detail(&self, item: Item) -> Text<12> {
+    fn detail(&self, s: &Settings, item: Item) -> Text<12> {
         let paused = self.session.as_ref().map(Session::item);
         match item {
-            Item::Resume => Text::format(format_args!("{}", self.session.as_ref().map_or("", Session::name))),
+            Item::Resume => {
+                let practice = self.session.as_ref().map(Session::practice).or(s.last_practice);
+                Text::format(format_args!("{}", practice.map_or("", Practice::name)))
+            }
             _ if paused == Some(item) => Text::format(format_args!("PAUSED")),
             Item::List(_) => Text::format(format_args!(">")),
-            Item::Drill(Kind::Koch) => Text::format(format_args!("LEVEL {}", self.letters.level)),
-            Item::Drill(Kind::Head) => Text::format(format_args!("RUNG {}", self.head_rung)),
+            Item::Practice(Practice::Drill(Kind::Koch)) => Text::format(format_args!("LEVEL {}", self.letters.level)),
+            Item::Practice(Practice::Drill(Kind::Head)) => Text::format(format_args!("RUNG {}", s.head_rung)),
             _ => Text::new(),
         }
     }
@@ -172,8 +172,10 @@ impl Ui {
         let t = &self.theme;
         let row = &rows(self.list)[self.cursor[self.list as usize]];
         rect(lcd, 0, ABOUT_Y, MAIN, CREDIT_Y + 12 - ABOUT_Y, t.bg);
-        tiny(lcd, 2, ABOUT_Y, row.about, t.muted, t.bg);
-        tiny(lcd, 2, CREDIT_Y, row.credit, t.dim, t.bg);
+        let restarts = row.item == Item::Resume && self.session.is_none();
+        tiny(lcd, 2, ABOUT_Y, if restarts { "START YOUR LAST PRACTICE AGAIN" } else { row.about }, t.muted, t.bg);
+        // 15 % toward the background keeps 2.6:1 contrast or more in every palette.
+        tiny(lcd, 2, CREDIT_Y, row.credit, mix(t.muted, t.bg, 15), t.bg);
     }
 
     /// Opens `list` with `item` selected, or the list's last selection when it has no such row.
@@ -185,9 +187,9 @@ impl Ui {
         self.open(lcd, s, Screen::Menu);
     }
 
-    /// Opens the top list from KEYER, on RESUME while a practice is paused.
+    /// Opens the top list from KEYER, on RESUME when it shows.
     pub(super) fn open_menu(&mut self, lcd: &mut Lcd, s: &Settings) {
-        let item = self.session.is_some().then_some(Item::Resume);
+        let item = self.shown(s, Item::Resume).then_some(Item::Resume);
         self.open_list(lcd, s, List::Top, item);
     }
 
@@ -224,19 +226,20 @@ impl Ui {
     }
 
     /// Opens what `item` names. A practice that is paused resumes; any other starts afresh.
-    fn menu_open(&mut self, lcd: &mut Lcd, s: &Settings, item: Item) {
-        if item == Item::Resume || self.session.as_ref().map(Session::item) == Some(item) {
-            return self.resume(lcd, s);
-        }
+    /// With nothing paused, RESUME starts the last practice.
+    fn menu_open(&mut self, lcd: &mut Lcd, s: &mut Settings, item: Item) {
+        let paused = self.session.as_ref().map(Session::item);
         match item {
-            Item::Resume => {}
+            Item::Resume if paused.is_some() => self.resume(lcd, s),
+            Item::Resume => {
+                if let Some(practice) = s.last_practice {
+                    self.start(lcd, s, practice);
+                }
+            }
             Item::List(list) => self.open_list(lcd, s, list, None),
             Item::Open(Screen::Settings) => self.open_settings_at(lcd, s, Section::Keyer),
             Item::Open(screen) => self.open(lcd, s, screen),
-            Item::Drill(kind) => self.open_receive(lcd, s, kind),
-            Item::Chew { quiz } => self.open_ragchew(lcd, s, quiz),
-            Item::Qso(program) => self.open_qso(lcd, s, program),
-            Item::Hunt => self.open_hunt(lcd, s),
+            Item::Practice(practice) => self.open_practice(lcd, s, practice),
         }
     }
 }

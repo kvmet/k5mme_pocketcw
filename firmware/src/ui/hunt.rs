@@ -8,7 +8,7 @@ use pocketcw_logic::{
     hunt::{Hunt, Logged, Phase},
     input::Action,
     player::{Keying, MAX_TEXT},
-    qso::{Options, Program, Tx},
+    qso::{Options, Program, Tx, ends_with_turn},
     settings::Settings,
 };
 
@@ -87,9 +87,9 @@ impl Hunting {
         let a = &bot.activator;
         let mut step = Text::new();
         let _ = match bot.phase {
-            _ if !self.over.is_empty() => write!(step, "YOUR OVER ENDS WHEN YOU PAUSE"),
+            _ if !self.over.is_empty() => write!(step, "END YOUR OVER WITH K, OR PAUSE"),
             Phase::Calling if self.hint => write!(step, "SEND: {}  OR  P2P {0}", bot.my_call()),
-            Phase::Calling => write!(step, "SEND YOUR CALL (P2P FIRST FROM A PARK)"),
+            Phase::Calling => write!(step, "SEND YOUR CALL"),
             Phase::Working { heard, .. } if self.hint && heard.as_str() != bot.my_call() => {
                 write!(step, "THEY HEARD {}: SEND CALL AGAIN", heard.as_str())
             }
@@ -107,7 +107,8 @@ impl Ui {
     pub(super) fn draw_hunt(&mut self, lcd: &mut Lcd, s: &Settings) {
         let t = &self.theme;
         self.header(lcd, s, "HUNT", &[]);
-        self.softkeys(lcd, ["SET", "QRS", "HINT", "BACK"]);
+        let Some(Session::Hunt(h)) = &self.session else { return };
+        self.softkeys(lcd, exchange::keys(h.hint));
         rect(lcd, 0, RULE_Y, MAIN, 1, t.rule());
         self.draw_hunt_lines(lcd);
         self.draw_hunt_state(lcd);
@@ -171,6 +172,7 @@ impl Ui {
         self.session = Some(Session::Hunt(Hunting::new(s.callsign(), seed, Self::qso_options(s), s.wpm)));
         self.open(lcd, s, Screen::Hunt);
         self.hunt_cq();
+        self.draw_hunt_lines(lcd);
     }
 
     fn hunt_cq(&mut self) {
@@ -183,14 +185,23 @@ impl Ui {
         }
     }
 
-    pub(super) fn hunt_decoded(&mut self, lcd: &mut Lcd, decoded: Decoded) {
+    pub(super) fn hunt_decoded(&mut self, lcd: &mut Lcd, s: &Settings, decoded: Decoded) {
         let Some(Session::Hunt(h)) = &mut self.session else { return };
-        if decoded.write_to(&mut h.over) {
+        let written = decoded.write_to(&mut h.over);
+        let ended = decoded == Decoded::Space && ends_with_turn(h.over.as_str());
+        if ended {
+            h.over_deadline = None;
+        }
+        if written {
             self.draw_hunt_over(lcd);
+        }
+        if ended {
+            let now_ms = self.now_ms;
+            self.hunt_over_done(lcd, s, now_ms);
         }
     }
 
-    /// Your key went down or up; the over ends after a long enough silence.
+    /// Your key went down or up; the over ends after a long enough silence, or at K.
     pub(super) fn hunt_key(&mut self, down: bool, at_ms: u32, dit_ms: u16) {
         let Some(Session::Hunt(h)) = &mut self.session else { return };
         h.cq_deadline = None;
@@ -254,9 +265,10 @@ impl Ui {
                 self.draw_hunt_lines(lcd);
             }
             Action::Soft(2) => {
-                if let Some(Session::Hunt(h)) = &mut self.session {
-                    h.hint = !h.hint;
-                }
+                let Some(Session::Hunt(h)) = &mut self.session else { return };
+                h.hint = !h.hint;
+                let hint = h.hint;
+                self.softkeys(lcd, exchange::keys(hint));
                 self.draw_hunt_lines(lcd);
                 self.draw_hunt_state(lcd);
                 self.draw_hunt_over(lcd);

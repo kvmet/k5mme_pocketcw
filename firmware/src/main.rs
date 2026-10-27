@@ -976,7 +976,7 @@ mod app {
                             power_off(&mut ui, &mut lcd, &mut bus, &settings, save_at.is_some());
                         }
                     }
-                    ui.timeout(&mut lcd, &settings, TICKS.load(Ordering::Relaxed));
+                    ui.timeout(&mut lcd, &mut settings, TICKS.load(Ordering::Relaxed));
                 }
             }
             if edges && (settings.mode, settings.swap, settings.wpm) != (before.mode, before.swap, before.wpm) {
@@ -1082,7 +1082,7 @@ mod app {
                 None => {}
                 Some(Action::PowerHold) => ui.alert(lcd, "RELEASE TO POWER OFF"),
                 Some(Action::PowerOff) => power_off(ui, lcd, bus, settings, unsaved),
-                Some(Action::PowerCancel) => ui.status(lcd, ""),
+                Some(Action::PowerCancel) => ui.alert(lcd, ""),
                 Some(action) => ui.act(lcd, settings, action, TICKS.load(Ordering::Relaxed)),
             },
             Message::Decoded(decoded) => ui.decoded(lcd, settings, decoded),

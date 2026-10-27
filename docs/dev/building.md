@@ -244,6 +244,7 @@ python3 -I tools/pocketcw.py F4 RIGHT CLICK shot timing.png
 | `expect REGEX` | Waits up to 60 s for an event line that matches from its start, such as `expect "PLAY "`. |
 | `listen MS` | Shows the event lines that arrive in that time. |
 | `shots DIR` | Saves every screen into the folder. See [Every screen](#every-screen). |
+| `manual` | Saves every screen for the user manual. See [The manual's screenshots](#the-manuals-screenshots). |
 | `info` | Shows the firmware version, the screen and the panel. |
 | `get NAME` | Shows a setting or memory, such as `get SPEED`. `get all` shows every one. |
 | `set NAME VALUE` | Changes a setting or memory, written as the screen writes it, such as `set MODE "IAMBIC A"`. |
@@ -259,10 +260,20 @@ A Python script can load the file and use its `Device` class: `press`, `hold`, `
 
 ### Every screen
 
-The `shots DIR` step saves a screenshot of every screen into a folder: KEYER and its MEM row, the top menu list, TIMING, the RECEIVE list and its five drills, the ON AIR list with POTA, SOTA, HUNT, CHEW and QUIZ, LETTERS, PROGRESS, SYSTEM, and each settings section. Start it with the device on the KEYER screen; it ends there.
+The `shots DIR` step saves a screenshot of every screen into a folder: KEYER and its MEM row, the top menu list, TIMING in both views, the RECEIVE list and its five drills, the ON AIR list with POTA, SOTA, HUNT, CHEW and QUIZ, LETTERS, PROGRESS, SYSTEM, and each settings section. Start it with the device on the KEYER screen; it stops at once on any other screen. It ends there.
 
 ```bash
 python3 -I tools/pocketcw.py shots shots
 ```
 
-It keys back one group in each of the Koch, words and calls drills, so each shows a scored row. The ragchews run until one over ends, and each QSO runs for 4 s. All of them add to the practice history. The run takes about 3 minutes. RADIO is left out, because it shows only with the decoder board on.
+It keys a short QSO on KEYER, so the decode lines show only that. It keys back one group in each drill, so each shows a scored row. On POTA and SOTA it calls CQ and waits for the pileup; HUNT waits for the activator's CQ. The ragchews run until one over ends. All of them add to the practice history. KEY OUT is OFF during the run, so the tour never keys a radio, and it goes back to its value at the end. The run takes about 4 minutes. RADIO is left out, because it shows only with the decoder board on.
+
+### The manual's screenshots
+
+The `manual` step runs the same tour into `docs/user/img`, at twice the screen's size, for the pages of the user manual. It first sets the settings the screens show to their defaults, such as STYLE HAZARD, PALETTE ORANGE, SPEED 20 and TONE 700, so the images match a new device. It keeps your callsign and memories. At the end it sets each of those settings back. A setting it cannot set back shows as `NOT SET BACK: NAME VALUE`.
+
+```bash
+python3 -I tools/pocketcw.py manual
+```
+
+Each run sends new random groups and stations, so every image changes. Run it after a change to a screen, and commit the images with the change.

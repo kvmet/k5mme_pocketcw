@@ -32,7 +32,7 @@ const MEMORY_COLS: usize = ((MAIN - 10 - MEMORY_X) / TINY_W) as usize;
 pub(super) enum Section {
     Keyer,
     Sound,
-    Hear,
+    Receive,
     Drills,
     Qso,
     Memories,
@@ -54,7 +54,7 @@ enum Row {
 /// Each row: its name, what it is, and the footer line that says what it does.
 const ROWS: [(&str, Row, &str); 40] = [
     ("KEYER", Row::Section(Section::Keyer), ""),
-    ("MODE", Row::Value(Field::Mode), "IAMBIC A OR B, OR A STRAIGHT KEY"),
+    ("MODE", Row::Value(Field::Mode), "IAMBIC A OR B, OR STRAIGHT/SIDESWIPER"),
     ("PADDLES", Row::Value(Field::Swap), "WHICH LEVER SENDS DITS"),
     ("SPEED", Row::Value(Field::Speed), "YOUR KEYER SPEED"),
     ("KEY OUT", Row::Value(Field::KeyOut), "KEYS THE RADIO ON KEYER TIMING RADIO"),
@@ -64,10 +64,10 @@ const ROWS: [(&str, Row, &str); 40] = [
     ("TONE", Row::Value(Field::Tone), "THE PITCH OF YOUR SIDETONE"),
     ("VOLUME", Row::Value(Field::Volume), "THE VOLUME OF EVERYTHING"),
     ("WAVE", Row::Value(Field::Wave), "SINE IS SOFT, SQUARE IS BRIGHT"),
-    ("NOISE", Row::Value(Field::Noise), "BAND NOISE UNDER DRILLS AND BOTS"),
+    ("NOISE", Row::Value(Field::Noise), "BAND NOISE UNDER DRILLS AND STATIONS"),
     ("FADING", Row::Value(Field::Fading), "HOW DEEP STATIONS FADE"),
-    ("HEAR", Row::Section(Section::Hear), ""),
-    ("CHAR SPEED", Row::Value(Field::RxSpeed), "SPEED OF DRILLS AND BOTS  MATCH: YOURS"),
+    ("RECEIVE", Row::Section(Section::Receive), ""),
+    ("CHAR SPEED", Row::Value(Field::RxSpeed), "DRILLS AND STATIONS  MATCH: YOURS"),
     ("FARNSWORTH", Row::Value(Field::RxEffective), "LOWER IT FOR LONGER GAPS"),
     ("DRILLS", Row::Section(Section::Drills), ""),
     ("CHEW SHOWS", Row::Value(Field::Reveal), "WHEN A RAGCHEW'S TEXT SHOWS"),
@@ -84,7 +84,7 @@ const ROWS: [(&str, Row, &str); 40] = [
     ("REPEAT EVERY", Row::Every, "GAP BEFORE A HELD MEMORY REPEATS"),
     ("AFTER SEND", Row::AfterSend, "CLOSE OR KEEP THE MEM ROW OPEN"),
     ("CALLSIGN", Row::Section(Section::Callsign), ""),
-    ("CALL", Row::Call, "FOR THE BOTS AND THE BOOT SCREEN"),
+    ("CALL", Row::Call, "FOR THE STATIONS AND THE BOOT SCREEN"),
     ("DEVICE", Row::Section(Section::Device), ""),
     ("USB OUT", Row::Value(Field::UsbOut), "WHAT THE USB PORT SENDS A COMPUTER"),
     ("DECODER BOARD", Row::Value(Field::DecoderBoard), "THE RADIO DECODER OF THE PRO MODEL"),
@@ -287,8 +287,14 @@ impl Ui {
     /// Selects the first row of the next section, or of the one before this row's.
     fn jump_section(&mut self, lcd: &mut Lcd, s: &Settings, forward: bool) {
         let here = (0..self.row).rev().find(|&i| is_section(i)).unwrap_or(0);
-        let start = if forward { (self.row..ROWS.len()).find(|&i| is_section(i)) } else { (0..here).rev().find(|&i| is_section(i)) };
-        let Some(Row::Section(section)) = start.map(|i| ROWS[i].1) else { return };
+        let previous = |end: usize| (0..end).rev().find(|&i| is_section(i));
+        // Both ends wrap; ROWS starts with a section.
+        let start = if forward {
+            (self.row..ROWS.len()).find(|&i| is_section(i)).unwrap_or(0)
+        } else {
+            previous(here).or_else(|| previous(ROWS.len())).unwrap_or(0)
+        };
+        let Row::Section(section) = ROWS[start].1 else { return };
         self.select_section(section);
         self.draw_settings_list(lcd, s);
     }

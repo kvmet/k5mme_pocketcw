@@ -1,6 +1,6 @@
 # Settings
 
-All settings are on one screen, in one list with nine sections: KEYER, SOUND, HEAR, DRILLS, QSO, MEMORIES, CALLSIGN, DEVICE and THEME. The device saves the settings 2 seconds after your last change.
+All settings are on one screen, in one list with nine sections: KEYER, SOUND, RECEIVE, DRILLS, QSO, MEMORIES, CALLSIGN, DEVICE and THEME. The device saves the settings 2 seconds after your last change.
 
 ## Open the settings
 
@@ -8,7 +8,8 @@ All settings are on one screen, in one list with nine sections: KEYER, SOUND, HE
 | - | - | - |
 | [Menu](menu.md), row SETTINGS | Dial click | KEYER |
 | Menu, KEYER, TIMING | F1 (SET) | KEYER |
-| Receive drills, ragchew, LETTERS | F1 (SET) | HEAR |
+| KOCH, WORDS, CALLS, HEAD, LETTERS, PROGRESS | F1 (SET) | RECEIVE |
+| NINJA, CHEW, QUIZ | F1 (SET) | DRILLS |
 | POTA, SOTA, HUNT | F1 (SET) | QSO |
 | RADIO | F1 (SET) | DEVICE |
 | SYSTEM | F1 (SET) | THEME |
@@ -20,8 +21,8 @@ F4 (BACK) leaves the settings and returns to the screen you came from. A drill o
 | Control | Action |
 | - | - |
 | F1 hold | Does what F1 HOLD sets, as on every screen. See [Held buttons](controls.md#held-buttons). |
-| F2 (PREV) | Selects the first row of the section before. |
-| F3 (NEXT) | Selects the first row of the next section. |
+| F2 (PREV) | Selects the first row of the section before. From KEYER, it goes to THEME. |
+| F3 (NEXT) | Selects the first row of the next section. From THEME, it goes to KEYER. |
 | F4 (BACK) | Leaves the settings. |
 | F4 hold (HOME) | Opens the KEYER screen. |
 | Dial turn | Selects another row. While you edit, changes the value. |
@@ -35,6 +36,8 @@ A line under the list tells you what the selected row sets.
 
 ## KEYER
 
+![The settings at the KEYER section](img/settings-keyer.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | MODE | IAMBIC A, IAMBIC B, STRAIGHT | IAMBIC B | Your key type. See [Keys and jacks](keys.md). |
@@ -46,6 +49,8 @@ A line under the list tells you what the selected row sets.
 
 ## SOUND
 
+![The settings at the SOUND section](img/settings-sound.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | TONE | 300 to 1200 Hz, in steps of 10 Hz | 700 Hz | The pitch of your sidetone. Other stations send at pitches near it. |
@@ -56,7 +61,9 @@ A line under the list tells you what the selected row sets.
 
 Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA and HUNT screens. While a SOUND row is selected, the band noise plays, so you hear the level you set.
 
-## HEAR
+## RECEIVE
+
+![The settings at the RECEIVE section](img/settings-receive.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |
@@ -65,12 +72,16 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 
 ## DRILLS
 
+![The settings at the DRILLS section](img/settings-drills.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | CHEW SHOWS | WHOLE OVER, EACH LINE | WHOLE OVER | When the [ragchew](ragchew.md) CHEW shows its text. |
 | NINJA WORDS | 100 to 3000, in steps of 100 | 500 | How many words the [NINJA](receive.md#ninja) drill picks from: the ham words first, then the most common English words. |
 
 ## QSO
+
+![The settings at the QSO section](img/settings-qso.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |
@@ -79,6 +90,8 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 | SPEED SPREAD | ON, OFF | ON | ON: each hunter or activator sends up to 5 WPM faster or slower than CHAR SPEED. |
 
 ## MEMORIES
+
+![The settings at the MEMORIES section](img/settings-memories.png)
 
 | Row | Values |
 | - | - |
@@ -89,6 +102,8 @@ Noise and fading play in the receive drills, the ragchew, and on the POTA, SOTA 
 See [Edit the memories](memories.md#edit-the-memories).
 
 ## CALLSIGN
+
+![The settings at the CALLSIGN section](img/settings-callsign.png)
 
 CALL is your callsign. The QSO and hunt screens use it, and the boot screen draws it. The default is N0CALL, a placeholder callsign.
 
@@ -103,6 +118,8 @@ Click the dial on CALL, then key your callsign. Each character you key goes at t
 
 ## DEVICE
 
+![The settings at the DEVICE section](img/settings-device.png)
+
 | Row | Values | Default | What it sets |
 | - | - | - | - |
 | USB OUT | OFF, TEXT, VBAND, SERIAL, RADIO | OFF | What the USB port sends a computer. TEXT types what you key. VBAND sends your keying to VBand. SERIAL is the serial port alone, for a logging program. RADIO types what the decoder board hears, and shows only while DECODER BOARD is ON. See [USB keyboard](usb.md). |
@@ -110,6 +127,8 @@ Click the dial on CALL, then key your callsign. Each character you key goes at t
 | F1 HOLD | KEY OUT, RESUME, MEM ROW, TIMING | KEY OUT | What holding F1 does on every screen. See [Held buttons](controls.md#held-buttons). |
 
 ## THEME
+
+![The settings at the THEME section](img/settings-theme.png)
 
 | Row | Values | Default | What it sets |
 | - | - | - | - |

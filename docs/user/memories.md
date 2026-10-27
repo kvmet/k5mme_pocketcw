@@ -13,14 +13,16 @@ The first time PocketCW starts, the memories hold messages for a POTA activation
 
 ## Send a memory
 
-1. On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. The labels of F1 to F4 change to M1 to M4, and the status line says `HOLD REPEATS  CLICK CLOSES`.
+![The KEYER screen with the memory row open](img/keyer-mem.png)
+
+1. On the KEYER screen, press F2 (MEM). The memory row replaces the decode lines and shows each memory. The labels of F1 to F4 change to M1 to M4, and the footer says `HOLD REPEATS  CLICK CLOSES`.
 2. Press F1 to F4 to send M1 to M4 once. Hold the button to send the memory again and again. An empty memory sends nothing, and the status line shows `M1 IS EMPTY (SETTINGS)`.
 
-The memory sends at your keyer speed and tone. The status line shows `SENDING M1  KEY TO STOP`. A held memory waits for the REPEAT EVERY time after it ends, then sends again. The status line then shows the time to the next send, such as `M1 AGAIN IN 6S  KEY TO STOP`.
+The memory sends at your keyer speed and tone. The footer shows `SENDING M1  KEY TO STOP`. A held memory waits for the REPEAT EVERY time after it ends, then sends again. Between sends, the footer shows `M1 REPEATS EVERY 6S  KEY TO STOP`.
 
 With F1 HOLD set to MEM ROW, holding F1 on any screen opens the KEYER screen with the memory row open. See [Held buttons](controls.md#held-buttons).
 
-A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. With OUT TYPE PADDLE, the memory plays only as a tone, and the status line says `M1 TONE ONLY: OUT IS PADDLE`.
+A memory keys the func jack only when KEY OUT is ON and OUT TYPE is STRAIGHT. Otherwise the memory plays only as a tone, and the footer says why: `M1 TONE ONLY: OUT TYPE PADDLE` or `M1 TONE ONLY: KEY OUT OFF`.
 
 ### Stop a memory
 
@@ -32,7 +34,7 @@ Keying from a logging program over USB also stops a memory, so the two never key
 
 | Control | Action |
 | - | - |
-| F1 to F4 (M1 to M4) | Sends that memory once. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, its button shows STOP, and a press of any button only stops it. |
+| F1 to F4 (M1 to M4) | Sends that memory once. With AFTER SEND set to CLOSE, the memory row closes. While a memory sends, a press of any button only stops it. With the row open, the sending memory's button shows STOP; with the row closed, all four buttons show STOP. |
 | F1 to F4 hold (REPEAT) | Sends that memory again and again, until you stop it. |
 | Dial turn | Changes the marked value on the KEYER screen. |
 | Dial click | Closes the memory row. While a memory sends, the click stops it instead. |

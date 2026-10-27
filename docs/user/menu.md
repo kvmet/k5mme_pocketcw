@@ -2,13 +2,15 @@
 
 The menu is a top list and three lists it opens: RECEIVE, ON AIR and STATS. Each row shows the name of a screen or a list. A `>` at the right end marks a row that opens a list. Under the rows, a line tells you what the selected row holds, and a dimmer line names the work the idea came from.
 
-To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other screen opens the list that holds that screen, with its row selected.
+To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other screen opens the list that holds that screen, with its row selected. SETTINGS is the exception: BACK returns to the screen you opened it from.
 
 ## The top list
 
+![The top list of the menu](img/menu.png)
+
 | Row | Opens | Page |
 | - | - | - |
-| RESUME | The practice you left, where you left it. This row shows only while a practice is paused, and the right end names the practice. | See below |
+| RESUME | The practice you left, where you left it. After you turn the device on, it starts the last practice you opened again from the start. The right end names the practice. The row shows once you have opened a practice. | See below |
 | RECEIVE | The list of receive drills. | [Receive drills](receive.md) |
 | ON AIR | The list of on-air practice: activations, the hunt and ragchews. | See below |
 | TIMING | A zoomed timing tape and histograms of your keying. | [Timing](timing.md) |
@@ -19,6 +21,8 @@ To open the menu, press F4 (MENU) on the KEYER screen. F4 (BACK) on any other sc
 The header of the top list shows your callsign.
 
 ## RECEIVE
+
+![The RECEIVE list of the menu](img/menu-receive.png)
 
 | Row | Opens |
 | - | - |
@@ -31,6 +35,8 @@ The header of the top list shows your callsign.
 See [Receive drills](receive.md).
 
 ## ON AIR
+
+![The ON AIR list of the menu](img/menu-on-air.png)
 
 | Row | Opens | Page |
 | - | - | - |
@@ -51,6 +57,8 @@ See [Receive drills](receive.md).
 ## Paused practice
 
 When you leave a drill, an activation, the hunt or a ragchew, it pauses. It keeps its log, transcript and score while the device is on. The RESUME row shows at the top of the top list, and the practice's own row shows `PAUSED`. Click either row to go on.
+
+The device remembers the last practice you opened, even after you turn it off. With nothing paused, RESUME starts that practice again from the start. KOCH starts at your level, and HEAD at your rung. The footer then reads `START YOUR LAST PRACTICE AGAIN`.
 
 Only one practice pauses at a time. When you start a different one, the paused one ends.
 

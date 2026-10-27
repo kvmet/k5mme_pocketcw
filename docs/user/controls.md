@@ -22,12 +22,14 @@ Two held buttons work on every screen:
 | F1 | Set by F1 HOLD | Does what F1 HOLD in the DEVICE section of the [settings](settings.md#device) sets. The default is KEY OUT. |
 | F4 | `HOME` | Opens the KEYER screen. A drill or QSO you were in pauses: RESUME in the [menu](menu.md) goes on with it. |
 
+On KEYER, F4 has no hold. With the memory row open, every hold sends its memory again and again instead. See [Memories](memories.md).
+
 F1 HOLD has four values:
 
 | F1 HOLD | Label | Action |
 | - | - | - |
-| KEY OUT | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT IN PRACTICE`. See [The func jack](keys.md#the-func-jack). |
-| RESUME | `RESUME` | Goes on with the drill or QSO you paused. With nothing paused, the status line shows `NOTHING PAUSED`. |
+| KEY OUT | `KEYOUT` | Turns KEY OUT on or off. The status line shows `KEY OUT ON` or `KEY OUT OFF`. On a screen where your key does not key the radio, it shows `KEY OUT ON: NOT ON THIS SCREEN`. See [The func jack](keys.md#the-func-jack). |
+| RESUME | `RESUME` | Goes on with the drill or QSO you paused. With nothing paused, it starts the last one you opened again. With no last one, the status line shows `NOTHING TO RESUME`. |
 | MEM ROW | `MEM` | Opens the KEYER screen with the [memory](memories.md) row open. |
 | TIMING | `TIMING` | Opens the [TIMING](timing.md) screen. |
 
@@ -62,7 +64,7 @@ When the battery is empty, the device saves everything and turns off by itself. 
 
 - The header across the top names the screen. It also shows details such as the keyer mode, the values the dial sets, and a battery icon at the right end. `TX` shows while your key keys the radio.
 - The column at the right edge, under the header, shows the labels of F1 to F4.
-- The status line at the bottom shows short messages. A message stays until the screen draws that area again. See [Status messages](status-messages.md).
+- The footer at the bottom shows what the screen waits for or what the selected row does. Short messages show there for 3 seconds, brighter, and then the footer comes back. See [Status messages](status-messages.md).
 
 ## Header values
 
@@ -72,13 +74,13 @@ On every screen except KEYER, MENU and SETTINGS, the dial sets values that show 
 | - | - | - |
 | `VOL 23` | The volume. | VOLUME in the SOUND section |
 | `SND 20` | Your keyer speed, in WPM. | SPEED in the KEYER section |
-| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH in the HEAR section |
+| `RCV 20/15` | The speed of what the device sends you: the character speed, then the Farnsworth speed. Equal numbers mean no Farnsworth spacing. | CHAR SPEED and FARNSWORTH in the RECEIVE section |
 
 - A dial click moves the focus to the next value. The focused number shows inverted. On RECEIVE KOCH, the focus also reaches `LEVEL` under the header.
 - A dial turn changes the focused value.
 - A dial turn does nothing while you key, and for one word gap after you stop. A brushed dial cannot change a value in the middle of your over.
-- Each screen keeps its own focus while the device is on. A screen starts on RCV where it shows, on SND on TIMING, and on VOL on the others.
-- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the HEAR section of the settings.
+- Opening a screen puts the focus on RCV where it shows, on SND on TIMING, and on VOL on the others. After F1 (SET) and then F4 (BACK), the focus stays where it was.
+- With CHAR SPEED at MATCH, RCV shows your keyer speed. A turn sets CHAR SPEED, starting from that speed. To set MATCH again, use the RECEIVE section of the settings.
 - Turn the second RCV number down for Farnsworth spacing. Turn it up to the first number to stop the spacing.
 - On QSO and HUNT, a new RCV speed moves every station by the same amount: each keeps its offset from RCV and its fist. Any QRS ends.
 

@@ -66,11 +66,16 @@ pub(super) fn draw_over(lcd: &mut Lcd, t: &Theme, over: &str) {
     rect(lcd, shown.len() as i32 * CHAR_W + 1, INPUT_Y + 2, CHAR_W - 2, 13, t.accent);
 }
 
-/// A bot is sending or about to, your over is waiting for its end, or the bots wait for you.
+/// The QSO keys; F3 reads HIDE while hints show.
+pub(super) fn keys(hint: bool) -> [&'static str; 4] {
+    ["SET", "QRS", if hint { "HIDE" } else { "HINT" }, "BACK"]
+}
+
+/// A bot is sending or about to, you are keying your over, or the bots wait for you.
 pub(super) fn badge(bot_sending: bool, over: &str) -> &'static str {
     match (bot_sending, over.is_empty()) {
         (true, _) => "LISTEN",
-        (false, false) => "PAUSE ENDS",
+        (false, false) => "KEYING",
         (false, true) => "YOUR TURN",
     }
 }

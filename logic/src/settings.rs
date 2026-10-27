@@ -1,6 +1,8 @@
 //! User settings and their EEPROM record.
 
+use crate::drill::{self, FIRST_RUNG, RUNGS};
 use crate::keyer::{MAX_WPM, MIN_WPM, Mode, Output};
+use crate::qso::Program;
 use crate::record::{self, body_mut, frame, is_sealed, unframe};
 use crate::synth::{self, Sound};
 use crate::volume;
@@ -48,6 +50,41 @@ pub enum Shortcut {
 }
 
 pub const SHORTCUTS: [Shortcut; 4] = [Shortcut::KeyOut, Shortcut::Resume, Shortcut::Mem, Shortcut::Timing];
+
+/// A practice that RESUME starts again after power on. Stored as its index in `PRACTICES` plus
+/// one, with 0 for none; the table only grows at its end.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Practice {
+    Drill(drill::Kind),
+    Qso(Program),
+    Hunt,
+    Chew { quiz: bool },
+}
+
+const PRACTICES: [Practice; 10] = [
+    Practice::Drill(drill::Kind::Koch),
+    Practice::Drill(drill::Kind::Words),
+    Practice::Drill(drill::Kind::Calls),
+    Practice::Drill(drill::Kind::Ninja),
+    Practice::Drill(drill::Kind::Head),
+    Practice::Qso(Program::Pota),
+    Practice::Qso(Program::Sota),
+    Practice::Hunt,
+    Practice::Chew { quiz: false },
+    Practice::Chew { quiz: true },
+];
+
+impl Practice {
+    pub fn name(self) -> &'static str {
+        match self {
+            Practice::Drill(kind) => kind.name(),
+            Practice::Qso(program) => program.name(),
+            Practice::Hunt => "HUNT",
+            Practice::Chew { quiz: true } => "QUIZ",
+            Practice::Chew { quiz: false } => "CHEW",
+        }
+    }
+}
 
 /// In the order the setting steps through. RADIO is last, so the steps without the board are
 /// all but the last.
@@ -99,6 +136,10 @@ pub struct Settings {
     /// NINJA picks among the first this many pack words, a multiple of `NINJA_WORDS_STEP`.
     pub ninja_words: u16,
     pub shortcut: Shortcut,
+    /// The practice last opened; None until one is.
+    pub last_practice: Option<Practice>,
+    /// The HEAD rung, from `FIRST_RUNG`.
+    pub head_rung: u8,
 }
 
 pub const MAX_VOLUME: u8 = volume::MAX_LEVEL;
@@ -160,6 +201,7 @@ impl Default for Settings {
             palette: 0, callsign, rx_wpm: 0, rx_effective: 0, pileup: Pileup::TakeTurns, human_fist: true,
             spread: true, reveal_lines: false, brightness: MAX_BRIGHTNESS, square: false, noise: 0, fading: 0,
             decoder_board: false, usb_out: UsbOut::Off, ninja_words: 500, shortcut: Shortcut::KeyOut,
+            last_practice: None, head_rung: FIRST_RUNG,
         }
     }
 }
@@ -187,7 +229,9 @@ const BODY_LEN: usize = V6_BODY + 1;
 const COUNT_AT: usize = BODY_LEN;
 const NINJA_AT: usize = COUNT_AT + 1;
 const SHORTCUT_AT: usize = NINJA_AT + 1;
-pub const RECORD_LEN: usize = SHORTCUT_AT + 1 + record::OVERHEAD;
+const PRACTICE_AT: usize = SHORTCUT_AT + 1;
+const RUNG_AT: usize = PRACTICE_AT + 1;
+pub const RECORD_LEN: usize = RUNG_AT + 1 + record::OVERHEAD;
 /// Settings are kept in two copies and saved to them in turn, so a save cut off by power loss
 /// leaves the other copy whole. A save with count `n` goes to copy `n % COPIES`.
 pub const COPIES: usize = 2;
@@ -203,7 +247,8 @@ impl Settings {
     /// Body: wpm, mode, flags, volume, tone (LE), boot count (LE; the boot count record overrides
     /// it once that exists), style, palette, callsign, receive speed, effective speed, QSO and
     /// ragchew flags, brightness, sound flags (bit 0 square), noise, fading, hardware flags, save
-    /// count, NINJA words in hundreds, the F1 hold's index in `SHORTCUTS`.
+    /// count, NINJA words in hundreds, the F1 hold's index in `SHORTCUTS`, the last practice's
+    /// index in `PRACTICES` plus one, the HEAD rung.
     pub fn encode(&self, count: u8) -> [u8; RECORD_LEN] {
         let mode = match self.mode {
             Mode::IambicA => 0,
@@ -239,6 +284,8 @@ impl Settings {
         body[COUNT_AT] = count;
         body[NINJA_AT] = (self.ninja_words / NINJA_WORDS_STEP) as u8;
         body[SHORTCUT_AT] = SHORTCUTS.iter().position(|&c| c == self.shortcut).unwrap_or(0) as u8;
+        body[PRACTICE_AT] = self.last_practice.and_then(|p| PRACTICES.iter().position(|&q| q == p)).map_or(0, |i| i as u8 + 1);
+        body[RUNG_AT] = self.head_rung;
         frame(&mut record, MAGIC, VERSION);
         record
     }
@@ -318,6 +365,9 @@ impl Settings {
         });
         // A value from later firmware takes the default and keeps the rest of the record.
         let shortcut = body.get(SHORTCUT_AT).and_then(|&i| SHORTCUTS.get(i as usize)).copied().unwrap_or(defaults.shortcut);
+        let last_practice = body.get(PRACTICE_AT).and_then(|&i| PRACTICES.get((i as usize).checked_sub(1)?)).copied();
+        let rungs = FIRST_RUNG..=RUNGS.len() as u8;
+        let head_rung = body.get(RUNG_AT).copied().filter(|r| rungs.contains(r)).unwrap_or(FIRST_RUNG);
         let hardware = if len >= BODY_LEN { body[V6_BODY] } else { defaults.decoder_board as u8 };
         let stored = hardware >> USB_OUT_SHIFT & USB_OUT_MASK;
         // A value from later firmware turns USB off instead of dropping the whole record.
@@ -360,6 +410,8 @@ impl Settings {
             usb_out,
             ninja_words,
             shortcut,
+            last_practice,
+            head_rung,
         };
         let in_range = (MIN_WPM..=MAX_WPM).contains(&settings.wpm)
             && settings.volume <= MAX_VOLUME
@@ -739,6 +791,26 @@ mod tests {
         body_mut(&mut record)[SHORTCUT_AT] = 200;
         frame(&mut record, MAGIC, VERSION);
         assert_eq!(Settings::decode(&record), Some(Settings { shortcut: Shortcut::KeyOut, ..s }));
+    }
+
+    #[test]
+    fn last_practice_and_head_rung_round_trip_and_read_unknown_as_defaults() {
+        for (i, &practice) in PRACTICES.iter().enumerate() {
+            let s = Settings { last_practice: Some(practice), head_rung: 1 + i as u8 % RUNGS.len() as u8, ..Settings::default() };
+            assert_eq!(Settings::decode(&s.encode(0)), Some(s));
+        }
+        let s = Settings { last_practice: Some(Practice::Hunt), head_rung: 3, ..Settings::default() };
+        let mut later = s.encode(0);
+        body_mut(&mut later)[PRACTICE_AT] = PRACTICES.len() as u8 + 1;
+        body_mut(&mut later)[RUNG_AT] = RUNGS.len() as u8 + 1;
+        frame(&mut later, MAGIC, VERSION);
+        assert_eq!(Settings::decode(&later), Some(Settings { last_practice: None, head_rung: FIRST_RUNG, ..s }));
+        let mut before = [0xFF; 64];
+        let older = &mut before[..PRACTICE_AT + record::OVERHEAD];
+        body_mut(older).copy_from_slice(&s.encode(0)[record::BODY_START..record::BODY_START + PRACTICE_AT]);
+        frame(older, MAGIC, VERSION);
+        let read = Settings::decode(&before).map(|s| (s.last_practice, s.head_rung));
+        assert_eq!(read, Some((None, FIRST_RUNG)), "a save from before the fields");
     }
 
     #[test]

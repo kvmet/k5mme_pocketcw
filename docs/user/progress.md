@@ -10,12 +10,14 @@ The device keeps the last 32 sessions. A session starts to count at the first th
 
 | Column | What it counts |
 | - | - |
-| TIME | Time while you key, on any screen. Time between two key presses counts when the gap is 60 seconds or less. |
+| TIME | Time while you key, on any screen, and while a drill, ragchew, POTA, SOTA or HUNT sends to you. A gap between the two counts when it is 60 seconds or less. |
 | SENT | Characters you sent on the key, on any screen. |
 | COPY | Percent right in [receive drills](receive.md) and [ragchew](ragchew.md) quizzes. |
 | QSOS | QSOs you logged when you [activate](activate.md) or [hunt](hunt.md). |
 
 ## What the screen shows
+
+![The PROGRESS screen](img/progress.png)
 
 The chart shows the last 14 sessions, the newest at the right. `NOW` marks the session in progress.
 
@@ -37,7 +39,8 @@ Before your first session, the chart says `NOTHING YET: START KEYING`.
 
 | Control | Action |
 | - | - |
-| F1, F3 | Nothing. |
+| F1 (SET) | Opens the settings at the RECEIVE section. F4 (BACK) there returns to this screen. |
+| F3 | Nothing. |
 | F2 (LTRS) | Opens [Letters](letters.md). |
 | F4 (BACK) | Opens the STATS list of the [menu](menu.md). |
 | Dial turn | Changes the focused header value. See [Header values](controls.md#header-values). |
